@@ -20,10 +20,13 @@ local ConfigFileName
 
 if game.PlaceId == Games.GrowAGarden then
     ConfigFileName = "DarkHub_GrowAGarden"
+
 elseif game.PlaceId == Games.StealAnEgg then
     ConfigFileName = "DarkHub_StealAnEgg"
+
 elseif game.PlaceId == Games.Rivals then
     ConfigFileName = "DarkHub_Rivals"
+
 else
     ConfigFileName = "DarkHub_Unsupported"
 end
@@ -42,10 +45,10 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = "K",
 
     ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "DARK HUB",
-        FileName = ConfigFileName
-    },
+    Enabled = true,
+    FolderName = "DARK HUB",
+    FileName = ConfigFileName
+},
 
     Discord = {
         Enabled = true,
@@ -668,7 +671,7 @@ local function ProcessPlacement()
         PlaceSprinklerAtCFrame(targetCFrame)
     end
 end
-                
+
 --============================================================
 -- HOME TAB
 --============================================================
