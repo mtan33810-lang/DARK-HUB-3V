@@ -1,4 +1,3 @@
-
 --============================================================
 -- DARK HUB 3.0 (Grow a Garden - Direct Target Auto-Trowel)
 --============================================================
@@ -1752,6 +1751,18 @@ AutomaticallyTab:CreateInput({
     end
 })
 
+AutomaticallyTab:CreateSlider({
+    Name = "Water Speed",
+    Range = {0.05, 2},
+    Increment = 0.05,
+    Suffix = " sec",
+    CurrentValue = 1,
+    Flag = "WaterSpeed",
+    Callback = function(Value)
+        waterCooldown = Value
+    end
+})
+
 AutomaticallyTab:CreateSection("AUTO COLLECT PLANTS")
 
 AutomaticallyTab:CreateToggle({
@@ -1792,6 +1803,19 @@ AutomaticallyTab:CreateInput({
         local sourceList = getBackpackSeedsList()
         local filtered = filterList(sourceList, Text)
         CollectPlantDropdown:Refresh(filtered)
+    end
+})
+
+AutomaticallyTab:CreateSlider({
+    Name = "Collect Speed",
+    Range = {0.01, 2},
+    Increment = 0.01,
+    Suffix = " sec",
+    CurrentValue = 0.1,
+    Flag = "CollectSpeed",
+
+    Callback = function(Value)
+        collectCooldown = Value
     end
 })
 
