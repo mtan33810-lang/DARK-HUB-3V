@@ -1,8 +1,3 @@
-                        
-            
-
-
-        
 --============================================================
 -- DARK HUB 3.0 (Grow a Garden)
 --============================================================
@@ -673,8 +668,6 @@ local function ProcessPlacement()
         PlaceSprinklerAtCFrame(targetCFrame)
     end
 end
-
-end -- Closing block for: if game.PlaceId == Games.GrowAGarden then
                 
 --============================================================
 -- HOME TAB
