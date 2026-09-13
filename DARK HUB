@@ -295,8 +295,8 @@ local autoEquipCan = false
 local selectedWaterCan = "Water Can"
 local selectedWaterPlants = {}
 
-local waterRadius = 100
-local waterCooldown = 0.2
+local waterRadius = 500
+local waterCooldown = 1
 
 local function getWaterRemote()
     return GameEvents:FindFirstChild("Water_RE") or GameEvents:FindFirstChild("Water")
@@ -393,7 +393,7 @@ local autoCollectAll = false
 local autoCollectSelectedPlants = false
 local selectedCollectPlants = {}
 
-local collectionRadius = 100
+local collectionRadius = 500
 local collectCooldown = 0.1
 
 local function matchesPlant(Plant)
