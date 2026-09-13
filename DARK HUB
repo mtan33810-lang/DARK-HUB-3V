@@ -186,39 +186,68 @@ end
 -- PLANT & SEED MATCHING HELPERS
 --============================================================
 
-local function getNearbyCollectPlants()
-    local PlantsPhysical = getPlantsPhysical()
-    local RootPart = getRootPart()
-
-    if not PlantsPhysical or not RootPart then
-        return {}
+local function getPlantName(Plant)
+    if not Plant then
+        return ""
     end
 
-    local Result = {}
+    local AttributeName = Plant:GetAttribute("PlantName")
 
-    -- Only scan TOP-LEVEL plant objects.
-    -- This prevents plant parts/models from being selected separately.
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
-        if matchesPlant(Plant) then
-            local Position = getPlantPosition(Plant)
+    if AttributeName then
+        return tostring(AttributeName)
+    end
 
-            if Position then
-                local Distance =
-                    (RootPart.Position - Position).Magnitude
+    return Plant.Name
+end
 
-                if Distance <= collectionRadius then
-                    table.insert(Result, {
-                        Object = Plant,
-                        Distance = Distance
-                    })
-                end
-            end
+local function getPlantPosition(Plant)
+    if not Plant then
+        return nil
+    end
+
+    if Plant:IsA("BasePart") then
+        return Plant.Position
+    end
+
+    if Plant:IsA("Model") then
+        if Plant.PrimaryPart then
+            return Plant.PrimaryPart.Position
+        end
+
+        local Part = Plant:FindFirstChildWhichIsA("BasePart", true)
+
+        if Part then
+            return Part.Position
         end
     end
 
-    table.sort(Result, function(A, B)
-        return A.Distance < B.Distance
-    end)
+    return nil
+end
+
+local function getUniquePlantNames()
+    local Result = {}
+    local Seen = {}
+
+    local PlantsPhysical = getPlantsPhysical()
+
+    if not PlantsPhysical then
+        return ALL_PLANTS
+    end
+
+    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+        local Name = getPlantName(Plant)
+
+        if Name ~= "" and not Seen[Name] then
+            Seen[Name] = true
+            table.insert(Result, Name)
+        end
+    end
+
+    if #Result == 0 then
+        return ALL_PLANTS
+    end
+
+    table.sort(Result)
 
     return Result
 end
