@@ -186,68 +186,39 @@ end
 -- PLANT & SEED MATCHING HELPERS
 --============================================================
 
-local function getPlantName(Plant)
-    if not Plant then
-        return ""
-    end
-
-    local AttributeName = Plant:GetAttribute("PlantName")
-
-    if AttributeName then
-        return tostring(AttributeName)
-    end
-
-    return Plant.Name
-end
-
-local function getPlantPosition(Plant)
-    if not Plant then
-        return nil
-    end
-
-    if Plant:IsA("BasePart") then
-        return Plant.Position
-    end
-
-    if Plant:IsA("Model") then
-        if Plant.PrimaryPart then
-            return Plant.PrimaryPart.Position
-        end
-
-        local Part = Plant:FindFirstChildWhichIsA("BasePart", true)
-
-        if Part then
-            return Part.Position
-        end
-    end
-
-    return nil
-end
-
-local function getUniquePlantNames()
-    local Result = {}
-    local Seen = {}
-
+local function getNearbyCollectPlants()
     local PlantsPhysical = getPlantsPhysical()
+    local RootPart = getRootPart()
 
-    if not PlantsPhysical then
-        return ALL_PLANTS
+    if not PlantsPhysical or not RootPart then
+        return {}
     end
 
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
-        local Name = getPlantName(Plant)
+    local Result = {}
 
-        if Name ~= "" and not Seen[Name] then
-            Seen[Name] = true
-            table.insert(Result, Name)
+    -- Only scan TOP-LEVEL plant objects.
+    -- This prevents plant parts/models from being selected separately.
+    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+        if matchesPlant(Plant) then
+            local Position = getPlantPosition(Plant)
+
+            if Position then
+                local Distance =
+                    (RootPart.Position - Position).Magnitude
+
+                if Distance <= collectionRadius then
+                    table.insert(Result, {
+                        Object = Plant,
+                        Distance = Distance
+                    })
+                end
+            end
         end
     end
 
-    if #Result == 0 then
-        return ALL_PLANTS
-    end
-
-    table.sort(Result)
+    table.sort(Result, function(A, B)
+        return A.Distance < B.Distance
+    end)
 
     return Result
 end
@@ -495,6 +466,10 @@ local function collectPlant(Plant)
     end
 end
 
+--============================================================
+-- FIXED AUTO COLLECT SCANNER
+--============================================================
+
 local function getNearbyCollectPlants()
     local PlantsPhysical = getPlantsPhysical()
     local RootPart = getRootPart()
@@ -504,37 +479,21 @@ local function getNearbyCollectPlants()
     end
 
     local Result = {}
-    local Seen = {}
 
-    for _, Object in ipairs(PlantsPhysical:GetDescendants()) do
-        local Plant = Object
+    -- ONLY TOP-LEVEL PLANTS
+    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+        if matchesPlant(Plant) then
+            local Position = getPlantPosition(Plant)
 
-        if Object:IsA("Model") then
-            Plant = Object
-        elseif Object:IsA("BasePart") then
-            Plant = Object:FindFirstAncestorOfClass("Model")
-        end
+            if Position then
+                local Distance =
+                    (RootPart.Position - Position).Magnitude
 
-        if Plant
-            and Plant ~= PlantsPhysical
-            and not Seen[Plant]
-            and Plant:IsDescendantOf(PlantsPhysical)
-        then
-            Seen[Plant] = true
-
-            if matchesPlant(Plant) then
-                local Position = getPlantPosition(Plant)
-
-                if Position then
-                    local Distance =
-                        (RootPart.Position - Position).Magnitude
-
-                    if Distance <= collectionRadius then
-                        table.insert(Result, {
-                            Object = Plant,
-                            Distance = Distance
-                        })
-                    end
+                if Distance <= collectionRadius then
+                    table.insert(Result, {
+                        Object = Plant,
+                        Distance = Distance
+                    })
                 end
             end
         end
