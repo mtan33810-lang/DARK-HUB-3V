@@ -673,21 +673,15 @@ local function ProcessPlacement()
 end
 
 --============================================================
--- AUTO PLANT 
+-- AUTO PLANT
 --============================================================
 
---// SERVICES
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-
-local LocalPlayer = Players.LocalPlayer
-local GameEvents = ReplicatedStorage:WaitForChild("GameEvents")
+--// AUTO PLANT REMOTE
 local PlantEvent = GameEvents:WaitForChild("Plant_RE")
 
 --// SETTINGS
 local SelectedSeedName = ""
 local SearchFilter = ""
-
 local RandomRadius = 10
 local RandomCount = 10
 local PlantDelay = 0.5
