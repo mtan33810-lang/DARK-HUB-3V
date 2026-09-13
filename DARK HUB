@@ -1892,7 +1892,15 @@ AutomaticallyTab:CreateSlider({
     end
 })
 
+--============================================================
+-- AUTO COLLECT UI
+--============================================================
+
 AutomaticallyTab:CreateSection("AUTO COLLECT PLANTS")
+
+--============================================================
+-- COLLECT ALL
+--============================================================
 
 AutomaticallyTab:CreateToggle({
     Name = "Auto Collect ALL Plants",
@@ -1900,10 +1908,19 @@ AutomaticallyTab:CreateToggle({
     Flag = "AutoCollectAll",
 
     Callback = function(Value)
+
         autoCollectAll = Value
-        autoCollectEnabled = autoCollectAll or autoCollectSelectedPlants
+
+        autoCollectEnabled =
+            autoCollectAll
+            or autoCollectSelectedPlants
+
     end
 })
+
+--============================================================
+-- COLLECT SELECTED
+--============================================================
 
 AutomaticallyTab:CreateToggle({
     Name = "Auto Collect Selected Plants",
@@ -1911,88 +1928,205 @@ AutomaticallyTab:CreateToggle({
     Flag = "AutoCollectSelectedPlants",
 
     Callback = function(Value)
+
         autoCollectSelectedPlants = Value
-        autoCollectEnabled = autoCollectAll or autoCollectSelectedPlants
+
+        autoCollectEnabled =
+            autoCollectAll
+            or autoCollectSelectedPlants
+
     end
 })
 
-local initialGardenPlants = getUniquePlantNames()
+--============================================================
+-- PLANT DROPDOWN
+--============================================================
 
 local CollectPlantDropdown = AutomaticallyTab:CreateDropdown({
+
     Name = "Select Plants",
-    Options = initialGardenPlants,
+
+    Options = getUniqueCollectPlantNames(),
+
     CurrentOption = {},
+
     MultipleOptions = true,
+
     Flag = "SelectedCollectPlants",
+
     Callback = function(Value)
-        selectedCollectPlants = convertSelection(Value)
+
+        selectedCollectPlants = {}
+
+        if type(Value) == "table" then
+
+            for _, PlantName in ipairs(Value) do
+
+                if PlantName
+                    and PlantName ~= ""
+                    and PlantName ~= "No Plants Found"
+                then
+
+                    table.insert(
+                        selectedCollectPlants,
+                        NormalizePlantName(PlantName)
+                    )
+
+                end
+            end
+
+        elseif Value then
+
+            if Value ~= "No Plants Found" then
+
+                table.insert(
+                    selectedCollectPlants,
+                    NormalizePlantName(Value)
+                )
+
+            end
+        end
+
+        print(
+            "[Dark Hub] Selected collect plants:",
+            table.concat(selectedCollectPlants, ", ")
+        )
+
     end
 })
+
+--============================================================
+-- REFRESH
+--============================================================
 
 AutomaticallyTab:CreateButton({
+
     Name = "Refresh Garden Plants",
+
     Callback = function()
-        local currentGardenPlants = getUniquePlantNames()
-        CollectPlantDropdown:Refresh(currentGardenPlants)
-        
+
+        local Plants = getUniqueCollectPlantNames()
+
+        CollectPlantDropdown:Refresh(Plants)
+
         Rayfield:Notify({
+
             Title = "Garden Scanned",
-            Content = "Updated dropdown with " .. tostring(#currentGardenPlants) .. " detected plant types.",
+
+            Content =
+                "Found "
+                .. tostring(#Plants)
+                .. " unique plant types.",
+
             Duration = 3,
+
             Image = 4483362458
         })
+
     end
 })
 
-AutomaticallyTab:CreateInput({
-    Name = "Search Plant",
-    PlaceholderText = "Type plant name...",
-    RemoveTextAfterFocusLost = false,
-    Flag = "PlantSearch",
-    Callback = function(Text)
-        local filtered = {}
-        local search = string.lower(Text)
-        local sourceList = getUniquePlantNames()
+--============================================================
+-- SEARCH
+--============================================================
 
-        if search == "" then
-            filtered = sourceList
+AutomaticallyTab:CreateInput({
+
+    Name = "Search Plant",
+
+    PlaceholderText = "Type plant name...",
+
+    RemoveTextAfterFocusLost = false,
+
+    Flag = "PlantSearch",
+
+    Callback = function(Text)
+
+        local Search = string.lower(
+            tostring(Text or "")
+        )
+
+        local SourceList =
+            getUniqueCollectPlantNames()
+
+        local Filtered = {}
+
+        if Search == "" then
+
+            Filtered = SourceList
+
         else
-            for _, plant in ipairs(sourceList) do
-                if string.find(string.lower(plant), search, 1, true) then
-                    table.insert(filtered, plant)
+
+            for _, PlantName in ipairs(SourceList) do
+
+                if string.find(
+                    string.lower(PlantName),
+                    Search,
+                    1,
+                    true
+                ) then
+
+                    table.insert(
+                        Filtered,
+                        PlantName
+                    )
+
                 end
             end
         end
 
-        CollectPlantDropdown:Refresh(filtered)
+        CollectPlantDropdown:Refresh(
+            Filtered
+        )
+
     end
 })
 
-AutomaticallyTab:CreateSection("Settings")
+--============================================================
+-- COLLECTION SETTINGS
+--============================================================
+
+AutomaticallyTab:CreateSection("Collection Settings")
 
 AutomaticallyTab:CreateSlider({
+
     Name = "Collection Radius",
+
     Range = {10, 1000},
+
     Increment = 10,
+
     Suffix = " Studs",
+
     CurrentValue = 100,
+
     Flag = "CollectionRadius",
 
     Callback = function(Value)
+
         collectionRadius = Value
+
     end
 })
 
 AutomaticallyTab:CreateSlider({
+
     Name = "Collect Speed",
+
     Range = {0.01, 2},
+
     Increment = 0.01,
+
     Suffix = " sec",
+
     CurrentValue = 0.1,
+
     Flag = "CollectSpeed",
 
     Callback = function(Value)
+
         collectCooldown = Value
+
     end
 })
 
