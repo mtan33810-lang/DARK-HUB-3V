@@ -495,10 +495,6 @@ local function collectPlant(Plant)
     end
 end
 
---============================================================
--- FIXED AUTO COLLECT SCANNER
---============================================================
-
 local function getNearbyCollectPlants()
     local PlantsPhysical = getPlantsPhysical()
     local RootPart = getRootPart()
@@ -508,21 +504,37 @@ local function getNearbyCollectPlants()
     end
 
     local Result = {}
+    local Seen = {}
 
-    -- ONLY TOP-LEVEL PLANTS
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
-        if matchesPlant(Plant) then
-            local Position = getPlantPosition(Plant)
+    for _, Object in ipairs(PlantsPhysical:GetDescendants()) do
+        local Plant = Object
 
-            if Position then
-                local Distance =
-                    (RootPart.Position - Position).Magnitude
+        if Object:IsA("Model") then
+            Plant = Object
+        elseif Object:IsA("BasePart") then
+            Plant = Object:FindFirstAncestorOfClass("Model")
+        end
 
-                if Distance <= collectionRadius then
-                    table.insert(Result, {
-                        Object = Plant,
-                        Distance = Distance
-                    })
+        if Plant
+            and Plant ~= PlantsPhysical
+            and not Seen[Plant]
+            and Plant:IsDescendantOf(PlantsPhysical)
+        then
+            Seen[Plant] = true
+
+            if matchesPlant(Plant) then
+                local Position = getPlantPosition(Plant)
+
+                if Position then
+                    local Distance =
+                        (RootPart.Position - Position).Magnitude
+
+                    if Distance <= collectionRadius then
+                        table.insert(Result, {
+                            Object = Plant,
+                            Distance = Distance
+                        })
+                    end
                 end
             end
         end
@@ -916,7 +928,7 @@ local function StartInfinitePlant()
         PlantLoopRunning = false
     end)
 end
-
+                
 --============================================================
 -- HOME TAB
 --============================================================
