@@ -1732,7 +1732,7 @@ AutomaticallyTab:CreateButton({
 })
 
 local WaterPlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Seeds To Water",
+    Name = "Select Plant To Water",
     Options = getBackpackSeedsList(),
     CurrentOption = {},
     MultipleOptions = true,
@@ -1741,7 +1741,7 @@ local WaterPlantDropdown = AutomaticallyTab:CreateDropdown({
 })
 
 AutomaticallyTab:CreateInput({
-    Name = "Search Seed (Water)",
+    Name = "Search Plant (Water)",
     PlaceholderText = "Type seed name...",
     RemoveTextAfterFocusLost = false,
     Flag = "WaterPlantSearch",
@@ -1775,7 +1775,7 @@ AutomaticallyTab:CreateToggle({
 })
 
 local CollectPlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Seeds To Collect",
+    Name = "Select Plant To Collect",
     Options = getBackpackSeedsList(),
     CurrentOption = {},
     MultipleOptions = true,
@@ -1784,7 +1784,7 @@ local CollectPlantDropdown = AutomaticallyTab:CreateDropdown({
 })
 
 AutomaticallyTab:CreateInput({
-    Name = "Search Seed (Collect)",
+    Name = "Search Plant (Collect)",
     PlaceholderText = "Type seed name...",
     RemoveTextAfterFocusLost = false,
     Flag = "CollectPlantSearch",
@@ -1839,7 +1839,7 @@ local initialTrowelOptions = getBackpackSeedsList()
 TargetPlantName = initialTrowelOptions[1] or ""
 
 local PlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Seed Type",
+    Name = "Select Plant Type",
     Options = initialTrowelOptions,
     CurrentOption = {initialTrowelOptions[1] or "None"},
     MultipleOptions = false,
@@ -1850,7 +1850,7 @@ local PlantDropdown = AutomaticallyTab:CreateDropdown({
 })
 
 AutomaticallyTab:CreateInput({
-    Name = "Search Seed (Trowel)",
+    Name = "Search Plant (Trowel)",
     PlaceholderText = "Type seed name...",
     RemoveTextAfterFocusLost = false,
     Flag = "TrowelPlantSearch",
