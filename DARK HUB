@@ -186,55 +186,45 @@ end
 -- PLANT & SEED MATCHING HELPERS
 --============================================================
 
-local function getPlantName(Plant)
-    if not Plant then
-        return ""
+local function getAllGardenPlants()
+    local PlantsPhysical = getPlantsPhysical()
+    if not PlantsPhysical then
+        return {}
     end
 
-    local AttributeName = Plant:GetAttribute("PlantName")
+    local Plants = {}
+    local Seen = {}
 
-    if AttributeName then
-        return tostring(AttributeName)
-    end
+    for _, Object in ipairs(PlantsPhysical:GetDescendants()) do
+        local Plant = nil
 
-    return Plant.Name
-end
-
-local function getPlantPosition(Plant)
-    if not Plant then
-        return nil
-    end
-
-    if Plant:IsA("BasePart") then
-        return Plant.Position
-    end
-
-    if Plant:IsA("Model") then
-        if Plant.PrimaryPart then
-            return Plant.PrimaryPart.Position
+        if Object:IsA("Model") then
+            Plant = Object
+        elseif Object:IsA("BasePart") then
+            Plant = Object:FindFirstAncestorOfClass("Model")
         end
 
-        local Part = Plant:FindFirstChildWhichIsA("BasePart", true)
+        if Plant
+            and Plant ~= PlantsPhysical
+            and Plant:IsDescendantOf(PlantsPhysical)
+            and not Seen[Plant]
+        then
+            Seen[Plant] = true
 
-        if Part then
-            return Part.Position
+            if getPlantPosition(Plant) then
+                table.insert(Plants, Plant)
+            end
         end
     end
 
-    return nil
+    return Plants
 end
 
 local function getUniquePlantNames()
     local Result = {}
     local Seen = {}
 
-    local PlantsPhysical = getPlantsPhysical()
-
-    if not PlantsPhysical then
-        return ALL_PLANTS
-    end
-
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+    for _, Plant in ipairs(getAllGardenPlants()) do
         local Name = getPlantName(Plant)
 
         if Name ~= "" and not Seen[Name] then
@@ -248,7 +238,6 @@ local function getUniquePlantNames()
     end
 
     table.sort(Result)
-
     return Result
 end
 
@@ -347,16 +336,15 @@ local function waterPlant(Plant)
 end
 
 local function getNearbyWaterPlants()
-    local PlantsPhysical = getPlantsPhysical()
     local RootPart = getRootPart()
 
-    if not PlantsPhysical or not RootPart then
+    if not RootPart then
         return {}
     end
 
     local Result = {}
 
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+    for _, Plant in ipairs(getAllGardenPlants()) do
         local Position = getPlantPosition(Plant)
 
         if Position then
@@ -581,16 +569,22 @@ local CurrentlySelectedFromDropdown = nil
 local function GetGardenPlantNames()
     local found = {}
     local hash = {}
-    for _, plant in ipairs(PlantsFolder:GetChildren()) do
-        if not hash[plant.Name] then
-            hash[plant.Name] = true
-            table.insert(found, plant.Name)
+
+    for _, Plant in ipairs(getAllGardenPlants()) do
+        local Name = getPlantName(Plant)
+
+        if Name ~= "" and not hash[Name] then
+            hash[Name] = true
+            table.insert(found, Name)
         end
     end
+
     table.sort(found)
+
     if #found == 0 then
         table.insert(found, "No Plants Found")
     end
+
     return found
 end
 
