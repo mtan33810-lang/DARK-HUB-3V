@@ -1885,6 +1885,36 @@ task.spawn(function()
     end
 end)
 
+--============================================================
+-- CHARACTER / TOOL HANDLING
+--============================================================
+
+local function setupBackpackListener(backpack)
+    if not backpack then return end
+    backpack.ChildAdded:Connect(function(Tool)
+        if autoEquipCan and Tool:IsA("Tool") and containsIgnoreCase(Tool.Name, "water") then
+            task.wait(0.1)
+            equipWaterCan()
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(Character)
+    local Humanoid = Character:WaitForChild("Humanoid", 10)
+    local Backpack = LocalPlayer:WaitForChild("Backpack", 10)
+
+    if Humanoid then
+        task.wait(0.5)
+        if autoEquipCan then
+            equipWaterCan()
+        end
+    end
+    
+    setupBackpackListener(Backpack)
+end)
+
+if LocalPlayer.Backpack then
+    setupBackpackListener(LocalPlayer.Backpack)
 end
 
 --============================================================
