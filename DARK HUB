@@ -183,7 +183,7 @@ local function selectionContains(list, value)
 end
 
 --============================================================
--- SHARED PLANT SCANNER
+-- PLANT & SEED MATCHING HELPERS
 --============================================================
 
 local function getPlantName(Plant)
@@ -191,25 +191,10 @@ local function getPlantName(Plant)
         return ""
     end
 
-    -- Attribute first
     local AttributeName = Plant:GetAttribute("PlantName")
+
     if AttributeName and tostring(AttributeName) ~= "" then
         return tostring(AttributeName)
-    end
-
-    -- Check common name attributes
-    for _, Attribute in ipairs({
-        "Name",
-        "Plant",
-        "Crop",
-        "CropName",
-        "DisplayName"
-    }) do
-        local Value = Plant:GetAttribute(Attribute)
-
-        if Value and tostring(Value) ~= "" then
-            return tostring(Value)
-        end
     end
 
     return tostring(Plant.Name or "")
@@ -239,98 +224,7 @@ local function getPlantPosition(Plant)
     return nil
 end
 
-local function getPlantContainer()
-    local Farm = Workspace:FindFirstChild("Farm")
-
-    if not Farm then
-        return nil
-    end
-
-    -- Exact known path
-    local NestedFarm = Farm:FindFirstChild("Farm")
-
-    if NestedFarm then
-        local Important = NestedFarm:FindFirstChild("Important")
-
-        if Important then
-            local Plants = Important:FindFirstChild("Plants_Physical")
-
-            if Plants then
-                return Plants
-            end
-        end
-    end
-
-    -- Fallback recursive search
-    local Plants = Farm:FindFirstChild("Plants_Physical", true)
-
-    if Plants then
-        return Plants
-    end
-
-    return nil
-end
-
 local function getAllGardenPlants()
-    local PlantsFolder = getPlantContainer()
-
-    if not PlantsFolder then
-        return {}
-    end
-
-    local Plants = {}
-    local Seen = {}
-
-    -- First check direct children
-    for _, Object in ipairs(PlantsFolder:GetChildren()) do
-        if Object:IsA("Model") or Object:IsA("BasePart") then
-            local Plant = Object
-
-            if not Seen[Plant] and getPlantPosition(Plant) then
-                Seen[Plant] = true
-                table.insert(Plants, Plant)
-            end
-        end
-    end
-
-    -- Then check nested models
-    for _, Object in ipairs(PlantsFolder:GetDescendants()) do
-        if Object:IsA("Model") then
-            local Plant = Object
-
-            if not Seen[Plant] and getPlantPosition(Plant) then
-                Seen[Plant] = true
-                table.insert(Plants, Plant)
-            end
-        end
-    end
-
-    return Plants
-end
-
-local function getUniquePlantNames()
-    local Result = {}
-    local Seen = {}
-
-    for _, Plant in ipairs(getAllGardenPlants()) do
-        local Name = getPlantName(Plant)
-
-        if Name ~= "" and not Seen[Name] then
-            Seen[Name] = true
-            table.insert(Result, Name)
-        end
-    end
-
-    table.sort(Result)
-
-    -- If the garden has not loaded yet,
-    -- use your known plant list instead of "No Plants Found".
-    if #Result == 0 then
-        return ALL_PLANTS
-    end
-
-    return Result
-end
 
 --============================================================
 -- AUTO WATER SYSTEM
