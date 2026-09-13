@@ -1,5 +1,5 @@
 --============================================================
--- DARK HUB 3.0 (Grow a Garden)
+-- DARK HUB 3.0 (Grow a Garden - Direct Target Auto-Trowel)
 --============================================================
 
 -- Global/Scope Variables
@@ -20,13 +20,10 @@ local ConfigFileName
 
 if game.PlaceId == Games.GrowAGarden then
     ConfigFileName = "DarkHub_GrowAGarden"
-
 elseif game.PlaceId == Games.StealAnEgg then
     ConfigFileName = "DarkHub_StealAnEgg"
-
 elseif game.PlaceId == Games.Rivals then
     ConfigFileName = "DarkHub_Rivals"
-
 else
     ConfigFileName = "DarkHub_Unsupported"
 end
@@ -45,10 +42,10 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = "K",
 
     ConfigurationSaving = {
-    Enabled = true,
-    FolderName = "DARK HUB",
-    FileName = ConfigFileName
-},
+        Enabled = true,
+        FolderName = "DARK HUB",
+        FileName = ConfigFileName
+    },
 
     Discord = {
         Enabled = true,
@@ -58,18 +55,6 @@ local Window = Rayfield:CreateWindow({
 
     KeySystem = false
 })
-
---============================================================
--- DEBUG: CHECK CURRENT ROBLOX PLACE
---============================================================
-
-print("===== DARK HUB DEBUG =====")
-print("Game Name:", game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
-print("GameId:", game.GameId)
-print("PlaceId:", game.PlaceId)
-print("Expected GrowAGarden:", Games.GrowAGarden)
-print("Match:", game.PlaceId == Games.GrowAGarden)
-print("==========================")
 
 --============================================================
 -- GAME 1: GROW A GARDEN
@@ -116,31 +101,132 @@ local function getRootPart()
 end
 
 --============================================================
--- PLANT CONTAINER
+-- NAME CLEANER HELPER
 --============================================================
 
-local function getPlantsPhysical()
-    local Farm = Workspace:FindFirstChild("Farm")
+local function cleanItemName(name)
+    if not name then return "" end
+    local str = tostring(name)
 
-    if not Farm then
-        return nil
+    -- Strip quantities in brackets or parentheses like [x2882], [×2882], (x5), etc.
+    str = string.gsub(str, "%s*%[%s*[x×X]%d+%s*%]", "")
+    str = string.gsub(str, "%s*%(%s*[x×X]%d+%s*%)", "")
+    str = string.gsub(str, "%s*%[%d+%]%", "")
+    
+    -- Strip 'Seed' / 'Seeds' suffix if present
+    str = string.gsub(str, "%s*[S|s][E|e][E|e][D|d][S|s]?%s*", "")
+    
+    -- Trim whitespace
+    str = string.gsub(str, "^%s*(.-)%s*$", "%1")
+    return str
+end
+
+--============================================================
+-- SEED-ONLY SCANNER
+--============================================================
+
+local function getBackpackSeedsList()
+    local Result = {}
+    local Seen = {}
+
+    local Backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    local Character = getCharacter()
+
+    local function isSeed(item)
+        local rawName = item.Name
+        local lower = string.lower(rawName)
+
+        -- Must explicitly contain "seed" in the name or have a seed-related attribute
+        local hasSeedName = string.find(lower, "seed") ~= nil
+        local hasSeedAttr = item:GetAttribute("IsSeed") == true or item:GetAttribute("SeedName") ~= nil
+
+        return hasSeedName or hasSeedAttr
     end
 
-    local NestedFarm = Farm:FindFirstChild("Farm")
+    local function scanContainer(container)
+        if not container then return end
+        for _, item in ipairs(container:GetChildren()) do
+            if item:IsA("Tool") and isSeed(item) then
+                local baseName = item:GetAttribute("SeedName") or item.Name
+                local cleanedName = cleanItemName(baseName)
 
-    if NestedFarm then
-        local Important = NestedFarm:FindFirstChild("Important")
-
-        if Important then
-            local Plants = Important:FindFirstChild("Plants_Physical")
-
-            if Plants then
-                return Plants
+                if cleanedName ~= "" and cleanedName ~= "No Seeds Found" and not Seen[cleanedName] then
+                    Seen[cleanedName] = true
+                    table.insert(Result, cleanedName)
+                end
             end
         end
     end
 
-    return Farm:FindFirstChild("Plants_Physical", true)
+    scanContainer(Backpack)
+    scanContainer(Character)
+
+    table.sort(Result)
+
+    if #Result == 0 then
+        return {"No Seeds Found"}
+    end
+
+    return Result
+end
+
+local function filterList(sourceList, searchText)
+    local filtered = {}
+    local search = string.lower(searchText or "")
+    if search == "" then return sourceList end
+
+    for _, item in ipairs(sourceList) do
+        if string.find(string.lower(item), search, 1, true) then
+            table.insert(filtered, item)
+        end
+    end
+    
+    if #filtered == 0 then return {"No Seeds Found"} end
+    return filtered
+end
+
+--============================================================
+-- PLANT CONTAINER SCANNER
+--============================================================
+
+local function getPlantsPhysicalContainer()
+    local Farm = Workspace:FindFirstChild("Farm")
+    if Farm then
+        local NestedFarm = Farm:FindFirstChild("Farm")
+        if NestedFarm then
+            local Important = NestedFarm:FindFirstChild("Important")
+            if Important then
+                local Plants = Important:FindFirstChild("Plants_Physical") or Important:FindFirstChild("Plants")
+                if Plants then return Plants end
+            end
+        end
+        local DirectPlants = Farm:FindFirstChild("Plants_Physical", true) or Farm:FindFirstChild("Plants", true)
+        if DirectPlants then return DirectPlants end
+    end
+
+    local FarmsFolder = Workspace:FindFirstChild("Farms") or Workspace:FindFirstChild("Plots")
+    if FarmsFolder then
+        local MyPlot = FarmsFolder:FindFirstChild(LocalPlayer.Name) or FarmsFolder:FindFirstChild(LocalPlayer.DisplayName)
+        if MyPlot then
+            local Plants = MyPlot:FindFirstChild("Plants_Physical", true) or MyPlot:FindFirstChild("Plants", true)
+            if Plants then return Plants end
+        end
+    end
+
+    return Workspace:FindFirstChild("Plants_Physical", true) or Workspace:FindFirstChild("Plants", true)
+end
+
+local function getPlantName(Plant)
+    if not Plant then return "" end
+
+    local AttributeName = Plant:GetAttribute("PlantName") or Plant:GetAttribute("Species") or Plant:GetAttribute("Type")
+    local rawName = AttributeName and tostring(AttributeName) or Plant.Name
+
+    if rawName == "Part" or rawName == "Model" or rawName == "Base" or rawName == "Dirt" or rawName == "Plot" then
+        return ""
+    end
+
+    return cleanItemName(rawName)
 end
 
 --============================================================
@@ -148,108 +234,54 @@ end
 --============================================================
 
 local function convertSelection(Value)
+    local selectedList = {}
+
     if type(Value) == "table" then
-        return Value
+        for _, v in ipairs(Value) do
+            local str = cleanItemName(v)
+            if str ~= "No Seeds Found" and str ~= "None" and str ~= "" then
+                table.insert(selectedList, str)
+            end
+        end
+        return selectedList
     end
 
     if Value ~= nil then
-        return {Value}
+        local str = cleanItemName(Value)
+        if str ~= "No Seeds Found" and str ~= "None" and str ~= "" then
+            return {str}
+        end
     end
 
     return {}
 end
 
 local function containsIgnoreCase(text, search)
-    if not text or not search then
-        return false
-    end
-
-    return string.find(
-        string.lower(tostring(text)),
-        string.lower(tostring(search)),
-        1,
-        true
-    ) ~= nil
+    if not text or not search then return false end
+    local cleanTarget = cleanItemName(text)
+    local cleanSearch = cleanItemName(search)
+    return string.find(string.lower(cleanTarget), string.lower(cleanSearch), 1, true) ~= nil
 end
 
 local function selectionContains(list, value)
+    if not list or #list == 0 then return false end
     for _, selected in ipairs(list) do
         if containsIgnoreCase(value, selected) then
             return true
         end
     end
-
     return false
 end
 
---============================================================
--- PLANT & SEED MATCHING HELPERS
---============================================================
-
-local function getPlantName(Plant)
-    if not Plant then
-        return ""
-    end
-
-    local AttributeName = Plant:GetAttribute("PlantName")
-
-    if AttributeName then
-        return tostring(AttributeName)
-    end
-
-    return Plant.Name
-end
-
 local function getPlantPosition(Plant)
-    if not Plant then
-        return nil
-    end
-
-    if Plant:IsA("BasePart") then
-        return Plant.Position
-    end
-
+    if not Plant then return nil end
+    if Plant:IsA("BasePart") then return Plant.Position end
     if Plant:IsA("Model") then
-        if Plant.PrimaryPart then
-            return Plant.PrimaryPart.Position
-        end
-
+        if Plant.PrimaryPart then return Plant.PrimaryPart.Position end
         local Part = Plant:FindFirstChildWhichIsA("BasePart", true)
-
-        if Part then
-            return Part.Position
-        end
+        if Part then return Part.Position end
     end
-
     return nil
-end
-
-local function getUniquePlantNames()
-    local Result = {}
-    local Seen = {}
-
-    local PlantsPhysical = getPlantsPhysical()
-
-    if not PlantsPhysical then
-        return ALL_PLANTS
-    end
-
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
-        local Name = getPlantName(Plant)
-
-        if Name ~= "" and not Seen[Name] then
-            Seen[Name] = true
-            table.insert(Result, Name)
-        end
-    end
-
-    if #Result == 0 then
-        return ALL_PLANTS
-    end
-
-    table.sort(Result)
-
-    return Result
 end
 
 --============================================================
@@ -265,142 +297,84 @@ local selectedWaterPlants = {}
 local waterRadius = 100
 local waterCooldown = 0.2
 
-local WaterCans = {
-    "Water Can",
-    "Wonder Water",
-    "Super Watering Can",
-    "Sugar Watering Can"
-}
-
 local function getWaterRemote()
-    return GameEvents:FindFirstChild("Water_RE")
+    return GameEvents:FindFirstChild("Water_RE") or GameEvents:FindFirstChild("Water")
 end
 
 local function isWaterCanEquipped()
     local Character = getCharacter()
-    if not Character then
-        return false
-    end
+    if not Character then return false end
 
     for _, Tool in ipairs(Character:GetChildren()) do
-        if Tool:IsA("Tool") then
-            if string.lower(Tool.Name) == string.lower(selectedWaterCan) or containsIgnoreCase(Tool.Name, "water") then
-                return true
-            end
+        if Tool:IsA("Tool") and (string.lower(Tool.Name) == string.lower(selectedWaterCan) or containsIgnoreCase(Tool.Name, "water")) then
+            return true
         end
     end
-
     return false
 end
 
 local function equipWaterCan()
     local Character = getCharacter()
     local Humanoid = getHumanoid()
+    if not Character or not Humanoid then return false end
 
-    if not Character or not Humanoid then
-        return false
-    end
-
-    if isWaterCanEquipped() then
-        return true
-    end
+    if isWaterCanEquipped() then return true end
 
     local Backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
-
-    if not Backpack then
-        return false
-    end
+    if not Backpack then return false end
 
     for _, Tool in ipairs(Backpack:GetChildren()) do
-        if Tool:IsA("Tool") then
-            if string.lower(Tool.Name) == string.lower(selectedWaterCan) then
-                Humanoid:EquipTool(Tool)
-                return true
-            end
+        if Tool:IsA("Tool") and (string.lower(Tool.Name) == string.lower(selectedWaterCan) or containsIgnoreCase(Tool.Name, "water")) then
+            Humanoid:EquipTool(Tool)
+            return true
         end
     end
-
-    for _, Tool in ipairs(Backpack:GetChildren()) do
-        if Tool:IsA("Tool") then
-            if containsIgnoreCase(Tool.Name, "water") then
-                Humanoid:EquipTool(Tool)
-                return true
-            end
-        end
-    end
-
     return false
 end
 
 local function waterPlant(Plant)
     local Remote = getWaterRemote()
-
-    if not Remote then
-        return
-    end
-
+    if not Remote then return end
     local Position = getPlantPosition(Plant)
-
     if Position then
         Remote:FireServer(Position)
     end
 end
 
 local function getNearbyWaterPlants()
-    local PlantsPhysical = getPlantsPhysical()
+    local PlantsContainer = getPlantsPhysicalContainer()
     local RootPart = getRootPart()
-
-    if not PlantsPhysical or not RootPart then
-        return {}
-    end
+    if not RootPart then return {} end
 
     local Result = {}
+    local rawList = PlantsContainer and PlantsContainer:GetChildren() or Workspace:GetChildren()
 
-    for _, Plant in ipairs(PlantsPhysical:GetChildren()) do
+    for _, Plant in ipairs(rawList) do
         local Position = getPlantPosition(Plant)
-
         if Position then
             local Distance = (RootPart.Position - Position).Magnitude
-
             if Distance <= waterRadius then
                 local Name = getPlantName(Plant)
-
-                local Allowed =
-                    #selectedWaterPlants == 0
-                    or selectionContains(selectedWaterPlants, Name)
-
+                local Allowed = #selectedWaterPlants == 0 or selectionContains(selectedWaterPlants, Name)
                 if Allowed then
-                    table.insert(Result, {
-                        Object = Plant,
-                        Distance = Distance
-                    })
+                    table.insert(Result, { Object = Plant, Distance = Distance })
                 end
             end
         end
     end
 
-    table.sort(Result, function(A, B)
-        return A.Distance < B.Distance
-    end)
-
+    table.sort(Result, function(A, B) return A.Distance < B.Distance end)
     return Result
 end
 
 task.spawn(function()
     while true do
         task.wait(0.1)
-
         if autoWaterEnabled then
-            if autoEquipCan then
-                equipWaterCan()
-            end
-
+            if autoEquipCan then equipWaterCan() end
             if isWaterCanEquipped() then
                 for _, Data in ipairs(getNearbyWaterPlants()) do
-                    if not autoWaterEnabled or not isWaterCanEquipped() then
-                        break
-                    end
-
+                    if not autoWaterEnabled or not isWaterCanEquipped() then break end
                     waterPlant(Data.Object)
                     task.wait(waterCooldown)
                 end
@@ -409,22 +383,6 @@ task.spawn(function()
     end
 end)
 
-local function filterList(sourceList, searchText)
-    local filtered = {}
-    local search = string.lower(searchText or "")
-
-    if search == "" then
-        return sourceList
-    end
-
-    for _, item in ipairs(sourceList) do
-        if string.find(string.lower(item), search, 1, true) then
-            table.insert(filtered, item)
-        end
-    end
-    return filtered
-end
-
 --============================================================
 -- AUTO COLLECT
 --============================================================
@@ -432,133 +390,75 @@ end
 local autoCollectEnabled = false
 local autoCollectAll = false
 local autoCollectSelectedPlants = false
-
 local selectedCollectPlants = {}
 
 local collectionRadius = 100
 local collectCooldown = 0.1
 
 local function matchesPlant(Plant)
-    if autoCollectAll then
-        return true
-    end
-
-    if not autoCollectSelectedPlants then
-        return false
-    end
-
+    if autoCollectAll then return true end
+    if not autoCollectSelectedPlants then return false end
     local Name = getPlantName(Plant)
-
     return selectionContains(selectedCollectPlants, Name)
 end
 
---============================================================
--- COLLECT REMOTE
---============================================================
-
 local function getCollectRemote()
     local Crops = GameEvents:FindFirstChild("Crops")
-
-    if Crops then
-        local Collect = Crops:FindFirstChild("Collect")
-
-        if Collect then
-            return Collect
-        end
-    end
-
-    return nil
+    if Crops then return Crops:FindFirstChild("Collect") end
+    return GameEvents:FindFirstChild("Collect")
 end
 
 local function collectPlant(Plant)
-    if not Plant then
-        return
-    end
-
+    if not Plant then return end
     local CollectRemote = getCollectRemote()
 
     if CollectRemote then
-        CollectRemote:FireServer({
-            Plant
-        })
-
+        CollectRemote:FireServer({ Plant })
         return
     end
 
-    local Prompt = Plant:FindFirstChildWhichIsA(
-        "ProximityPrompt",
-        true
-    )
-
+    local Prompt = Plant:FindFirstChildWhichIsA("ProximityPrompt", true)
     if Prompt and fireproximityprompt then
         fireproximityprompt(Prompt)
     end
 end
 
 local function getNearbyCollectPlants()
-    local PlantsPhysical = getPlantsPhysical()
+    local PlantsContainer = getPlantsPhysicalContainer()
     local RootPart = getRootPart()
-
-    if not PlantsPhysical or not RootPart then
-        return {}
-    end
+    if not RootPart then return {} end
 
     local Result = {}
     local Seen = {}
+    local searchList = PlantsContainer and PlantsContainer:GetDescendants() or Workspace:GetDescendants()
 
-    for _, Object in ipairs(PlantsPhysical:GetDescendants()) do
-        local Plant = Object
-
-        if Object:IsA("Model") then
-            Plant = Object
-        elseif Object:IsA("BasePart") then
-            Plant = Object:FindFirstAncestorOfClass("Model")
-        end
-
-        if Plant
-            and Plant ~= PlantsPhysical
-            and not Seen[Plant]
-            and Plant:IsDescendantOf(PlantsPhysical)
-        then
+    for _, Object in ipairs(searchList) do
+        local Plant = Object:IsA("Model") and Object or Object:FindFirstAncestorOfClass("Model")
+        if Plant and not Seen[Plant] then
             Seen[Plant] = true
-
             if matchesPlant(Plant) then
                 local Position = getPlantPosition(Plant)
-
                 if Position then
-                    local Distance =
-                        (RootPart.Position - Position).Magnitude
-
+                    local Distance = (RootPart.Position - Position).Magnitude
                     if Distance <= collectionRadius then
-                        table.insert(Result, {
-                            Object = Plant,
-                            Distance = Distance
-                        })
+                        table.insert(Result, { Object = Plant, Distance = Distance })
                     end
                 end
             end
         end
     end
 
-    table.sort(Result, function(A, B)
-        return A.Distance < B.Distance
-    end)
-
+    table.sort(Result, function(A, B) return A.Distance < B.Distance end)
     return Result
 end
 
 task.spawn(function()
     while true do
         task.wait(0.1)
-
         if autoCollectEnabled then
             for _, Data in ipairs(getNearbyCollectPlants()) do
-                if not autoCollectEnabled then
-                    break
-                end
-
+                if not autoCollectEnabled then break end
                 collectPlant(Data.Object)
-
                 task.wait(collectCooldown)
             end
         end
@@ -566,37 +466,31 @@ task.spawn(function()
 end)
 
 --============================================================
--- SERVICES & VARIABLES & AUTO TROWEL 
+-- AUTO TROWEL WITH AUTOMATIC SELECTION TARGETING
 --============================================================
 
-local TrowelRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("TrowelRemote")
-local PlantsFolder = workspace:WaitForChild("Farm"):WaitForChild("Farm"):WaitForChild("Important"):WaitForChild("Plants_Physical")
+local TrowelRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("TrowelRemote", 5)
 
 local AutoTrowelEnabled = false
-local PlacementPos = Vector3.new(-44.096, 0.635, -97.672)
+local PlacementCFrame = nil
 
-local AllowedPlants = {}
-local CurrentlySelectedFromDropdown = nil
+local TargetPlantName = ""
 
-local function GetGardenPlantNames()
-    local found = {}
-    local hash = {}
-    for _, plant in ipairs(PlantsFolder:GetChildren()) do
-        if not hash[plant.Name] then
-            hash[plant.Name] = true
-            table.insert(found, plant.Name)
-        end
-    end
-    table.sort(found)
-    if #found == 0 then
-        table.insert(found, "No Plants Found")
-    end
-    return found
+local function showPlacementMarker(cframe)
+    local Part = Instance.new("Part")
+    Part.Size = Vector3.new(2, 0.2, 2)
+    Part.CFrame = cframe
+    Part.Anchored = true
+    Part.CanCollide = false
+    Part.Material = Enum.Material.Neon
+    Part.Color = Color3.fromRGB(0, 255, 150)
+    Part.Transparency = 0.3
+    Part.Parent = Workspace
+
+    task.delay(3, function()
+        if Part then Part:Destroy() end
+    end)
 end
-
---============================================================
--- HELPER FUNCTIONS
---============================================================
 
 local function GetTrowel()
     for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
@@ -610,13 +504,13 @@ local function GetTrowel()
     return nil
 end
 
-local function IsPlantAllowed(plantInstance)
-    for name, isAllowed in pairs(AllowedPlants) do
-        if isAllowed and (plantInstance.Name == name or plantInstance.Name:find(name)) then
-            return true
-        end
+local function IsTargetPlant(plantInstance)
+    if TargetPlantName == "" or TargetPlantName == "No Seeds Found" or TargetPlantName == "None" then
+        return false
     end
-    return false
+
+    local plantName = getPlantName(plantInstance)
+    return containsIgnoreCase(plantName, TargetPlantName)
 end
 
 --============================================================
@@ -1821,16 +1715,13 @@ AutomaticallyTab:CreateToggle({
     Name = "Auto Water Plants",
     CurrentValue = false,
     Flag = "AutoWater",
-    Callback = function(Value)
-        autoWaterEnabled = Value
-    end
+    Callback = function(Value) autoWaterEnabled = Value end
 })
 
 AutomaticallyTab:CreateButton({
     Name = "Equip Water Can",
     Callback = function()
         local Equipped = equipWaterCan()
-        
         Rayfield:Notify({
             Title = "Water Can",
             Content = Equipped and ("Equipped: " .. tostring(selectedWaterCan)) or (tostring(selectedWaterCan) .. " was not found."),
@@ -1840,48 +1731,23 @@ AutomaticallyTab:CreateButton({
 })
 
 local WaterPlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Plants To Water",
-    Options = getUniquePlantNames(),
+    Name = "Select Seeds To Water",
+    Options = getBackpackSeedsList(),
     CurrentOption = {},
     MultipleOptions = true,
     Flag = "SelectedWaterPlants",
-    Callback = function(Value)
-        selectedWaterPlants = convertSelection and convertSelection(Value) or Value
-    end
+    Callback = function(Value) selectedWaterPlants = convertSelection(Value) end
 })
 
-AutomaticallyTab:CreateButton({
-    Name = "Refresh Plant List",
-    Callback = function()
-        local plants = getUniquePlantNames()
-        WaterPlantDropdown:Refresh(plants)
-        Rayfield:Notify({ Title = "Refreshed", Content = "Found " .. #plants .. " plants.", Duration = 2 })
-    end
-})
-
-AutomaticallyTab:CreateSection("Settings")
-
-AutomaticallyTab:CreateSlider({
-    Name = "Water Radius",
-    Range = {10, 500},
-    Increment = 10,
-    Suffix = " Studs",
-    CurrentValue = 100,
-    Flag = "WaterRadius",
-    Callback = function(Value)
-        waterRadius = Value
-    end
-})
-
-AutomaticallyTab:CreateSlider({
-    Name = "Water Speed",
-    Range = {0.05, 2},
-    Increment = 0.05,
-    Suffix = " sec",
-    CurrentValue = 1,
-    Flag = "WaterSpeed",
-    Callback = function(Value)
-        waterCooldown = Value
+AutomaticallyTab:CreateInput({
+    Name = "Search Seed (Water)",
+    PlaceholderText = "Type seed name...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "WaterPlantSearch",
+    Callback = function(Text)
+        local sourceList = getBackpackSeedsList()
+        local filtered = filterList(sourceList, Text)
+        WaterPlantDropdown:Refresh(filtered)
     end
 })
 
@@ -1891,7 +1757,6 @@ AutomaticallyTab:CreateToggle({
     Name = "Auto Collect ALL Plants",
     CurrentValue = false,
     Flag = "AutoCollectAll",
-
     Callback = function(Value)
         autoCollectAll = Value
         autoCollectEnabled = autoCollectAll or autoCollectSelectedPlants
@@ -1902,222 +1767,115 @@ AutomaticallyTab:CreateToggle({
     Name = "Auto Collect Selected Plants",
     CurrentValue = false,
     Flag = "AutoCollectSelectedPlants",
-
     Callback = function(Value)
         autoCollectSelectedPlants = Value
         autoCollectEnabled = autoCollectAll or autoCollectSelectedPlants
     end
 })
 
-local initialGardenPlants = getUniquePlantNames()
-
 local CollectPlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Plants",
-    Options = initialGardenPlants,
+    Name = "Select Seeds To Collect",
+    Options = getBackpackSeedsList(),
     CurrentOption = {},
     MultipleOptions = true,
     Flag = "SelectedCollectPlants",
-    Callback = function(Value)
-        selectedCollectPlants = convertSelection(Value)
-    end
-})
-
-AutomaticallyTab:CreateButton({
-    Name = "Refresh Garden Plants",
-    Callback = function()
-        local currentGardenPlants = getUniquePlantNames()
-        CollectPlantDropdown:Refresh(currentGardenPlants)
-        
-        Rayfield:Notify({
-            Title = "Garden Scanned",
-            Content = "Updated dropdown with " .. tostring(#currentGardenPlants) .. " detected plant types.",
-            Duration = 3,
-            Image = 4483362458
-        })
-    end
+    Callback = function(Value) selectedCollectPlants = convertSelection(Value) end
 })
 
 AutomaticallyTab:CreateInput({
-    Name = "Search Plant",
-    PlaceholderText = "Type plant name...",
+    Name = "Search Seed (Collect)",
+    PlaceholderText = "Type seed name...",
     RemoveTextAfterFocusLost = false,
-    Flag = "PlantSearch",
+    Flag = "CollectPlantSearch",
     Callback = function(Text)
-        local filtered = {}
-        local search = string.lower(Text)
-        local sourceList = getUniquePlantNames()
-
-        if search == "" then
-            filtered = sourceList
-        else
-            for _, plant in ipairs(sourceList) do
-                if string.find(string.lower(plant), search, 1, true) then
-                    table.insert(filtered, plant)
-                end
-            end
-        end
-
+        local sourceList = getBackpackSeedsList()
+        local filtered = filterList(sourceList, Text)
         CollectPlantDropdown:Refresh(filtered)
     end
 })
 
-AutomaticallyTab:CreateSection("Settings")
-
-AutomaticallyTab:CreateSlider({
-    Name = "Collection Radius",
-    Range = {10, 1000},
-    Increment = 10,
-    Suffix = " Studs",
-    CurrentValue = 100,
-    Flag = "CollectionRadius",
-
-    Callback = function(Value)
-        collectionRadius = Value
-    end
-})
-
-AutomaticallyTab:CreateSlider({
-    Name = "Collect Speed",
-    Range = {0.01, 2},
-    Increment = 0.01,
-    Suffix = " sec",
-    CurrentValue = 0.1,
-    Flag = "CollectSpeed",
-
-    Callback = function(Value)
-        collectCooldown = Value
-    end
-})
-
 AutomaticallyTab:CreateSection("⛏️ AUTO TROWEL")
+
+AutomaticallyTab:CreateButton({
+    Name = "📍 Set Placement Position (My Position)",
+    Callback = function()
+        local root = getRootPart()
+        if root then
+            PlacementCFrame = root.CFrame - Vector3.new(0, 2.5, 0)
+            showPlacementMarker(PlacementCFrame)
+            Rayfield:Notify({
+                Title = "Position Set",
+                Content = "Trowel position locked to your standing spot!",
+                Duration = 3
+            })
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Character RootPart not found. Stand on solid ground and try again.",
+                Duration = 3
+            })
+        end
+    end
+})
 
 AutomaticallyTab:CreateToggle({
     Name = "Enable Auto-Trowel",
     CurrentValue = false,
     Flag = "AutoTrowelToggle",
     Callback = function(Value)
+        if Value and not PlacementCFrame then
+            Rayfield:Notify({
+                Title = "Warning",
+                Content = "Please click 'Set Placement Position' first before enabling!",
+                Duration = 3
+            })
+        end
         AutoTrowelEnabled = Value
     end,
 })
 
-AutomaticallyTab:CreateSection("Target Plant Selection")
+local initialTrowelOptions = getBackpackSeedsList()
+TargetPlantName = initialTrowelOptions[1] or ""
 
-local initialOptions = GetGardenPlantNames()
 local PlantDropdown = AutomaticallyTab:CreateDropdown({
-    Name = "Select Plant Type (From Garden)",
-    Options = initialOptions,
-    CurrentOption = {initialOptions[1] or "None"},
+    Name = "Select Seed Type",
+    Options = initialTrowelOptions,
+    CurrentOption = {initialTrowelOptions[1] or "None"},
     MultipleOptions = false,
     Flag = "PlantDropdown",
     Callback = function(Option)
-        CurrentlySelectedFromDropdown = Option[1]
+        TargetPlantName = cleanItemName(type(Option) == "table" and Option[1] or Option)
     end,
 })
 
-AutomaticallyTab:CreateButton({
-    Name = "🔄 Refresh Plant List",
-    Callback = function()
-        local updatedList = GetGardenPlantNames()
-        PlantDropdown:Refresh(updatedList)
-        Rayfield:Notify({
-            Title = "Garden Scanned",
-            Content = string.format("Found %d unique plant type(s).", #updatedList),
-            Duration = 2,
-        })
-    end,
-})
-
-AutomaticallyTab:CreateButton({
-    Name = "Add Selected Plant To Target Plant",
-    Callback = function()
-        if CurrentlySelectedFromDropdown and CurrentlySelectedFromDropdown ~= "No Plants Found" then
-            AllowedPlants[CurrentlySelectedFromDropdown] = true
-            Rayfield:Notify({
-                Title = "Plant Added",
-                Content = CurrentlySelectedFromDropdown .. " will now be troweled.",
-                Duration = 2,
-            })
-        end
-    end,
-})
-
-AutomaticallyTab:CreateButton({
-    Name = "Remove Selected Plant From Target Plant",
-    Callback = function()
-        if CurrentlySelectedFromDropdown then
-            AllowedPlants[CurrentlySelectedFromDropdown] = false
-            Rayfield:Notify({
-                Title = "Plant Removed",
-                Content = CurrentlySelectedFromDropdown .. " will no longer be troweled.",
-                Duration = 2,
-            })
-        end
-    end,
-})
-
-AutomaticallyTab:CreateSection("Target Coordinates")
-
-local PosInput = AutomaticallyTab:CreateInput({
-    Name = "Placement Position (X, Y, Z)",
-    PlaceholderText = "-44.096, 0.635, -97.672",
-    RemoveTextOnFocusLost = false,
+AutomaticallyTab:CreateInput({
+    Name = "Search Seed (Trowel)",
+    PlaceholderText = "Type seed name...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "TrowelPlantSearch",
     Callback = function(Text)
-        local coords = {}
-        for num in string.gmatch(Text, "[%d%.%-]+") do
-            table.insert(coords, tonumber(num))
-        end
-        if #coords == 3 then
-            PlacementPos = Vector3.new(coords[1], coords[2], coords[3])
-            Rayfield:Notify({
-                Title = "Position Updated",
-                Content = string.format("New target: %.2f, %.2f, %.2f", coords[1], coords[2], coords[3]),
-                Duration = 2,
-            })
-        end
-    end,
-})
-
-AutomaticallyTab:CreateButton({
-    Name = "Set Target to Current Stand Position",
-    Callback = function()
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            PlacementPos = root.Position
-            PosInput:Set(string.format("%.2f, %.2f, %.2f", root.Position.X, root.Position.Y, root.Position.Z))
-            Rayfield:Notify({
-                Title = "Coordinates Updated",
-                Content = "Saved current player position.",
-                Duration = 2,
-            })
-        end
-    end,
+        local sourceList = getBackpackSeedsList()
+        local filtered = filterList(sourceList, Text)
+        PlantDropdown:Refresh(filtered)
+    end
 })
 
 --============================================================
--- MAIN EXECUTION LOOP
+-- MAIN TROWEL EXECUTION LOOP
 --============================================================
 
 task.spawn(function()
     while true do
-        if AutoTrowelEnabled then
+        if AutoTrowelEnabled and TrowelRemote and PlacementCFrame then
             local Trowel = GetTrowel()
-            if Trowel then
+            local PlantsFolder = getPlantsPhysicalContainer()
+            if Trowel and PlantsFolder then
                 for _, plant in ipairs(PlantsFolder:GetChildren()) do
                     if not AutoTrowelEnabled then break end
-                    
-                    if IsPlantAllowed(plant) then
-                        local targetCFrame = CFrame.new(PlacementPos)
-                        
-                        pcall(function()
-                            TrowelRemote:InvokeServer("Pickup", Trowel, plant)
-                        end)
-                        
+                    if IsTargetPlant(plant) then
+                        pcall(function() TrowelRemote:InvokeServer("Pickup", Trowel, plant) end)
                         task.wait(0.1)
-                        
-                        pcall(function()
-                            TrowelRemote:InvokeServer("Place", Trowel, plant, targetCFrame)
-                        end)
-                        
+                        pcall(function() TrowelRemote:InvokeServer("Place", Trowel, plant, PlacementCFrame) end)
                         task.wait(0.1)
                     end
                 end
@@ -2127,36 +1885,6 @@ task.spawn(function()
     end
 end)
 
---============================================================
--- CHARACTER / TOOL HANDLING
---============================================================
-
-local function setupBackpackListener(backpack)
-    if not backpack then return end
-    backpack.ChildAdded:Connect(function(Tool)
-        if autoEquipCan and Tool:IsA("Tool") and containsIgnoreCase(Tool.Name, "water") then
-            task.wait(0.1)
-            equipWaterCan()
-        end
-    end)
-end
-
-LocalPlayer.CharacterAdded:Connect(function(Character)
-    local Humanoid = Character:WaitForChild("Humanoid", 10)
-    local Backpack = LocalPlayer:WaitForChild("Backpack", 10)
-
-    if Humanoid then
-        task.wait(0.5)
-        if autoEquipCan then
-            equipWaterCan()
-        end
-    end
-    
-    setupBackpackListener(Backpack)
-end)
-
-if LocalPlayer.Backpack then
-    setupBackpackListener(LocalPlayer.Backpack)
 end
 
 --============================================================
