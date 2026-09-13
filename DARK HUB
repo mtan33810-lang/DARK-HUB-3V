@@ -673,6 +673,256 @@ local function ProcessPlacement()
 end
 
 --============================================================
+-- AUTO PLANT
+--============================================================
+
+local PlantEvent = GameEvents:WaitForChild("Plant_RE")
+
+--// SETTINGS
+local SelectedSeedName = ""
+local SearchFilter = ""
+local RandomRadius = 10
+local RandomCount = 10
+local PlantDelay = 0.5
+
+local InfinitePlant = false
+local PlantLoopRunning = false
+
+-- ============================================================
+-- SEED FUNCTIONS
+-- ============================================================
+
+local function GetCleanSeedName(rawName)
+    if type(rawName) ~= "string" then
+        return ""
+    end
+
+    local name = rawName
+
+    -- Remove [ID]
+    name = name:gsub("%s*%b[]", "")
+
+    -- Remove "Seed" from the end
+    name = name:gsub("%s+[Ss][Ee][Ee][Dd]%s*$", "")
+
+    -- Clean extra spaces
+    name = name:gsub("%s+", " ")
+    name = name:match("^%s*(.-)%s*$") or name
+
+    return name
+end
+
+local function IsSeedTool(tool)
+    if not tool:IsA("Tool") then
+        return false
+    end
+
+    return tool.Name:lower():find("seed", 1, true) ~= nil
+end
+
+local function GetAvailableSeeds()
+    local seeds = {}
+    local found = {}
+
+    local function Scan(container)
+        if not container then
+            return
+        end
+
+        for _, item in ipairs(container:GetChildren()) do
+            if IsSeedTool(item) then
+                local seedName = GetCleanSeedName(item.Name)
+
+                if seedName ~= "" then
+                    if SearchFilter == "" or
+                        seedName:lower():find(SearchFilter:lower(), 1, true) then
+
+                        if not found[seedName] then
+                            found[seedName] = true
+                            table.insert(seeds, seedName)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    Scan(LocalPlayer:FindFirstChild("Backpack"))
+    Scan(LocalPlayer.Character)
+
+    table.sort(seeds)
+
+    if #seeds == 0 then
+        return {"No Seeds Found"}
+    end
+
+    return seeds
+end
+
+local function HasSelectedSeed()
+    if SelectedSeedName == "" then
+        return false
+    end
+
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    local character = LocalPlayer.Character
+
+    local function Check(container)
+        if not container then
+            return false
+        end
+
+        for _, item in ipairs(container:GetChildren()) do
+            if IsSeedTool(item) then
+                if GetCleanSeedName(item.Name) == SelectedSeedName then
+                    return true
+                end
+            end
+        end
+
+        return false
+    end
+
+    return Check(backpack) or Check(character)
+end
+
+-- ============================================================
+-- RANDOM POSITION
+-- ============================================================
+
+local function GetRandomPlantPosition()
+    local angle = math.random() * math.pi * 2
+
+    -- Gives an even spread across the circle
+    local distance = math.sqrt(math.random()) * RandomRadius
+
+    local offsetX = math.cos(angle) * distance
+    local offsetZ = math.sin(angle) * distance
+
+    -- Uses the player's current position as the center
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        return nil
+    end
+
+    local center = root.Position
+
+    return center + Vector3.new(
+        offsetX,
+        0,
+        offsetZ
+    )
+end
+
+-- ============================================================
+-- PLANT
+-- ============================================================
+
+local function PlantAt(position)
+    if not position or SelectedSeedName == "" then
+        return false
+    end
+
+    local success = pcall(function()
+        -- EXACT FORMAT CONFIRMED BY USER:
+        -- Plant_RE:FireServer(Vector3 position, "Carrot")
+        PlantEvent:FireServer(
+            position,
+            SelectedSeedName
+        )
+    end)
+
+    return success
+end
+
+-- ============================================================
+-- RANDOM PLANT ONCE
+-- ============================================================
+
+local function RandomPlantOnce()
+    if SelectedSeedName == "" then
+        Rayfield:Notify({
+            Title = "Auto Planter",
+            Content = "Select a seed first.",
+            Duration = 3
+        })
+        return
+    end
+
+    if not HasSelectedSeed() then
+        Rayfield:Notify({
+            Title = "Auto Planter",
+            Content = "Selected seed is not in your inventory.",
+            Duration = 3
+        })
+        return
+    end
+
+    for i = 1, RandomCount do
+        local position = GetRandomPlantPosition()
+
+        if position then
+            PlantAt(position)
+        end
+
+        task.wait(PlantDelay)
+    end
+
+    Rayfield:Notify({
+        Title = "Auto Planter",
+        Content = "Finished planting " .. RandomCount .. " random plants.",
+        Duration = 3
+    })
+end
+
+-- ============================================================
+-- INFINITE RANDOM PLANT
+-- ============================================================
+
+local function StartInfinitePlant()
+    if PlantLoopRunning then
+        return
+    end
+
+    PlantLoopRunning = true
+
+    task.spawn(function()
+        while InfinitePlant do
+
+            if SelectedSeedName == "" then
+                task.wait(0.5)
+                continue
+            end
+
+            if not HasSelectedSeed() then
+                task.wait(1)
+                continue
+            end
+
+            for i = 1, RandomCount do
+                if not InfinitePlant then
+                    break
+                end
+
+                local position = GetRandomPlantPosition()
+
+                if position then
+                    PlantAt(position)
+                end
+
+                task.wait(PlantDelay)
+            end
+
+            task.wait(0.1)
+        end
+
+        PlantLoopRunning = false
+    end)
+end
+
+--============================================================
 -- HOME TAB
 --============================================================
 
