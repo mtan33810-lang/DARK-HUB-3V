@@ -183,35 +183,123 @@ local function selectionContains(list, value)
 end
 
 --============================================================
--- PLANT & SEED MATCHING HELPERS
+-- SHARED PLANT SCANNER
 --============================================================
 
+local function getPlantName(Plant)
+    if not Plant then
+        return ""
+    end
+
+    -- Attribute first
+    local AttributeName = Plant:GetAttribute("PlantName")
+    if AttributeName and tostring(AttributeName) ~= "" then
+        return tostring(AttributeName)
+    end
+
+    -- Check common name attributes
+    for _, Attribute in ipairs({
+        "Name",
+        "Plant",
+        "Crop",
+        "CropName",
+        "DisplayName"
+    }) do
+        local Value = Plant:GetAttribute(Attribute)
+
+        if Value and tostring(Value) ~= "" then
+            return tostring(Value)
+        end
+    end
+
+    return tostring(Plant.Name or "")
+end
+
+local function getPlantPosition(Plant)
+    if not Plant then
+        return nil
+    end
+
+    if Plant:IsA("BasePart") then
+        return Plant.Position
+    end
+
+    if Plant:IsA("Model") then
+        if Plant.PrimaryPart then
+            return Plant.PrimaryPart.Position
+        end
+
+        local Part = Plant:FindFirstChildWhichIsA("BasePart", true)
+
+        if Part then
+            return Part.Position
+        end
+    end
+
+    return nil
+end
+
+local function getPlantContainer()
+    local Farm = Workspace:FindFirstChild("Farm")
+
+    if not Farm then
+        return nil
+    end
+
+    -- Exact known path
+    local NestedFarm = Farm:FindFirstChild("Farm")
+
+    if NestedFarm then
+        local Important = NestedFarm:FindFirstChild("Important")
+
+        if Important then
+            local Plants = Important:FindFirstChild("Plants_Physical")
+
+            if Plants then
+                return Plants
+            end
+        end
+    end
+
+    -- Fallback recursive search
+    local Plants = Farm:FindFirstChild("Plants_Physical", true)
+
+    if Plants then
+        return Plants
+    end
+
+    return nil
+end
+
 local function getAllGardenPlants()
-    local PlantsPhysical = getPlantsPhysical()
-    if not PlantsPhysical then
+    local PlantsFolder = getPlantContainer()
+
+    if not PlantsFolder then
         return {}
     end
 
     local Plants = {}
     local Seen = {}
 
-    for _, Object in ipairs(PlantsPhysical:GetDescendants()) do
-        local Plant = nil
+    -- First check direct children
+    for _, Object in ipairs(PlantsFolder:GetChildren()) do
+        if Object:IsA("Model") or Object:IsA("BasePart") then
+            local Plant = Object
 
-        if Object:IsA("Model") then
-            Plant = Object
-        elseif Object:IsA("BasePart") then
-            Plant = Object:FindFirstAncestorOfClass("Model")
+            if not Seen[Plant] and getPlantPosition(Plant) then
+                Seen[Plant] = true
+                table.insert(Plants, Plant)
+            end
         end
+    end
 
-        if Plant
-            and Plant ~= PlantsPhysical
-            and Plant:IsDescendantOf(PlantsPhysical)
-            and not Seen[Plant]
-        then
-            Seen[Plant] = true
+    -- Then check nested models
+    for _, Object in ipairs(PlantsFolder:GetDescendants()) do
+        if Object:IsA("Model") then
+            local Plant = Object
 
-            if getPlantPosition(Plant) then
+            if not Seen[Plant] and getPlantPosition(Plant) then
+                Seen[Plant] = true
                 table.insert(Plants, Plant)
             end
         end
@@ -233,11 +321,14 @@ local function getUniquePlantNames()
         end
     end
 
+    table.sort(Result)
+
+    -- If the garden has not loaded yet,
+    -- use your known plant list instead of "No Plants Found".
     if #Result == 0 then
         return ALL_PLANTS
     end
 
-    table.sort(Result)
     return Result
 end
 
@@ -582,7 +673,7 @@ local function GetGardenPlantNames()
     table.sort(found)
 
     if #found == 0 then
-        table.insert(found, "No Plants Found")
+        return ALL_PLANTS
     end
 
     return found
