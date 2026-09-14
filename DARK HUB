@@ -38,7 +38,7 @@ local Rayfield = loadstring(game:HttpGet(
 if game.PlaceId == Games.GrowAGarden then
 
 local Window = Rayfield:CreateWindow({
-    Name = "🌱 DARK HUB - Grow a Garden",
+    Name = "🌱 DARK HUB | Grow a Garden",
     Icon = 0,
     LoadingTitle = "Dark Hub",
     LoadingSubtitle = "by Max",
@@ -2198,7 +2198,7 @@ Rayfield:Notify({
 elseif game.PlaceId == Games.StealAnEgg then
 
 local Window = Rayfield:CreateWindow({
-    Name = "🥚 DARK HUB - Steal a Egg",
+    Name = "🥚 DARK HUB | Steal An Egg",
     Icon = 0,
     LoadingTitle = "Dark Hub",
     LoadingSubtitle = "by Max",
@@ -2347,7 +2347,7 @@ Rayfield:Notify({
 elseif game.GameId == Games.Rivals then
 
 local Window = Rayfield:CreateWindow({
-    Name = "🎯 DARK HUB - Rivals",
+    Name = "🎯 DARK HUB | Rivals",
     Icon = 0,
     LoadingTitle = "Dark Hub",
     LoadingSubtitle = "by Max",
