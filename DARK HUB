@@ -1763,7 +1763,7 @@ AutomaticallyTab:CreateSlider({
     end
 })
 
-AutomaticallyTab:CreateSection("AUTO COLLECT PLANTS")
+AutomaticallyTab:CreateSection("🥭 AUTO COLLECT PLANTS")
 
 AutomaticallyTab:CreateToggle({
     Name = "Auto Collect ALL Plants",
@@ -1946,7 +1946,7 @@ end
 -- AUTO PLACE SPRINKLER 
 --============================================================
 
-AutomaticallyTab:CreateSection("AUTO PLACE SPRINKLER")
+AutomaticallyTab:CreateSection("🚿 AUTO PLACE SPRINKLER")
 
 -- Target Mode Dropdown
 AutomaticallyTab:CreateDropdown({
@@ -2089,7 +2089,7 @@ AutomaticallyTab:CreateButton({
 -- AUTO PLANT
 --============================================================
 
-AutomaticallyTab:CreateSection("AUTO PLANT")
+AutomaticallyTab:CreateSection("🌱 AUTO PLANT")
 
 local SeedDropdown = AutomaticallyTab:CreateDropdown({
     Name = "Select Seed",
