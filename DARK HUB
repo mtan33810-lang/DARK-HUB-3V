@@ -1703,7 +1703,7 @@ task.spawn(function()
     end
 end) 
 
-ShopTab:CreateSection("🧳 SAFARI MERCHANT SHOP")
+ShopTab:CreateSection("🦁 SAFARI MERCHANT SHOP")
 
 local travelingMerchantOptions = {
     "Orange Delight",
