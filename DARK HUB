@@ -2253,7 +2253,7 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 end)
 
 --============================================================
--- TP WALK (Velocity-Based Anti-Rubberband)
+-- TP WALK (BodyVelocity / Force Bypass)
 --============================================================
 
 local RunService = game:GetService("RunService")
@@ -2263,6 +2263,14 @@ local LocalPlayer = Players.LocalPlayer
 local tpWalkEnabled = false
 local tpWalkSpeed = 50
 local tpWalkConnection
+local bodyVelocity = nil
+
+local function cleanupVelocity()
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
+    end
+end
 
 MainTab:CreateToggle({
     Name = "TP Walk",
@@ -2276,32 +2284,44 @@ MainTab:CreateToggle({
             tpWalkConnection:Disconnect()
             tpWalkConnection = nil
         end
+        cleanupVelocity()
 
         if not Value then
             return
         end
 
-        tpWalkConnection = RunService.PreSimulation:Connect(function()
+        tpWalkConnection = RunService.RenderStepped:Connect(function()
             local Character = LocalPlayer.Character
-            if not Character then return end
+            if not Character then 
+                cleanupVelocity()
+                return 
+            end
 
             local Humanoid = Character:FindFirstChildOfClass("Humanoid")
             local RootPart = Character:FindFirstChild("HumanoidRootPart")
 
-            if not Humanoid or not RootPart then
+            if not Humanoid or not RootPart or Humanoid.Health <= 0 then
+                cleanupVelocity()
                 return
             end
 
             local moveDirection = Humanoid.MoveDirection
 
             if moveDirection.Magnitude > 0 then
-                -- Apply target velocity directly to physics engine
-                local targetVelocity = moveDirection.Unit * (tpWalkSpeed * 5)
-                RootPart.AssemblyLinearVelocity = Vector3.new(
-                    targetVelocity.X,
-                    RootPart.AssemblyLinearVelocity.Y,
-                    targetVelocity.Z
-                )
+                -- Create BodyVelocity instance if it doesn't exist
+                if not bodyVelocity or bodyVelocity.Parent ~= RootPart then
+                    cleanupVelocity()
+                    bodyVelocity = Instance.new("BodyVelocity")
+                    bodyVelocity.Name = "TPWalkVelocity"
+                    bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000) -- Only horizontal force
+                    bodyVelocity.P = 12500
+                    bodyVelocity.Parent = RootPart
+                end
+
+                -- Direct movement force vector
+                bodyVelocity.Velocity = moveDirection.Unit * (tpWalkSpeed * 4)
+            else
+                cleanupVelocity()
             end
         end)
     end
@@ -2317,24 +2337,6 @@ MainTab:CreateSlider({
 
     Callback = function(Value)
         tpWalkSpeed = Value
-    end
-})
-
-MainTab:CreateSlider({
-    Name = "Walk Speed",
-    Range = {0, 300},
-    Increment = 1,
-    Suffix = " Speed",
-    CurrentValue = 16,
-    Flag = "WalkSpeed",
-
-    Callback = function(Value)
-        local Character = game:GetService("Players").LocalPlayer.Character
-        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-
-        if Humanoid then
-            Humanoid.WalkSpeed = Value
-        end
     end
 })
 
