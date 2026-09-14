@@ -2253,44 +2253,49 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 end)
 
 --============================================================
--- TP WALK (Micro-Pulse Bypass)
+-- TP WALK (State & NoClip Bypass)
 --============================================================
 
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local tpWalkEnabled = false
-local tpWalkSpeed = 3 -- Keep lower (1-5 range) to avoid triggering check
-local tpWalkThread = nil
+local tpWalkSpeed = 2
+local tpWalkConnection = nil
 
 MainTab:CreateToggle({
-    Name = "TP Walk (Micro-Pulse)",
+    Name = "TP Walk (State Bypass)",
     CurrentValue = false,
-    Flag = "TPWalkToggle",
+    Flag = "TPWalkStateToggle",
 
     Callback = function(Value)
         tpWalkEnabled = Value
 
-        if tpWalkThread then
-            task.cancel(tpWalkThread)
-            tpWalkThread = nil
+        if tpWalkConnection then
+            tpWalkConnection:Disconnect()
+            tpWalkConnection = nil
         end
 
         if not Value then return end
 
-        tpWalkThread = task.spawn(function()
-            while tpWalkEnabled do
-                local dt = task.wait(0.03) -- Micro-delay to mask rapid movement from server
-                
-                local Character = LocalPlayer.Character
-                local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-                local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        tpWalkConnection = RunService.Stepped:Connect(function()
+            local Character = LocalPlayer.Character
+            if not Character then return end
 
-                if Humanoid and RootPart and Humanoid.MoveDirection.Magnitude > 0 then
-                    local moveVector = Humanoid.MoveDirection.Unit
-                    -- Teleport in small steps relative to frame time
-                    RootPart.CFrame = RootPart.CFrame + (moveVector * (tpWalkSpeed * 10) * dt)
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            local RootPart = Character:FindFirstChild("HumanoidRootPart")
+
+            if Humanoid and RootPart and Humanoid.MoveDirection.Magnitude > 0 then
+                -- Disable collisions briefly to disrupt floor check anti-cheat
+                for _, part in ipairs(Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
                 end
+
+                -- Shift position relative to camera or movement vector
+                RootPart.CFrame = RootPart.CFrame + (Humanoid.MoveDirection.Unit * (tpWalkSpeed / 2))
             end
         end)
     end
@@ -2298,11 +2303,11 @@ MainTab:CreateToggle({
 
 MainTab:CreateSlider({
     Name = "TP Walk Speed",
-    Range = {1, 10},
-    Increment = 0.5,
+    Range = {1, 15},
+    Increment = 1,
     Suffix = " Speed",
-    CurrentValue = 3,
-    Flag = "TPWalkSpeed",
+    CurrentValue = 2,
+    Flag = "TPWalkStateSpeed",
 
     Callback = function(Value)
         tpWalkSpeed = Value
