@@ -2252,13 +2252,13 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
--- TP Walk Implementation
+-- Alternative TP Walk Implementation
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local tpWalkEnabled = false
-local tpWalkSpeed = 1
+local tpWalkSpeed = 2
 local tpWalkConnection = nil
 
 MainTab:CreateToggle({
@@ -2275,15 +2275,14 @@ MainTab:CreateToggle({
         end
 
         if tpWalkEnabled then
-            tpWalkConnection = RunService.RenderStepped:Connect(function(delta)
+            tpWalkConnection = RunService.Heartbeat:Connect(function()
                 local Character = LocalPlayer.Character
-                if not Character then return end
+                local HRP = Character and Character:FindFirstChild("HumanoidRootPart")
+                local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
 
-                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-                local HRP = Character:FindFirstChild("HumanoidRootPart")
-
-                if Humanoid and HRP and Humanoid.MoveVector.Magnitude > 0 then
-                    HRP.CFrame = HRP.CFrame + (Humanoid.MoveVector * (tpWalkSpeed * 10) * delta)
+                if HRP and Humanoid and Humanoid.MoveVector.Magnitude > 0 then
+                    local moveDir = Humanoid.MoveVector
+                    HRP.CFrame = HRP.CFrame + Vector3.new(moveDir.X, 0, moveDir.Z) * (tpWalkSpeed / 2)
                 end
             end)
         end
@@ -2292,10 +2291,10 @@ MainTab:CreateToggle({
 
 MainTab:CreateSlider({
     Name = "TP Walk Speed",
-    Range = {1, 50},
+    Range = {1, 20},
     Increment = 1,
-    Suffix = " Multiplier",
-    CurrentValue = 1,
+    Suffix = " Speed",
+    CurrentValue = 2,
     Flag = "TPWalkSpeed",
 
     Callback = function(Value)
