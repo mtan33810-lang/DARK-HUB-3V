@@ -2704,45 +2704,54 @@ local function getHumanoid(character)
 end
 
 --============================================================
--- PLAYER VALIDATION
+-- ENHANCED TEAM & TARGET VALIDATION
 --============================================================
 
 local function isValidPlayerTarget(player)
     if not player or player == LocalPlayer then return false end
 
-    local character = player.Character
     local localChar = LocalPlayer.Character
-    if not character or not localChar then return false end
+    local targetChar = player.Character
+    if not localChar or not targetChar then return false end
 
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local targetPart = character:FindFirstChild(Settings.TargetPart) or character:FindFirstChild("HumanoidRootPart")
+    local humanoid = targetChar:FindFirstChildOfClass("Humanoid")
+    local targetPart = targetChar:FindFirstChild(Settings.TargetPart) or targetChar:FindFirstChild("HumanoidRootPart")
 
     if not humanoid or not targetPart or humanoid.Health <= 0 then return false end
 
     if Settings.TeamCheck then
-        if player.Team ~= nil and LocalPlayer.Team ~= nil and player.Team == LocalPlayer.Team then 
-            return false 
+        -- 1. Standard Roblox Team Check
+        if player.Team ~= nil and LocalPlayer.Team ~= nil then
+            if player.Team == LocalPlayer.Team then return false end
         end
 
+        -- 2. Team Color / BrickColor Check
         if player.TeamColor == LocalPlayer.TeamColor and player.TeamColor ~= BrickColor.new("White") then
             return false
         end
 
-        local myTeam = LocalPlayer:GetAttribute("Team") or localChar:GetAttribute("Team") or LocalPlayer:GetAttribute("TeamColor")
-        local enemyTeam = player:GetAttribute("Team") or character:GetAttribute("Team") or player:GetAttribute("TeamColor")
+        -- 3. Custom Attributes (Common in modern Roblox FPS titles)
+        local myTeamAttr = LocalPlayer:GetAttribute("Team") or localChar:GetAttribute("Team") or LocalPlayer:GetAttribute("TeamColor") or localChar:GetAttribute("Squad")
+        local enemyTeamAttr = player:GetAttribute("Team") or targetChar:GetAttribute("Team") or player:GetAttribute("TeamColor") or targetChar:GetAttribute("Squad")
 
-        if myTeam and enemyTeam and myTeam == enemyTeam then
+        if myTeamAttr ~= nil and enemyTeamAttr ~= nil and myTeamAttr == enemyTeamAttr then
             return false
         end
 
+        -- 4. Parent Hierarchy Check (Teammate models grouped under specific Workspace Folders)
+        if targetChar.Parent and localChar.Parent then
+            if targetChar.Parent ~= Workspace and targetChar.Parent == localChar.Parent then
+                return false
+            end
+        end
+
+        -- 5. Highlight & Marker Colors (Engine visual team identifiers)
         local myHighlight = localChar:FindFirstChildOfClass("Highlight")
-        local enemyHighlight = character:FindFirstChildOfClass("Highlight")
-        if myHighlight and enemyHighlight and myHighlight.FillColor == enemyHighlight.FillColor then
-            return false
-        end
-
-        if character.Parent and localChar.Parent and character.Parent ~= Workspace and character.Parent == localChar.Parent then 
-            return false 
+        local enemyHighlight = targetChar:FindFirstChildOfClass("Highlight")
+        if myHighlight and enemyHighlight then
+            if myHighlight.FillColor == enemyHighlight.FillColor or myHighlight.OutlineColor == enemyHighlight.OutlineColor then
+                return false
+            end
         end
     end
 
