@@ -2766,7 +2766,7 @@ local function isVisible(targetPart)
 end
 
 --============================================================
--- AIM TARGET SELECTOR
+-- STABLE AIM TARGET SELECTOR
 --============================================================
 
 local function getAimTarget()
@@ -2784,6 +2784,7 @@ local function getAimTarget()
             if targetPart and isVisible(targetPart) then
                 local position, visible = Camera:WorldToViewportPoint(targetPart.Position)
 
+                -- Ensure target is strictly in front of camera
                 if visible and position.Z > 0 then
                     local distance = (Vector2.new(position.X, position.Y) - center).Magnitude
                     if distance < closestDistance then
@@ -3169,10 +3170,14 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --============================================================
--- AIM LOOP
+-- STABLE AIM LOOP (CAMERA PRIORITY)
 --============================================================
 
-RunService.RenderStepped:Connect(function(deltaTime)
+-- Unbind previous renders if re-executed
+pcall(function() RunService:UnbindFromRenderStep("DarkHub_Aimbot") end)
+
+RunService:BindToRenderStep("DarkHub_Aimbot", Enum.RenderPriority.Camera.Value + 1, function(deltaTime)
+    -- FOV Rendering
     if Settings.ShowFOV then
         local viewport = Camera.ViewportSize
         FOVCircle.Position = Vector2.new(viewport.X * 0.5, viewport.Y * 0.5)
@@ -3184,19 +3189,26 @@ RunService.RenderStepped:Connect(function(deltaTime)
 
     if not Settings.Aimbot then return end
 
-    local target = (Settings.TargetLock and isValidPlayerTarget(Settings.AimTarget)) and Settings.AimTarget or getAimTarget()
-    Settings.AimTarget = target
+    -- Acquire or maintain target
+    local target = Settings.AimTarget
+    if not (Settings.TargetLock and isValidPlayerTarget(target)) then
+        target = getAimTarget()
+        Settings.AimTarget = target
+    end
 
     if not target or not target.Character then return end
 
     local targetPart = target.Character:FindFirstChild(Settings.TargetPart) or target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetPart then
+    if not targetPart or not targetPart.Parent then
         Settings.AimTarget = nil
         return
     end
 
-    local alpha = math.clamp(Settings.Smoothness * (deltaTime * 60), 0, 1)
-    Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, targetPart.Position), alpha)
+    -- Smooth CFrame Interpolation aligned to Camera step
+    local targetCFrame = CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
+    local lerpFactor = math.clamp(Settings.Smoothness * (deltaTime * 60), 0.01, 1)
+    
+    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, lerpFactor)
 end)
 
 --============================================================
