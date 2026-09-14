@@ -2683,16 +2683,9 @@ local Settings = {
     FOV = 150,
     Smoothness = 0.20,
 
-    -- NPC COMBAT
-    AttackRange = 10,
-    AutoPlayer = false,
-
     -- SEPARATE TARGETS
-    AimTarget = nil,
-    BotTarget = nil
+    AimTarget = nil
 }
-
-local attackTimer = 0
 
 -- Shared Raycast Parameters to eliminate Garbage Collection allocations per frame
 local wallCheckParams = RaycastParams.new()
@@ -2806,33 +2799,6 @@ local function isVisible(targetPart)
 
     local result = workspace:Raycast(origin, direction, wallCheckParams)
     return result == nil
-end
-
---============================================================
--- NPC CLOSEST TARGET
---============================================================
-
-local function getClosestEnemy()
-    local character = getCharacter()
-    local root = getRoot(character)
-    if not root then return nil end
-
-    local closest = nil
-    local closestDistance = math.huge
-
-    for _, enemy in ipairs(CollectionService:GetTagged("TestEnemy")) do
-        if isValidEnemy(enemy) then
-            local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
-            local distance = (root.Position - enemyRoot.Position).Magnitude
-
-            if distance < closestDistance then
-                closestDistance = distance
-                closest = enemy
-            end
-        end
-    end
-
-    return closest
 end
 
 --============================================================
@@ -3326,16 +3292,6 @@ local CombatTab = Window:CreateTab("NPC Combat", 4483362458)
 
 CombatTab:CreateSection("TestEnemy Combat")
 
-CombatTab:CreateSlider({
-    Name = "Attack Range",
-    Range = {5, 20},
-    Increment = 1,
-    Suffix = " studs",
-    CurrentValue = 10,
-    Flag = "AttackRange",
-    Callback = function(Value) Settings.AttackRange = Value end
-})
-
 CombatTab:CreateButton({
     Name = "Attack Test Enemies In Range",
     Callback = function()
@@ -3350,7 +3306,7 @@ CombatTab:CreateButton({
                 local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
                 local distance = (root.Position - enemyRoot.Position).Magnitude
 
-                if distance <= Settings.AttackRange then
+                if distance <= 10 then
                     CombatEvent:FireServer("Attack", enemy)
                 end
             end
@@ -3358,39 +3314,11 @@ CombatTab:CreateButton({
     end
 })
 
-CombatTab:CreateToggle({
-    Name = "Auto Player",
-    CurrentValue = false,
-    Flag = "AutoPlayer",
-    Callback = function(Value)
-        Settings.AutoPlayer = Value
-        if not Value then
-            Settings.BotTarget = nil
-            attackTimer = 0
-        end
-    end
-})
-
-CombatTab:CreateButton({
-    Name = "Stop Bot",
-    Callback = function()
-        Settings.AutoPlayer = false
-        Settings.BotTarget = nil
-        attackTimer = 0
-
-        Rayfield:Notify({
-            Title = "Dark Hub",
-            Content = "NPC bot stopped.",
-            Duration = 2
-        })
-    end
-})
-
 --============================================================
 -- ESP RENDER LOOP
 --============================================================
 
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(deltaTime)
     local character = getCharacter()
     local localRoot = getRoot(character)
 
@@ -3562,56 +3490,11 @@ RunService.RenderStepped:Connect(function(deltaTime)
 end)
 
 --============================================================
--- NPC BOT LOOP
---============================================================
-
-RunService.Heartbeat:Connect(function(deltaTime)
-    if not Settings.AutoPlayer or not CombatEvent then return end
-
-    local character = getCharacter()
-    local humanoid = getHumanoid(character)
-    local root = getRoot(character)
-
-    if not humanoid or not root then return end
-
-    if not isValidEnemy(Settings.BotTarget) then
-        Settings.BotTarget = getClosestEnemy()
-    end
-
-    local target = Settings.BotTarget
-    if not target then return end
-
-    local enemyRoot = target:FindFirstChild("HumanoidRootPart")
-    local enemyHumanoid = target:FindFirstChildOfClass("Humanoid")
-
-    if not enemyRoot or not enemyHumanoid or enemyHumanoid.Health <= 0 then
-        Settings.BotTarget = nil
-        return
-    end
-
-    local distance = (root.Position - enemyRoot.Position).Magnitude
-
-    if distance > Settings.AttackRange then
-        humanoid:MoveTo(enemyRoot.Position)
-    else
-        humanoid:MoveTo(root.Position)
-        attackTimer += deltaTime
-
-        if attackTimer >= 0.35 then
-            attackTimer = 0
-            CombatEvent:FireServer("Attack", target)
-        end
-    end
-end)
-
---============================================================
 -- CHARACTER RESET
 --============================================================
 
 LocalPlayer.CharacterAdded:Connect(function()
     Settings.AimTarget = nil
-    Settings.BotTarget = nil
-    attackTimer = 0
 end)
 
 --============================================================
