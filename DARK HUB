@@ -1960,8 +1960,6 @@ AutomaticallyTab:CreateDropdown({
     end,
 })
 
-AutomaticallyTab:CreateSection("Coordinate Settings")
-
 -- Input: X Coordinate
 local InputX = AutomaticallyTab:CreateInput({
     Name = "X Coordinate",
@@ -2017,8 +2015,6 @@ AutomaticallyTab:CreateButton({
     end,
 })
 
-AutomaticallyTab:CreateSection("Sprinkler Settings")
-
 -- Sprinkler Type Dropdown
 AutomaticallyTab:CreateDropdown({
     Name = "Select Sprinkler Type",
@@ -2043,8 +2039,6 @@ AutomaticallyTab:CreateSlider({
         OffsetDistance = Value
     end,
 })
-
-AutomaticallyTab:CreateSection("Auto Placement Controls")
 
 -- Auto Placement Toggle
 AutomaticallyTab:CreateToggle({
@@ -2129,8 +2123,6 @@ AutomaticallyTab:CreateInput({
 -- ============================================================
 -- RANDOM SETTINGS
 -- ============================================================
-
-AutomaticallyTab:CreateSection("Random Planting")
 
 AutomaticallyTab:CreateSlider({
     Name = "Random Radius",
