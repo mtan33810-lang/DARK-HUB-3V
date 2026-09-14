@@ -1869,6 +1869,59 @@ task.spawn(function()
     end
 end) 
 
+ShopTab:CreateSection("📦 RARE COSMETICS MERCHANT SHOP")
+
+local travelingMerchantOptions = {
+    "Cooking Pot",
+    "Hot Spring",
+    "Spell Book",
+    "Wisp Well",
+    "Hex Circle",
+    "Sarcophagus",
+}
+
+local selectedMerchantItems = {}
+local autoBuyMerchantItems = false
+
+ShopTab:CreateDropdown({
+    Name = "Select Items to Auto Buy",
+    Options = travelingMerchantOptions,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "TravelingMerchantDropdownFlag",
+    Callback = function(Options)
+        selectedMerchantItems = typeof(Options) == "table" and Options or {Options}
+    end,
+})
+
+ShopTab:CreateToggle({
+    Name = "🛒 Auto Buy Traveling Merchant Items",
+    CurrentValue = false,
+    Flag = "AutoBuyTravelingMerchantFlag",
+    Callback = function(Value)
+        autoBuyMerchantItems = Value
+    end,
+})
+
+task.spawn(function()
+    while true do
+        if autoBuyMerchantItems and #selectedMerchantItems > 0 then
+            pcall(function()
+                local gameEvents = ReplicatedStorage:FindFirstChild("GameEvents")
+                local buyRemote = gameEvents and gameEvents:FindFirstChild("BuyTravelingMerchantShopStock")
+
+                if buyRemote and buyRemote:IsA("RemoteEvent") then
+                    for _, itemName in ipairs(selectedMerchantItems) do
+                        if not autoBuyMerchantItems then break end
+                        buyRemote:FireServer(itemName)
+                    end
+                end
+            end)
+        end
+        task.wait(1)
+    end
+end) 
+
 --============================================================
 -- AUTOMATICALLY TAB
 --============================================================
