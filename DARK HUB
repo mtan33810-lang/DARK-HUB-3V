@@ -2253,75 +2253,44 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 end)
 
 --============================================================
--- TP WALK (BodyVelocity / Force Bypass)
+-- TP WALK (Micro-Pulse Bypass)
 --============================================================
 
-local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local tpWalkEnabled = false
-local tpWalkSpeed = 50
-local tpWalkConnection
-local bodyVelocity = nil
-
-local function cleanupVelocity()
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
-    end
-end
+local tpWalkSpeed = 3 -- Keep lower (1-5 range) to avoid triggering check
+local tpWalkThread = nil
 
 MainTab:CreateToggle({
-    Name = "TP Walk",
+    Name = "TP Walk (Micro-Pulse)",
     CurrentValue = false,
     Flag = "TPWalkToggle",
 
     Callback = function(Value)
         tpWalkEnabled = Value
 
-        if tpWalkConnection then
-            tpWalkConnection:Disconnect()
-            tpWalkConnection = nil
-        end
-        cleanupVelocity()
-
-        if not Value then
-            return
+        if tpWalkThread then
+            task.cancel(tpWalkThread)
+            tpWalkThread = nil
         end
 
-        tpWalkConnection = RunService.RenderStepped:Connect(function()
-            local Character = LocalPlayer.Character
-            if not Character then 
-                cleanupVelocity()
-                return 
-            end
+        if not Value then return end
 
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        tpWalkThread = task.spawn(function()
+            while tpWalkEnabled do
+                local dt = task.wait(0.03) -- Micro-delay to mask rapid movement from server
+                
+                local Character = LocalPlayer.Character
+                local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+                local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
 
-            if not Humanoid or not RootPart or Humanoid.Health <= 0 then
-                cleanupVelocity()
-                return
-            end
-
-            local moveDirection = Humanoid.MoveDirection
-
-            if moveDirection.Magnitude > 0 then
-                -- Create BodyVelocity instance if it doesn't exist
-                if not bodyVelocity or bodyVelocity.Parent ~= RootPart then
-                    cleanupVelocity()
-                    bodyVelocity = Instance.new("BodyVelocity")
-                    bodyVelocity.Name = "TPWalkVelocity"
-                    bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000) -- Only horizontal force
-                    bodyVelocity.P = 12500
-                    bodyVelocity.Parent = RootPart
+                if Humanoid and RootPart and Humanoid.MoveDirection.Magnitude > 0 then
+                    local moveVector = Humanoid.MoveDirection.Unit
+                    -- Teleport in small steps relative to frame time
+                    RootPart.CFrame = RootPart.CFrame + (moveVector * (tpWalkSpeed * 10) * dt)
                 end
-
-                -- Direct movement force vector
-                bodyVelocity.Velocity = moveDirection.Unit * (tpWalkSpeed * 4)
-            else
-                cleanupVelocity()
             end
         end)
     end
@@ -2329,10 +2298,10 @@ MainTab:CreateToggle({
 
 MainTab:CreateSlider({
     Name = "TP Walk Speed",
-    Range = {1, 100},
-    Increment = 1,
+    Range = {1, 10},
+    Increment = 0.5,
     Suffix = " Speed",
-    CurrentValue = 50,
+    CurrentValue = 3,
     Flag = "TPWalkSpeed",
 
     Callback = function(Value)
