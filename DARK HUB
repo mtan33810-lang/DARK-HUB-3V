@@ -2609,6 +2609,15 @@ Rayfield:Notify({
 --============================================================
 elseif game.GameId == Games.Rivals then
 
+-- Pre-cache Core Services & Ref-pointers
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
 local Window = Rayfield:CreateWindow({
     Name = "🎯 DARK HUB | Rivals",
     Icon = 0,
@@ -2632,26 +2641,6 @@ local Window = Rayfield:CreateWindow({
 
     KeySystem = false
 })
-
---============================================================
--- SERVICES
---============================================================
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
---============================================================
--- COMBAT REMOTE
---============================================================
-
-local CombatFolder = ReplicatedStorage:WaitForChild("CombatTest", 5)
-local CombatEvent = CombatFolder and CombatFolder:WaitForChild("CombatEvent", 5)
 
 --============================================================
 -- SETTINGS
@@ -2683,17 +2672,23 @@ local Settings = {
     FOV = 150,
     Smoothness = 0.20,
 
-    -- SEPARATE TARGETS
     AimTarget = nil
 }
 
--- Shared Raycast Parameters to eliminate Garbage Collection allocations per frame
+-- Cached Raycast Parameters
 local wallCheckParams = RaycastParams.new()
 wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
 wallCheckParams.IgnoreWater = true
 
+-- Pre-allocate Corner Cache to prevent Garbage Collection overhead
+local boxConnections = {
+    {1,2}, {2,3}, {3,4}, {4,1},
+    {5,6}, {6,7}, {7,8}, {8,5},
+    {1,5}, {2,6}, {3,7}, {4,8}
+}
+
 --============================================================
--- UTILITY
+-- UTILITY (INLINED FAST-PATHS)
 --============================================================
 
 local function getCharacter()
@@ -2709,22 +2704,7 @@ local function getHumanoid(character)
 end
 
 --============================================================
--- NPC VALIDATION
---============================================================
-
-local function isValidEnemy(enemy)
-    if not enemy or not enemy:IsA("Model") then return false end
-    if not CollectionService:HasTag(enemy, "TestEnemy") then return false end
-
-    local humanoid = enemy:FindFirstChildOfClass("Humanoid")
-    local root = enemy:FindFirstChild("HumanoidRootPart")
-
-    if not humanoid or not root then return false end
-    return humanoid.Health > 0
-end
-
---============================================================
--- PLAYER VALIDATION (FIXED FOR RIVALS)
+-- PLAYER VALIDATION
 --============================================================
 
 local function isValidPlayerTarget(player)
@@ -2740,41 +2720,29 @@ local function isValidPlayerTarget(player)
     if not humanoid or not targetPart or humanoid.Health <= 0 then return false end
 
     if Settings.TeamCheck then
-        -- 1. Standard Roblox Teams Check
-        if player.Team ~= nil and LocalPlayer.Team ~= nil then
-            if player.Team == LocalPlayer.Team then return false end
+        if player.Team ~= nil and LocalPlayer.Team ~= nil and player.Team == LocalPlayer.Team then 
+            return false 
         end
 
-        -- 2. Team Color Check (Ignores Neutral/White)
         if player.TeamColor == LocalPlayer.TeamColor and player.TeamColor ~= BrickColor.new("White") then
             return false
         end
 
-        -- 3. Rivals Team Attributes (Checks both Player and Character models)
-        local myTeam = LocalPlayer:GetAttribute("Team") 
-            or localChar:GetAttribute("Team") 
-            or LocalPlayer:GetAttribute("TeamColor")
-            
-        local enemyTeam = player:GetAttribute("Team") 
-            or character:GetAttribute("Team") 
-            or player:GetAttribute("TeamColor")
+        local myTeam = LocalPlayer:GetAttribute("Team") or localChar:GetAttribute("Team") or LocalPlayer:GetAttribute("TeamColor")
+        local enemyTeam = player:GetAttribute("Team") or character:GetAttribute("Team") or player:GetAttribute("TeamColor")
 
         if myTeam and enemyTeam and myTeam == enemyTeam then
             return false
         end
 
-        -- 4. Rivals Model Highlights / Outlines (Red vs Blue/Green)
         local myHighlight = localChar:FindFirstChildOfClass("Highlight")
         local enemyHighlight = character:FindFirstChildOfClass("Highlight")
-        if myHighlight and enemyHighlight then
-            if myHighlight.FillColor == enemyHighlight.FillColor or myHighlight.OutlineColor == enemyHighlight.OutlineColor then
-                return false
-            end
+        if myHighlight and enemyHighlight and myHighlight.FillColor == enemyHighlight.FillColor then
+            return false
         end
 
-        -- 5. Workspace Folder Teams Check (e.g., workspace.Teams.Red)
-        if character.Parent and localChar.Parent and character.Parent ~= workspace then
-            if character.Parent == localChar.Parent then return false end
+        if character.Parent and localChar.Parent and character.Parent ~= Workspace and character.Parent == localChar.Parent then 
+            return false 
         end
     end
 
@@ -2782,7 +2750,7 @@ local function isValidPlayerTarget(player)
 end
 
 --============================================================
--- WALL CHECK
+-- FAST WALL CHECK
 --============================================================
 
 local function isVisible(targetPart)
@@ -2791,23 +2759,19 @@ local function isVisible(targetPart)
     local origin = Camera.CFrame.Position
     local direction = targetPart.Position - origin
 
-    local ignore = {}
-    if LocalPlayer.Character then
-        table.insert(ignore, LocalPlayer.Character)
-    end
+    local ignore = {LocalPlayer.Character}
     wallCheckParams.FilterDescendantsInstances = ignore
 
-    local result = workspace:Raycast(origin, direction, wallCheckParams)
-    return result == nil
+    return Workspace:Raycast(origin, direction, wallCheckParams) == nil
 end
 
 --============================================================
--- PLAYER AIM TARGET
+-- AIM TARGET SELECTOR
 --============================================================
 
 local function getAimTarget()
     local viewport = Camera.ViewportSize
-    local center = Vector2.new(viewport.X / 2, viewport.Y / 2)
+    local center = Vector2.new(viewport.X * 0.5, viewport.Y * 0.5)
 
     local closest = nil
     local closestDistance = Settings.FOV
@@ -2822,7 +2786,6 @@ local function getAimTarget()
 
                 if visible and position.Z > 0 then
                     local distance = (Vector2.new(position.X, position.Y) - center).Magnitude
-
                     if distance < closestDistance then
                         closestDistance = distance
                         closest = player
@@ -2844,7 +2807,7 @@ local ESPCache = {}
 local function createESP(player)
     if ESPCache[player] or player == LocalPlayer then return end
 
-    local lines = {}
+    local lines = table.create(12)
     for i = 1, 12 do
         local line = Drawing.new("Line")
         line.Visible = false
@@ -2890,8 +2853,8 @@ local function createESP(player)
 end
 
 local function hideESP(drawings)
-    for _, line in ipairs(drawings.Lines) do
-        line.Visible = false
+    for i = 1, 12 do
+        drawings.Lines[i].Visible = false
     end
     drawings.Tracer.Visible = false
     drawings.NameTag.Visible = false
@@ -2904,8 +2867,8 @@ local function removeESP(player)
     local drawings = ESPCache[player]
     if not drawings then return end
 
-    for _, line in ipairs(drawings.Lines) do
-        line:Remove()
+    for i = 1, 12 do
+        drawings.Lines[i]:Remove()
     end
     drawings.Tracer:Remove()
     drawings.NameTag:Remove()
@@ -2917,7 +2880,7 @@ local function removeESP(player)
 end
 
 for _, player in ipairs(Players:GetPlayers()) do
-    createESP(player)
+    task.spawn(createESP, player)
 end
 
 Players.PlayerAdded:Connect(createESP)
@@ -2940,30 +2903,23 @@ FOVCircle.Filled = false
 --============================================================
 
 local MainTab = Window:CreateTab("Main", 4483362458)
-
 MainTab:CreateSection("🚶Movement")
 
--- Infinite Jump
 local infiniteJump = false
 
 MainTab:CreateToggle({
     Name = "Infinite Jump",
     CurrentValue = false,
     Flag = "InfiniteJump",
-    Callback = function(Value)
-        infiniteJump = Value
-    end
+    Callback = function(Value) infiniteJump = Value end
 })
 
 UserInputService.JumpRequest:Connect(function()
     if not infiniteJump then return end
     local humanoid = getHumanoid(getCharacter())
-    if humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
+    if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
 end)
 
--- Walk Speed
 MainTab:CreateSlider({
     Name = "Walk Speed",
     Range = {0, 300},
@@ -2973,33 +2929,26 @@ MainTab:CreateSlider({
     Flag = "WalkSpeed",
     Callback = function(Value)
         local humanoid = getHumanoid(getCharacter())
-        if humanoid then
-            humanoid.WalkSpeed = Value
-        end
+        if humanoid then humanoid.WalkSpeed = Value end
     end
 })
 
--- Store the target jump height (defaults to your UI's starting value)
 local currentJumpHeight = 7
 
--- Function to apply the jump height to a character
+-- Asynchronous non-blocking Jump Height Application
 local function applyJumpHeight(character)
     if not character then return end
-    
-    -- Wait for the Humanoid to load after respawning
-    local humanoid = character:WaitForChild("Humanoid", 5)
-    if humanoid then
-        humanoid.UseJumpPower = false
-        humanoid.JumpHeight = currentJumpHeight
-    end
+    task.spawn(function()
+        local humanoid = character:WaitForChild("Humanoid", 3)
+        if humanoid then
+            humanoid.UseJumpPower = false
+            humanoid.JumpHeight = currentJumpHeight
+        end
+    end)
 end
 
--- Re-apply jump height whenever a new character spawns
-LocalPlayer.CharacterAdded:Connect(function(newCharacter)
-    applyJumpHeight(newCharacter)
-end)
+LocalPlayer.CharacterAdded:Connect(applyJumpHeight)
 
--- Create the UI Slider
 MainTab:CreateSlider({
     Name = "Jump Height",
     Range = {0, 300},
@@ -3013,7 +2962,6 @@ MainTab:CreateSlider({
     end
 })
 
--- TP Walk
 local tpWalkEnabled = false
 local tpWalkSpeed = 1
 
@@ -3021,9 +2969,7 @@ MainTab:CreateToggle({
     Name = "TP Walk",
     CurrentValue = false,
     Flag = "TPWalk",
-    Callback = function(Value)
-        tpWalkEnabled = Value
-    end
+    Callback = function(Value) tpWalkEnabled = Value end
 })
 
 MainTab:CreateSlider({
@@ -3033,9 +2979,7 @@ MainTab:CreateSlider({
     Suffix = " Multiplier",
     CurrentValue = 1,
     Flag = "TPWalkSpeed",
-    Callback = function(Value)
-        tpWalkSpeed = Value
-    end
+    Callback = function(Value) tpWalkSpeed = Value end
 })
 
 RunService.RenderStepped:Connect(function(deltaTime)
@@ -3045,49 +2989,31 @@ RunService.RenderStepped:Connect(function(deltaTime)
     local hrp = getRoot(character)
 
     if humanoid and hrp and humanoid.MoveDirection.Magnitude > 0 then
-        hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * (tpWalkSpeed * 10) * deltaTime)
+        hrp.CFrame += (humanoid.MoveDirection * (tpWalkSpeed * 10) * deltaTime)
     end
 end)
 
 MainTab:CreateSection("Setting")
 
 MainTab:CreateButton({
-
     Name = "Destroy UI",
-
     Callback = function()
-
-        AutoPlantEnabled = false
-
         Rayfield:Destroy()
-
     end
 })
 
 MainTab:CreateSection("Themes")
 
-local Themes = {
-    "Default",
-    "AmberGlow",
-    "Amethyst",
-    "Bloom",
-    "DarkBlue",
-    "Green",
-    "Light",
-    "Ocean",
-    "Serenity"
-}
-
-for _, ThemeName in ipairs(Themes) do
+local Themes = {"Default", "AmberGlow", "Amethyst", "Bloom", "DarkBlue", "Green", "Light", "Ocean", "Serenity"}
+for i = 1, #Themes do
+    local themeName = Themes[i]
     MainTab:CreateButton({
-        Name = ThemeName,
-
+        Name = themeName,
         Callback = function()
-            Window.ModifyTheme(ThemeName)
-
+            Window.ModifyTheme(themeName)
             Rayfield:Notify({
                 Title = "Theme Changed",
-                Content = "Theme: " .. ThemeName,
+                Content = "Theme: " .. themeName,
                 Duration = 2
             })
         end
@@ -3099,231 +3025,63 @@ end
 --============================================================
 
 local ESPTab = Window:CreateTab("ESP", 4483362458)
-
 ESPTab:CreateSection("ESP Settings")
 
-ESPTab:CreateToggle({
-    Name = "Enable ESP",
-    CurrentValue = false,
-    Flag = "ESPEnabled",
-    Callback = function(Value) Settings.ESPEnabled = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Show 3D Boxes",
-    CurrentValue = false,
-    Flag = "ESPBoxes",
-    Callback = function(Value) Settings.ESPBoxes = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Show Names",
-    CurrentValue = false,
-    Flag = "ESPNames",
-    Callback = function(Value) Settings.ESPNames = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Show Distance",
-    CurrentValue = false,
-    Flag = "ESPDistance",
-    Callback = function(Value) Settings.ESPDistance = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Show Health",
-    CurrentValue = false,
-    Flag = "ESPHealth",
-    Callback = function(Value) Settings.ESPHealth = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Show Tracers",
-    CurrentValue = false,
-    Flag = "ESPTracers",
-    Callback = function(Value) Settings.ESPTracers = Value end
-})
-
-ESPTab:CreateToggle({
-    Name = "Team Check",
-    CurrentValue = Settings.TeamCheck,
-    Flag = "ESP_TeamCheck",
-    Callback = function(Value) 
-        Settings.TeamCheck = Value 
-    end
-})
+ESPTab:CreateToggle({Name = "Enable ESP", CurrentValue = false, Flag = "ESPEnabled", Callback = function(V) Settings.ESPEnabled = V end})
+ESPTab:CreateToggle({Name = "Show 3D Boxes", CurrentValue = false, Flag = "ESPBoxes", Callback = function(V) Settings.ESPBoxes = V end})
+ESPTab:CreateToggle({Name = "Show Names", CurrentValue = false, Flag = "ESPNames", Callback = function(V) Settings.ESPNames = V end})
+ESPTab:CreateToggle({Name = "Show Distance", CurrentValue = false, Flag = "ESPDistance", Callback = function(V) Settings.ESPDistance = V end})
+ESPTab:CreateToggle({Name = "Show Health", CurrentValue = false, Flag = "ESPHealth", Callback = function(V) Settings.ESPHealth = V end})
+ESPTab:CreateToggle({Name = "Show Tracers", CurrentValue = false, Flag = "ESPTracers", Callback = function(V) Settings.ESPTracers = V end})
+ESPTab:CreateToggle({Name = "Team Check", CurrentValue = Settings.TeamCheck, Flag = "ESP_TeamCheck", Callback = function(V) Settings.TeamCheck = V end})
 
 ESPTab:CreateSection("Box")
-
-ESPTab:CreateColorPicker({
-    Name = "Box Color",
-    Color = Settings.BoxColor,
-    Flag = "BoxColor",
-    Callback = function(Value) Settings.BoxColor = Value end
-})
-
-ESPTab:CreateSlider({
-    Name = "Box Thickness",
-    Range = {1, 5},
-    Increment = 0.5,
-    Suffix = " px",
-    CurrentValue = 1.5,
-    Flag = "BoxThickness",
-    Callback = function(Value) Settings.BoxThickness = Value end
-})
+ESPTab:CreateColorPicker({Name = "Box Color", Color = Settings.BoxColor, Flag = "BoxColor", Callback = function(V) Settings.BoxColor = V end})
+ESPTab:CreateSlider({Name = "Box Thickness", Range = {1, 5}, Increment = 0.5, Suffix = " px", CurrentValue = 1.5, Flag = "BoxThickness", Callback = function(V) Settings.BoxThickness = V end})
 
 ESPTab:CreateSection("Tracers")
-
-ESPTab:CreateColorPicker({
-    Name = "Tracer Color",
-    Color = Settings.TracerColor,
-    Flag = "TracerColor",
-    Callback = function(Value) Settings.TracerColor = Value end
-})
-
-ESPTab:CreateDropdown({
-    Name = "Tracer Origin",
-    Options = {"Bottom", "Center", "Top"},
-    CurrentOption = {"Bottom"},
-    MultipleOptions = false,
-    Flag = "TracerOrigin",
-    Callback = function(Value)
-        Settings.TracerOrigin = typeof(Value) == "table" and Value[1] or Value
-    end
-})
-
-ESPTab:CreateSlider({
-    Name = "Tracer Thickness",
-    Range = {1, 5},
-    Increment = 0.5,
-    Suffix = " px",
-    CurrentValue = 1.5,
-    Flag = "TracerThickness",
-    Callback = function(Value) Settings.TracerThickness = Value end
-})
+ESPTab:CreateColorPicker({Name = "Tracer Color", Color = Settings.TracerColor, Flag = "TracerColor", Callback = function(V) Settings.TracerColor = V end})
+ESPTab:CreateDropdown({Name = "Tracer Origin", Options = {"Bottom", "Center", "Top"}, CurrentOption = {"Bottom"}, MultipleOptions = false, Flag = "TracerOrigin", Callback = function(V) Settings.TracerOrigin = typeof(V) == "table" and V[1] or V end})
+ESPTab:CreateSlider({Name = "Tracer Thickness", Range = {1, 5}, Increment = 0.5, Suffix = " px", CurrentValue = 1.5, Flag = "TracerThickness", Callback = function(V) Settings.TracerThickness = V end})
 
 --============================================================
 -- AIM TAB
 --============================================================
 
 local AimTab = Window:CreateTab("Aim Test", 4483362458)
-
 AimTab:CreateSection("Player Aim Testing")
 
-AimTab:CreateToggle({
-    Name = "Aimbot",
-    CurrentValue = false,
-    Flag = "Aimbot",
-    Callback = function(Value)
-        Settings.Aimbot = Value
-        if not Value then Settings.AimTarget = nil end
-    end
-})
-
-AimTab:CreateToggle({
-    Name = "Target Lock",
-    CurrentValue = false,
-    Flag = "TargetLock",
-    Callback = function(Value)
-        Settings.TargetLock = Value
-        if not Value then Settings.AimTarget = nil end
-    end
-})
-
-AimTab:CreateToggle({
-    Name = "Wall Check",
-    CurrentValue = true,
-    Flag = "WallCheck",
-    Callback = function(Value) Settings.WallCheck = Value end
-})
-
-AimTab:CreateToggle({
-    Name = "Show FOV",
-    CurrentValue = false,
-    Flag = "ShowFOV",
-    Callback = function(Value) Settings.ShowFOV = Value end
-})
-
-AimTab:CreateToggle({
-    Name = "Team Check",
-    CurrentValue = Settings.TeamCheck,
-    Flag = "Aim_TeamCheck",
-    Callback = function(Value) 
-        Settings.TeamCheck = Value 
-    end
-})
-
-AimTab:CreateDropdown({
-    Name = "Target Part",
-    Options = {"Head", "HumanoidRootPart"},
-    CurrentOption = {"Head"},
-    MultipleOptions = false,
-    Flag = "TargetPart",
-    Callback = function(Value)
-        Settings.TargetPart = typeof(Value) == "table" and Value[1] or Value
-    end
-})
-
-AimTab:CreateSlider({
-    Name = "FOV",
-    Range = {50, 500},
-    Increment = 10,
-    Suffix = " px",
-    CurrentValue = 150,
-    Flag = "AimFOV",
-    Callback = function(Value) Settings.FOV = Value end
-})
-
-AimTab:CreateSlider({
-    Name = "Smoothness",
-    Range = {0.01, 1},
-    Increment = 0.05,
-    Suffix = "",
-    CurrentValue = 0.20,
-    Flag = "AimSmoothness",
-    Callback = function(Value) Settings.Smoothness = Value end
-})
+AimTab:CreateToggle({Name = "Aimbot", CurrentValue = false, Flag = "Aimbot", Callback = function(V) Settings.Aimbot = V if not V then Settings.AimTarget = nil end end})
+AimTab:CreateToggle({Name = "Target Lock", CurrentValue = false, Flag = "TargetLock", Callback = function(V) Settings.TargetLock = V if not V then Settings.AimTarget = nil end end})
+AimTab:CreateToggle({Name = "Wall Check", CurrentValue = true, Flag = "WallCheck", Callback = function(V) Settings.WallCheck = V end})
+AimTab:CreateToggle({Name = "Show FOV", CurrentValue = false, Flag = "ShowFOV", Callback = function(V) Settings.ShowFOV = V end})
+AimTab:CreateToggle({Name = "Team Check", CurrentValue = Settings.TeamCheck, Flag = "Aim_TeamCheck", Callback = function(V) Settings.TeamCheck = V end})
+AimTab:CreateDropdown({Name = "Target Part", Options = {"Head", "HumanoidRootPart"}, CurrentOption = {"Head"}, MultipleOptions = false, Flag = "TargetPart", Callback = function(V) Settings.TargetPart = typeof(V) == "table" and V[1] or V end})
+AimTab:CreateSlider({Name = "FOV", Range = {50, 500}, Increment = 10, Suffix = " px", CurrentValue = 150, Flag = "AimFOV", Callback = function(V) Settings.FOV = V end})
+AimTab:CreateSlider({Name = "Smoothness", Range = {0.01, 1}, Increment = 0.05, Suffix = "", CurrentValue = 0.20, Flag = "AimSmoothness", Callback = function(V) Settings.Smoothness = V end})
 
 --============================================================
--- NPC COMBAT TAB
+-- HIGH PERFORMANCE ESP LOOP
 --============================================================
 
-local CombatTab = Window:CreateTab("NPC Combat", 4483362458)
+RunService.RenderStepped:Connect(function()
+    if not Settings.ESPEnabled then return end
 
-CombatTab:CreateSection("TestEnemy Combat")
-
-CombatTab:CreateButton({
-    Name = "Attack Test Enemies In Range",
-    Callback = function()
-        if not CombatEvent then return end
-
-        local character = getCharacter()
-        local root = getRoot(character)
-        if not root then return end
-
-        for _, enemy in ipairs(CollectionService:GetTagged("TestEnemy")) do
-            if isValidEnemy(enemy) then
-                local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
-                local distance = (root.Position - enemyRoot.Position).Magnitude
-
-                if distance <= 10 then
-                    CombatEvent:FireServer("Attack", enemy)
-                end
-            end
-        end
-    end
-})
-
---============================================================
--- ESP RENDER LOOP
---============================================================
-
-RunService.RenderStepped:Connect(function(deltaTime)
     local character = getCharacter()
     local localRoot = getRoot(character)
+    if not localRoot then return end
+
+    local viewportSize = Camera.ViewportSize
+    local originX, originY = viewportSize.X * 0.5, viewportSize.Y
+    if Settings.TracerOrigin == "Center" then
+        originY = viewportSize.Y * 0.5
+    elseif Settings.TracerOrigin == "Top" then
+        originY = 0
+    end
+    local tracerOrigin = Vector2.new(originX, originY)
 
     for player, drawings in pairs(ESPCache) do
-        if not Settings.ESPEnabled or not localRoot or not isValidPlayerTarget(player) then
+        if not isValidPlayerTarget(player) then
             hideESP(drawings)
             continue
         end
@@ -3337,73 +3095,49 @@ RunService.RenderStepped:Connect(function(deltaTime)
             continue
         end
 
-        local size = Vector3.new(2, 3, 2)
-        local cf = root.CFrame
-
-        local corners = {
-            cf * CFrame.new(-size.X, size.Y, -size.Z),
-            cf * CFrame.new(size.X, size.Y, -size.Z),
-            cf * CFrame.new(size.X, size.Y, size.Z),
-            cf * CFrame.new(-size.X, size.Y, size.Z),
-            cf * CFrame.new(-size.X, -size.Y, -size.Z),
-            cf * CFrame.new(size.X, -size.Y, -size.Z),
-            cf * CFrame.new(size.X, -size.Y, size.Z),
-            cf * CFrame.new(-size.X, -size.Y, size.Z)
-        }
-
-        local screenCorners = {}
-        local minX, minY, maxY = math.huge, math.huge, -math.huge
-        local allVisible = true
-
-        for i, corner in ipairs(corners) do
-            local position, visible = Camera:WorldToViewportPoint(corner.Position)
-            if not visible then allVisible = false end
-
-            screenCorners[i] = Vector2.new(position.X, position.Y)
-            minX = math.min(minX, position.X)
-            minY = math.min(minY, position.Y)
-            maxY = math.max(maxY, position.Y)
-        end
-
-        local connections = {
-            {1,2}, {2,3}, {3,4}, {4,1},
-            {5,6}, {6,7}, {7,8}, {8,5},
-            {1,5}, {2,6}, {3,7}, {4,8}
-        }
-
-        if Settings.ESPBoxes and allVisible then
-            for i, connection in ipairs(connections) do
-                local line = drawings.Lines[i]
-                line.From = screenCorners[connection[1]]
-                line.To = screenCorners[connection[2]]
-                line.Color = Settings.BoxColor
-                line.Thickness = Settings.BoxThickness
-                line.Visible = true
-            end
-        else
-            for _, line in ipairs(drawings.Lines) do
-                line.Visible = false
-            end
-        end
-
         local screenPosition, visible = Camera:WorldToViewportPoint(root.Position)
         if not visible then
             hideESP(drawings)
             continue
         end
 
-        if Settings.ESPTracers then
-            local viewport = Camera.ViewportSize
-            local origin = Vector2.new(viewport.X / 2, viewport.Y)
+        if Settings.ESPBoxes then
+            local cf = root.CFrame
+            local sizeX, sizeY, sizeZ = 2, 3, 2
 
-            if Settings.TracerOrigin == "Center" then
-                origin = Vector2.new(viewport.X / 2, viewport.Y / 2)
-            elseif Settings.TracerOrigin == "Top" then
-                origin = Vector2.new(viewport.X / 2, 0)
+            local screenCorners = table.create(8)
+            local allVisible = true
+
+            for i = 1, 8 do
+                local offsetX = (i == 1 or i == 4 or i == 5 or i == 8) and -sizeX or sizeX
+                local offsetY = (i <= 4) and sizeY or -sizeY
+                local offsetZ = (i == 1 or i == 2 or i == 5 or i == 6) and -sizeZ or sizeZ
+
+                local pos, vis = Camera:WorldToViewportPoint((cf * CFrame.new(offsetX, offsetY, offsetZ)).Position)
+                if not vis then allVisible = false break end
+                screenCorners[i] = Vector2.new(pos.X, pos.Y)
             end
 
-            drawings.Tracer.From = origin
-            drawings.Tracer.To = Vector2.new(screenPosition.X, maxY)
+            if allVisible then
+                for i = 1, 12 do
+                    local line = drawings.Lines[i]
+                    local conn = boxConnections[i]
+                    line.From = screenCorners[conn[1]]
+                    line.To = screenCorners[conn[2]]
+                    line.Color = Settings.BoxColor
+                    line.Thickness = Settings.BoxThickness
+                    line.Visible = true
+                end
+            else
+                for i = 1, 12 do drawings.Lines[i].Visible = false end
+            end
+        else
+            for i = 1, 12 do drawings.Lines[i].Visible = false end
+        end
+
+        if Settings.ESPTracers then
+            drawings.Tracer.From = tracerOrigin
+            drawings.Tracer.To = Vector2.new(screenPosition.X, screenPosition.Y)
             drawings.Tracer.Color = Settings.TracerColor
             drawings.Tracer.Thickness = Settings.TracerThickness
             drawings.Tracer.Visible = true
@@ -3412,37 +3146,19 @@ RunService.RenderStepped:Connect(function(deltaTime)
         end
 
         local distance = (localRoot.Position - root.Position).Magnitude
-        local text = player.Name
-
-        if Settings.ESPDistance then
-            text = text .. string.format(" [%d studs]", math.floor(distance))
-        end
+        local text = Settings.ESPDistance and string.format("%s [%d studs]", player.Name, math.floor(distance)) or player.Name
 
         drawings.NameTag.Text = text
-        drawings.NameTag.Position = Vector2.new(screenPosition.X, minY - 16)
+        drawings.NameTag.Position = Vector2.new(screenPosition.X, screenPosition.Y - 20)
         drawings.NameTag.Visible = Settings.ESPNames or Settings.ESPDistance
 
         if Settings.ESPHealth then
-            local boxHeight = math.max(math.abs(maxY - minY), 1)
             local maxHealth = math.max(humanoid.MaxHealth, 1)
             local healthPercent = math.clamp(humanoid.Health / maxHealth, 0, 1)
 
-            local barWidth = 3
-            local barHeight = boxHeight * healthPercent
-            local healthColor = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
-
-            drawings.HealthOutline.Size = Vector2.new(barWidth + 2, boxHeight + 2)
-            drawings.HealthOutline.Position = Vector2.new(minX - barWidth - 6, minY - 1)
-            drawings.HealthOutline.Visible = true
-
-            drawings.HealthBar.Size = Vector2.new(barWidth, barHeight)
-            drawings.HealthBar.Position = Vector2.new(minX - barWidth - 5, minY + (boxHeight - barHeight))
-            drawings.HealthBar.Color = healthColor
-            drawings.HealthBar.Visible = true
-
             drawings.HealthText.Text = string.format("%d/%d HP", math.floor(humanoid.Health), math.floor(maxHealth))
-            drawings.HealthText.Color = healthColor
-            drawings.HealthText.Position = Vector2.new(minX - 60, minY)
+            drawings.HealthText.Color = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+            drawings.HealthText.Position = Vector2.new(screenPosition.X - 30, screenPosition.Y + 10)
             drawings.HealthText.Visible = true
         else
             drawings.HealthOutline.Visible = false
@@ -3457,24 +3173,19 @@ end)
 --============================================================
 
 RunService.RenderStepped:Connect(function(deltaTime)
-    if FOVCircle then
-        FOVCircle.Visible = Settings.ShowFOV
-        if Settings.ShowFOV then
-            local viewport = Camera.ViewportSize
-            FOVCircle.Position = Vector2.new(viewport.X / 2, viewport.Y / 2)
-            FOVCircle.Radius = Settings.FOV
-        end
+    if Settings.ShowFOV then
+        local viewport = Camera.ViewportSize
+        FOVCircle.Position = Vector2.new(viewport.X * 0.5, viewport.Y * 0.5)
+        FOVCircle.Radius = Settings.FOV
+        FOVCircle.Visible = true
+    else
+        FOVCircle.Visible = false
     end
 
     if not Settings.Aimbot then return end
 
-    local target
-    if Settings.TargetLock and isValidPlayerTarget(Settings.AimTarget) then
-        target = Settings.AimTarget
-    else
-        target = getAimTarget()
-        Settings.AimTarget = target
-    end
+    local target = (Settings.TargetLock and isValidPlayerTarget(Settings.AimTarget)) and Settings.AimTarget or getAimTarget()
+    Settings.AimTarget = target
 
     if not target or not target.Character then return end
 
@@ -3485,21 +3196,16 @@ RunService.RenderStepped:Connect(function(deltaTime)
     end
 
     local alpha = math.clamp(Settings.Smoothness * (deltaTime * 60), 0, 1)
-    local desired = CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
-    Camera.CFrame = Camera.CFrame:Lerp(desired, alpha)
+    Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, targetPart.Position), alpha)
 end)
 
 --============================================================
--- CHARACTER RESET
+-- CHARACTER RESET & INITIALIZATION
 --============================================================
 
 LocalPlayer.CharacterAdded:Connect(function()
     Settings.AimTarget = nil
 end)
-
---============================================================
--- READY
---============================================================
 
 Rayfield:Notify({
     Title = "Dark Hub",
@@ -3507,17 +3213,12 @@ Rayfield:Notify({
     Duration = 3
 })
 
---============================================================
--- UNSUPPORTED GAME FALLBACK
---============================================================
 else
-
     Rayfield:Notify({
         Title = "Unsupported Game",
         Content = "Dark Hub does not support this game.",
         Duration = 5
     })
-
 end
 
 pcall(function()
