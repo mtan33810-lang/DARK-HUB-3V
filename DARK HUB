@@ -2303,6 +2303,24 @@ MainTab:CreateSlider({
 })
 
 MainTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {0, 300},
+    Increment = 1,
+    Suffix = " Speed",
+    CurrentValue = 16,
+    Flag = "WalkSpeed",
+
+    Callback = function(Value)
+        local Character = game:GetService("Players").LocalPlayer.Character
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid then
+            Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+MainTab:CreateSlider({
     Name = "Jump Height",
     Range = {0, 300},
     Increment = 1,
@@ -2330,11 +2348,6 @@ SettingsTab:CreateButton({
     Callback = function()
 
         AutoPlantEnabled = false
-
-        if tpWalkConnection then
-            tpWalkConnection:Disconnect()
-            tpWalkConnection = nil
-        end
 
         Rayfield:Destroy()
 
