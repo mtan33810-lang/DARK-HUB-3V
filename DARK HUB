@@ -2252,7 +2252,10 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
--- Alternative TP Walk Implementation
+--============================================================
+-- TP WALK
+--============================================================
+
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -2269,23 +2272,50 @@ MainTab:CreateToggle({
     Callback = function(Value)
         tpWalkEnabled = Value
 
+        -- Disconnect previous connection
         if tpWalkConnection then
             tpWalkConnection:Disconnect()
             tpWalkConnection = nil
         end
 
-        if tpWalkEnabled then
-            tpWalkConnection = RunService.Heartbeat:Connect(function()
-                local Character = LocalPlayer.Character
-                local HRP = Character and Character:FindFirstChild("HumanoidRootPart")
-                local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-
-                if HRP and Humanoid and Humanoid.MoveVector.Magnitude > 0 then
-                    local moveDir = Humanoid.MoveVector
-                    HRP.CFrame = HRP.CFrame + Vector3.new(moveDir.X, 0, moveDir.Z) * (tpWalkSpeed / 2)
-                end
-            end)
+        if not tpWalkEnabled then
+            return
         end
+
+        tpWalkConnection = RunService.Heartbeat:Connect(function(deltaTime)
+            if not tpWalkEnabled then
+                return
+            end
+
+            local Character = LocalPlayer.Character
+            if not Character then
+                return
+            end
+
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            local HRP = Character:FindFirstChild("HumanoidRootPart")
+
+            if not Humanoid or not HRP then
+                return
+            end
+
+            -- Use MoveDirection, not MoveVector
+            local moveDirection = Humanoid.MoveDirection
+
+            if moveDirection.Magnitude > 0 then
+                -- Normalize so diagonal movement isn't faster
+                moveDirection = moveDirection.Unit
+
+                -- Movement amount based on time
+                local distance = tpWalkSpeed * deltaTime * 10
+
+                HRP.CFrame = HRP.CFrame + Vector3.new(
+                    moveDirection.X,
+                    0,
+                    moveDirection.Z
+                ) * distance
+            end
+        end)
     end
 })
 
@@ -2341,7 +2371,7 @@ MainTab:CreateSlider({
 
 MainTab:CreateSection("Setting")
 
-SettingsTab:CreateButton({
+MainTab:CreateButton({
 
     Name = "Destroy UI",
 
