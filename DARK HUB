@@ -2252,21 +2252,54 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
-MainTab:CreateSlider({
-    Name = "Walk Speed",
-    Range = {0, 300},
-    Increment = 1,
-    Suffix = " Speed",
-    CurrentValue = 16,
-    Flag = "WalkSpeed",
+-- TP Walk Implementation
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local tpWalkEnabled = false
+local tpWalkSpeed = 1
+local tpWalkConnection = nil
+
+MainTab:CreateToggle({
+    Name = "TP Walk",
+    CurrentValue = false,
+    Flag = "TPWalkToggle",
 
     Callback = function(Value)
-        local Character = game:GetService("Players").LocalPlayer.Character
-        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        tpWalkEnabled = Value
 
-        if Humanoid then
-            Humanoid.WalkSpeed = Value
+        if tpWalkConnection then
+            tpWalkConnection:Disconnect()
+            tpWalkConnection = nil
         end
+
+        if tpWalkEnabled then
+            tpWalkConnection = RunService.RenderStepped:Connect(function(delta)
+                local Character = LocalPlayer.Character
+                if not Character then return end
+
+                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                local HRP = Character:FindFirstChild("HumanoidRootPart")
+
+                if Humanoid and HRP and Humanoid.MoveVector.Magnitude > 0 then
+                    HRP.CFrame = HRP.CFrame + (Humanoid.MoveVector * (tpWalkSpeed * 10) * delta)
+                end
+            end)
+        end
+    end
+})
+
+MainTab:CreateSlider({
+    Name = "TP Walk Speed",
+    Range = {1, 50},
+    Increment = 1,
+    Suffix = " Multiplier",
+    CurrentValue = 1,
+    Flag = "TPWalkSpeed",
+
+    Callback = function(Value)
+        tpWalkSpeed = Value
     end
 })
 
@@ -2298,6 +2331,11 @@ SettingsTab:CreateButton({
     Callback = function()
 
         AutoPlantEnabled = false
+
+        if tpWalkConnection then
+            tpWalkConnection:Disconnect()
+            tpWalkConnection = nil
+        end
 
         Rayfield:Destroy()
 
