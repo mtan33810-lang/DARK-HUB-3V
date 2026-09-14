@@ -2253,7 +2253,7 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 end)
 
 --============================================================
--- TP WALK
+-- TP WALK (Velocity-Based Anti-Rubberband)
 --============================================================
 
 local RunService = game:GetService("RunService")
@@ -2261,7 +2261,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local tpWalkEnabled = false
-local tpWalkSpeed = 2
+local tpWalkSpeed = 50
 local tpWalkConnection
 
 MainTab:CreateToggle({
@@ -2281,7 +2281,7 @@ MainTab:CreateToggle({
             return
         end
 
-        tpWalkConnection = RunService.Heartbeat:Connect(function(dt)
+        tpWalkConnection = RunService.PreSimulation:Connect(function()
             local Character = LocalPlayer.Character
             if not Character then return end
 
@@ -2292,22 +2292,15 @@ MainTab:CreateToggle({
                 return
             end
 
-            local direction = Humanoid.MoveDirection
+            local moveDirection = Humanoid.MoveDirection
 
-            if direction.Magnitude > 0 then
-                direction = direction.Unit
-
-                -- Smaller, smoother movement prevents rubber-banding
-                local distance = tpWalkSpeed * 4 * dt
-
-                local currentPivot = Character:GetPivot()
-                local newPosition =
-                    currentPivot.Position +
-                    Vector3.new(direction.X, 0, direction.Z) * distance
-
-                Character:PivotTo(
-                    CFrame.new(newPosition) *
-                    currentPivot.Rotation
+            if moveDirection.Magnitude > 0 then
+                -- Apply target velocity directly to physics engine
+                local targetVelocity = moveDirection.Unit * (tpWalkSpeed * 5)
+                RootPart.AssemblyLinearVelocity = Vector3.new(
+                    targetVelocity.X,
+                    RootPart.AssemblyLinearVelocity.Y,
+                    targetVelocity.Z
                 )
             end
         end)
@@ -2316,10 +2309,10 @@ MainTab:CreateToggle({
 
 MainTab:CreateSlider({
     Name = "TP Walk Speed",
-    Range = {1, 20},
+    Range = {1, 100},
     Increment = 1,
     Suffix = " Speed",
-    CurrentValue = 2,
+    CurrentValue = 50,
     Flag = "TPWalkSpeed",
 
     Callback = function(Value)
