@@ -33,37 +33,12 @@ local Rayfield = loadstring(game:HttpGet(
 ))()
 
 --============================================================
--- GAME-SPECIFIC RAYFIELD WINDOW
--- Only the window for the current game is created.
+-- GAME 1: GROW A GARDEN
 --============================================================
-
-local WindowName = "✨ DARK HUB ✨"
-local WindowSubtitle = "by Max"
-local ShowText = "Rayfield"
-
 if game.PlaceId == Games.GrowAGarden then
-    WindowName = "🌱 DARK HUB - Grow a Garden"
-    WindowSubtitle = "Grow a Garden"
-    ShowText = "Grow a Garden"
-
-elseif game.PlaceId == Games.StealAnEgg then
-    WindowName = "🥚 DARK HUB - Steal a Egg"
-    WindowSubtitle = "Steal a Egg"
-    ShowText = "Steal a Egg"
-
-elseif game.PlaceId == Games.Rivals then
-    WindowName = "🎯 DARK HUB - Rivals"
-    WindowSubtitle = "Rivals"
-    ShowText = "Rivals"
-
-else
-    WindowName = "✨ DARK HUB - Unsupported"
-    WindowSubtitle = "Unsupported Game"
-    ShowText = "Unsupported"
-end
 
 local Window = Rayfield:CreateWindow({
-    Name = "✨ DARK HUB ✨",
+    Name = "🌱 DARK HUB - Grow a Garden",
     Icon = 0,
     LoadingTitle = "Dark Hub",
     LoadingSubtitle = "by Max",
@@ -85,11 +60,6 @@ local Window = Rayfield:CreateWindow({
 
     KeySystem = false
 })
-
---============================================================
--- GAME 1: GROW A GARDEN
---============================================================
-if game.PlaceId == Games.GrowAGarden then
 
 --============================================================
 -- SERVICES & LOCAL PLAYER
@@ -2227,6 +2197,30 @@ Rayfield:Notify({
 --============================================================
 elseif game.PlaceId == Games.StealAnEgg then
 
+local Window = Rayfield:CreateWindow({
+    Name = "🥚 DARK HUB - Steal a Egg",
+    Icon = 0,
+    LoadingTitle = "Dark Hub",
+    LoadingSubtitle = "by Max",
+    ShowText = "Rayfield",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "DARK HUB",
+        FileName = ConfigFileName
+    },
+
+    Discord = {
+        Enabled = true,
+        Invite = "https://discord.gg/aVbaNvP8w",
+        RememberJoins = true
+    },
+
+    KeySystem = false
+})
+
 local MainTab = Window:CreateTab("Main", 4483362458)
 
 MainTab:CreateSection("🚶Movement")
@@ -2351,6 +2345,30 @@ Rayfield:Notify({
 -- GAME 3: RIVALS
 --============================================================
 elseif game.GameId == Games.Rivals then
+
+local Window = Rayfield:CreateWindow({
+    Name = "🎯 DARK HUB - Rivals",
+    Icon = 0,
+    LoadingTitle = "Dark Hub",
+    LoadingSubtitle = "by Max",
+    ShowText = "Rayfield",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "DARK HUB",
+        FileName = ConfigFileName
+    },
+
+    Discord = {
+        Enabled = true,
+        Invite = "https://discord.gg/aVbaNvP8w",
+        RememberJoins = true
+    },
+
+    KeySystem = false
+})
 
 --============================================================
 -- SERVICES
