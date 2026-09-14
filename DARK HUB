@@ -2262,7 +2262,7 @@ local LocalPlayer = Players.LocalPlayer
 
 local tpWalkEnabled = false
 local tpWalkSpeed = 2
-local tpWalkConnection = nil
+local tpWalkConnection
 
 MainTab:CreateToggle({
     Name = "TP Walk",
@@ -2272,48 +2272,43 @@ MainTab:CreateToggle({
     Callback = function(Value)
         tpWalkEnabled = Value
 
-        -- Disconnect previous connection
         if tpWalkConnection then
             tpWalkConnection:Disconnect()
             tpWalkConnection = nil
         end
 
-        if not tpWalkEnabled then
+        if not Value then
             return
         end
 
-        tpWalkConnection = RunService.Heartbeat:Connect(function(deltaTime)
-            if not tpWalkEnabled then
-                return
-            end
-
+        tpWalkConnection = RunService.Heartbeat:Connect(function(dt)
             local Character = LocalPlayer.Character
-            if not Character then
-                return
-            end
+            if not Character then return end
 
             local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            local HRP = Character:FindFirstChild("HumanoidRootPart")
+            local RootPart = Character:FindFirstChild("HumanoidRootPart")
 
-            if not Humanoid or not HRP then
+            if not Humanoid or not RootPart then
                 return
             end
 
-            -- Use MoveDirection, not MoveVector
-            local moveDirection = Humanoid.MoveDirection
+            local direction = Humanoid.MoveDirection
 
-            if moveDirection.Magnitude > 0 then
-                -- Normalize so diagonal movement isn't faster
-                moveDirection = moveDirection.Unit
+            if direction.Magnitude > 0 then
+                direction = direction.Unit
 
-                -- Movement amount based on time
-                local distance = tpWalkSpeed * deltaTime * 10
+                -- Smaller, smoother movement prevents rubber-banding
+                local distance = tpWalkSpeed * 4 * dt
 
-                HRP.CFrame = HRP.CFrame + Vector3.new(
-                    moveDirection.X,
-                    0,
-                    moveDirection.Z
-                ) * distance
+                local currentPivot = Character:GetPivot()
+                local newPosition =
+                    currentPivot.Position +
+                    Vector3.new(direction.X, 0, direction.Z) * distance
+
+                Character:PivotTo(
+                    CFrame.new(newPosition) *
+                    currentPivot.Rotation
+                )
             end
         end)
     end
