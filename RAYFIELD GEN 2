@@ -920,9 +920,9 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 Rayfield:Notify({
-    Title = "Dark Hub",
-    Content = "Rivals module loaded successfully.",
-    Duration = 3
+    title = "Dark Hub",
+    content = "Rivals module loaded successfully.",
+    duration = 3,
 })
 
 --============================================================
