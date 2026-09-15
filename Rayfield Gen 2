@@ -506,12 +506,18 @@ EspTab:CreateSection({
 })
 
 local gridEsp = EspTab:CreateGroup()
-local leftEsp = gridEsp:CreateGroup({ direction = "column" })
-local rightEsp = gridEsp:CreateGroup({ direction = "column" })
+
+local leftEsp = gridEsp:CreateGroup({
+    direction = "column"
+})
+
+local rightEsp = gridEsp:CreateGroup({
+    direction = "column"
+})
 
 leftEsp:CreateToggle({
     name = "Enable ESP",
-    default = false,
+    default = Settings.ESPEnabled or false,
     callback = function(value)
         Settings.ESPEnabled = value
     end
@@ -519,7 +525,7 @@ leftEsp:CreateToggle({
 
 leftEsp:CreateToggle({
     name = "Show 3D Boxes",
-    default = false,
+    default = Settings.ESPBoxes or false,
     callback = function(value)
         Settings.ESPBoxes = value
     end
@@ -527,7 +533,7 @@ leftEsp:CreateToggle({
 
 leftEsp:CreateToggle({
     name = "Show Names",
-    default = false,
+    default = Settings.ESPNames or false,
     callback = function(value)
         Settings.ESPNames = value
     end
@@ -535,7 +541,7 @@ leftEsp:CreateToggle({
 
 leftEsp:CreateToggle({
     name = "Show Distance",
-    default = false,
+    default = Settings.ESPDistance or false,
     callback = function(value)
         Settings.ESPDistance = value
     end
@@ -543,10 +549,10 @@ leftEsp:CreateToggle({
 
 leftEsp:CreateColorPicker({
     name = "Box Color",
-    color = Settings.BoxColor,
+    color = Settings.BoxColor or Color3.fromRGB(255, 255, 255),
     flag = "BoxColor",
-    callback = function(Value)
-        Settings.BoxColor = Value
+    callback = function(value)
+        Settings.BoxColor = value
     end
 })
 
@@ -557,14 +563,14 @@ leftEsp:CreateSlider({
     suffix = " px",
     currentValue = Settings.BoxThickness or 1.5,
     flag = "BoxThickness",
-    callback = function(Value)
-        Settings.BoxThickness = Value
+    callback = function(value)
+        Settings.BoxThickness = value
     end
 })
 
 rightEsp:CreateToggle({
     name = "Show Health",
-    default = false,
+    default = Settings.ESPHealth or false,
     callback = function(value)
         Settings.ESPHealth = value
     end
@@ -572,7 +578,7 @@ rightEsp:CreateToggle({
 
 rightEsp:CreateToggle({
     name = "Team Check",
-    default = Settings.TeamCheck,
+    default = Settings.TeamCheck or false,
     callback = function(value)
         Settings.TeamCheck = value
     end
@@ -580,7 +586,7 @@ rightEsp:CreateToggle({
 
 rightEsp:CreateToggle({
     name = "Show Tracers",
-    default = false,
+    default = Settings.ESPTracers or false,
     callback = function(value)
         Settings.ESPTracers = value
     end
@@ -589,11 +595,10 @@ rightEsp:CreateToggle({
 rightEsp:CreateDropdown({
     name = "Tracer Origin",
     options = {"Bottom", "Center", "Top"},
-    default = "Top",
-    callback = function(Value)
-        Settings.TracerOrigin = typeof(Value) == "table"
-            and Value[1]
-            or Value
+    default = Settings.TracerOrigin or "Top",
+    callback = function(value)
+        Settings.TracerOrigin =
+            typeof(value) == "table" and value[1] or value
     end
 })
 
@@ -604,17 +609,17 @@ rightEsp:CreateSlider({
     suffix = " px",
     currentValue = Settings.TracerThickness or 1.5,
     flag = "TracerThickness",
-    callback = function(Value)
-        Settings.TracerThickness = Value
+    callback = function(value)
+        Settings.TracerThickness = value
     end
 })
 
 rightEsp:CreateColorPicker({
     name = "Tracer Color",
-    color = Settings.TracerColor,
+    color = Settings.TracerColor or Color3.fromRGB(255, 255, 255),
     flag = "TracerColor",
-    callback = function(Value)
-        Settings.TracerColor = Value
+    callback = function(value)
+        Settings.TracerColor = value
     end
 })
 
