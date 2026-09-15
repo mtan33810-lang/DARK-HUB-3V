@@ -69,6 +69,73 @@ local boxConnections = {
 }
 
 --============================================================
+-- CONFIG SYSTEM MANAGER
+--============================================================
+
+local ConfigFolder = "DarkHubConfigs"
+local ConfigFile = ConfigFolder .. "/Rivals_Config.json"
+
+local function ensureFolder()
+    if makefolder and not isfolder(ConfigFolder) then
+        makefolder(ConfigFolder)
+    end
+end
+
+local function saveConfig()
+    ensureFolder()
+    if writefile then
+        local json = HttpService:JSONEncode(Settings)
+        writefile(ConfigFile, json)
+        Rayfield:Notify({
+            title = "Config Saved",
+            content = "Successfully saved settings to " .. ConfigFile,
+            duration = 3
+        })
+    else
+        Rayfield:Notify({
+            title = "Config Error",
+            content = "Your executor does not support file saving.",
+            duration = 3
+        })
+    end
+end
+
+local function loadConfig()
+    ensureFolder()
+    if readfile and isfile and isfile(ConfigFile) then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile(ConfigFile))
+        end)
+
+        if success and type(result) == "table" then
+            for key, val in pairs(result) do
+                if Settings[key] ~= nil then
+                    Settings[key] = val
+                end
+            end
+
+            Rayfield:Notify({
+                title = "Config Loaded",
+                content = "Loaded settings successfully! (Re-open menu to sync controls)",
+                duration = 4
+            })
+        else
+            Rayfield:Notify({
+                title = "Config Error",
+                content = "Corrupted configuration file.",
+                duration = 3
+            })
+        end
+    else
+        Rayfield:Notify({
+            title = "Config Not Found",
+            content = "No saved config found to load.",
+            duration = 3
+        })
+    end
+end
+
+--============================================================
 -- UTILITY FUNCTIONS
 --============================================================
 
@@ -394,6 +461,37 @@ RunService.RenderStepped:Connect(function(deltaTime)
     end
 end)
 
+
+MainTab:CreateSection({
+    name = "Configuration Manager"
+})
+
+MainTab:CreateButton({
+    name = "Save Config",
+    callback = function()
+        saveConfig()
+    end
+})
+
+MainTab:CreateButton({
+    name = "Load Config",
+    callback = function()
+        loadConfig()
+    end
+})
+
+MainTab:CreateButton({
+    name = "Reset to Defaults",
+    callback = function()
+        Settings = table.clone(DefaultSettings)
+        Rayfield:Notify({
+            title = "Config Reset",
+            content = "Settings reset to defaults.",
+            duration = 3
+        })
+    end
+})
+
 --============================================================
 -- ESP TAB
 --============================================================
@@ -709,6 +807,11 @@ end)
 LocalPlayer.CharacterAdded:Connect(function()
     Settings.AimTarget = nil
 end)
+
+-- Auto-load saved config on boot if present
+if isfile and isfile(ConfigFile) then
+    loadConfig()
+end
 
 Rayfield:Notify({
     title = "Dark Hub",
