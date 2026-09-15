@@ -28,9 +28,7 @@ else
     ConfigFileName = "DarkHub_Unsupported"
 end
 
-local Rayfield = loadstring(game:HttpGet(
-    "https://sirius.menu/rayfield"
-))()
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
 --============================================================
 -- GAME 1: GROW A GARDEN
