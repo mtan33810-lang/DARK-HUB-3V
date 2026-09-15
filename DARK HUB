@@ -28,7 +28,9 @@ else
     ConfigFileName = "DarkHub_Unsupported"
 end
 
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
+local Rayfield = loadstring(game:HttpGet(
+    "https://sirius.menu/rayfield"
+))()
 
 --============================================================
 -- GAME 1: GROW A GARDEN
@@ -2414,11 +2416,28 @@ Rayfield:Notify({
 --============================================================
 elseif game.PlaceId == Games.StealAnEgg then
 
-local window = Rayfield:CreateWindow({
-    name = "DARK HUB | Steal An Egg",
-    subtitle = "MAX",
-    sidebarLayout = true,
-    theme = "cobalt",
+local Window = Rayfield:CreateWindow({
+    Name = "🥚 DARK HUB | Steal An Egg",
+    Icon = 0,
+    LoadingTitle = "Dark Hub",
+    LoadingSubtitle = "by Max",
+    ShowText = "Rayfield",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "DARK HUB",
+        FileName = ConfigFileName
+    },
+
+    Discord = {
+        Enabled = true,
+        Invite = "https://discord.gg/aVbaNvP8w",
+        RememberJoins = true
+    },
+
+    KeySystem = false
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
