@@ -541,6 +541,27 @@ leftEsp:CreateToggle({
     end
 })
 
+leftEsp:CreateColorPicker({
+    name = "Box Color",
+    color = Settings.BoxColor,
+    flag = "BoxColor",
+    callback = function(Value)
+        Settings.BoxColor = Value
+    end
+})
+
+leftEsp:CreateSlider({
+    name = "Box Thickness",
+    range = {1, 5},
+    increment = 0.5,
+    suffix = " px",
+    currentValue = Settings.BoxThickness or 1.5,
+    flag = "BoxThickness",
+    callback = function(Value)
+        Settings.BoxThickness = Value
+    end
+})
+
 rightEsp:CreateToggle({
     name = "Show Health",
     default = false,
@@ -562,6 +583,38 @@ rightEsp:CreateToggle({
     default = false,
     callback = function(value)
         Settings.ESPTracers = value
+    end
+})
+
+rightEsp:CreateDropdown({
+    name = "Tracer Origin",
+    options = {"Bottom", "Center", "Top"},
+    default = "Top",
+    callback = function(Value)
+        Settings.TracerOrigin = typeof(Value) == "table"
+            and Value[1]
+            or Value
+    end
+})
+
+rightEsp:CreateSlider({
+    name = "Tracer Thickness",
+    range = {1, 5},
+    increment = 0.5,
+    suffix = " px",
+    currentValue = Settings.TracerThickness or 1.5,
+    flag = "TracerThickness",
+    callback = function(Value)
+        Settings.TracerThickness = Value
+    end
+})
+
+rightEsp:CreateColorPicker({
+    name = "Tracer Color",
+    color = Settings.TracerColor,
+    flag = "TracerColor",
+    callback = function(Value)
+        Settings.TracerColor = Value
     end
 })
 
