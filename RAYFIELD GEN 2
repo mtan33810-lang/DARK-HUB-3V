@@ -24,15 +24,12 @@ local window = Rayfield:CreateWindow({
     subtitle = "MAX",
     sidebarLayout = true,
     theme = "rose",
-})
 
-local window = Rayfield:CreateWindow({
-    name = "Dark Hub",
     configuration = {
-        autoSave = true,      -- save on change
-        autoLoad = true,      -- load on first open
+        autoSave = true,
+        autoLoad = true,
         fileName = "MyConfig",
-        customFolder = "MyGame", -- optional
+        customFolder = "MyGame",
     },
 })
 
