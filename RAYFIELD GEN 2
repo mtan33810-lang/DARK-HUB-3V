@@ -23,7 +23,7 @@ local window = Rayfield:CreateWindow({
     name = "DARK HUB",
     subtitle = "MAX",
     sidebarLayout = true,
-    theme = "cobalt",
+    theme = "rose",
 })
 
 local window = Rayfield:CreateWindow({
