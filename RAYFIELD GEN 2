@@ -503,17 +503,13 @@ MainTab:CreateSection({
 
 
 local Themes = {
-    "Default",
-    "AmberGlow",
-    "Amethyst",
-    "Bloom",
-    "DarkBlue",
-    "Green",
-    "Light",
-    "Ocean",
-    "Serenity"
+    "default",
+    "cobalt",
+    "ember", 
+    "amethyst",
+    "frost",
+    "rose"
 }
-
 
 for _, themeName in ipairs(Themes) do
 
