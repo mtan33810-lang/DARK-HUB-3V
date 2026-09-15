@@ -26,6 +26,16 @@ local window = Rayfield:CreateWindow({
     theme = "cobalt",
 })
 
+local window = Rayfield:CreateWindow({
+    name = "Dark Hub",
+    configuration = {
+        autoSave = true,      -- save on change
+        autoLoad = true,      -- load on first open
+        fileName = "MyConfig",
+        customFolder = "MyGame", -- optional
+    },
+})
+
 --============================================================
 -- SETTINGS
 --============================================================
