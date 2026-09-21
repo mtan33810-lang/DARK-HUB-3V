@@ -1493,7 +1493,7 @@ EventTab:CreateToggle({
 -- SHOP TAB
 --============================================================
 
-local ShopTab = Window:CreateTab("Shop", 747549066)
+local ShopTab = Window:CreateTab("Shop", "shopping-cart")
 
 ShopTab:CreateSection("SEED SHOP")
 
