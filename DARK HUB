@@ -820,7 +820,7 @@ end
 -- HOME TAB
 --============================================================
 
-local HomeTab = Window:CreateTab("🏠 Home", nil)
+local HomeTab = Window:CreateTab("Home", 7733960981)
 
 HomeTab:CreateSection("🚶Movement")
 
