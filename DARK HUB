@@ -1012,7 +1012,7 @@ end
 -- EVENT TAB
 --============================================================
 
-local EventTab = Window:CreateTab("🎉 Event", nil)
+local EventTab = Window:CreateTab("Event", 10709783673)
 
 EventTab:CreateSection("🌱 BEANSTALK")
 
