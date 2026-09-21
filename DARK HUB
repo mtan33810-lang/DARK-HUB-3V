@@ -1014,32 +1014,27 @@ end
 
 local EventTab = Window:CreateTab("Event", 10709783673)
 
-EventTab:CreateSection("🌱 BEANSTALK")
+ EventTab:CreateSection("🍂 FALL EVENT")
 
-local autoBeanstalk = false
+local autoFallSubmit = false
 
 EventTab:CreateToggle({
     Name = "Auto Submit All Plants",
     CurrentValue = false,
-    Flag = "AutoBeanstalk",
+    Flag = "AutoFallSubmit",
 
     Callback = function(Value)
-        autoBeanstalk = Value
+        autoFallSubmit = Value
 
         if Value then
             task.spawn(function()
-                while autoBeanstalk do
-                    local Events = GameEvents:FindFirstChild("Events")
+                while autoFallSubmit do
+                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                    local GameEvents = ReplicatedStorage:FindFirstChild("GameEvents")
 
-                    local BeanstalkEvent =
-                        Events
-                        and Events:FindFirstChild("BeanstalkEvent")
-
-                    local Submit =
-                        BeanstalkEvent
-                        and BeanstalkEvent:FindFirstChild(
-                            "BeanstalkRESubmitAllPlant"
-                        )
+                    local Events = GameEvents and GameEvents:FindFirstChild("Events")
+                    local FallMarketEvent = Events and Events:FindFirstChild("FallMarketEvent")
+                    local Submit = FallMarketEvent and FallMarketEvent:FindFirstChild("SubmitAllPlants")
 
                     if Submit then
                         Submit:FireServer()
