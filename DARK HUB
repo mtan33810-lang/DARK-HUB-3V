@@ -924,11 +924,25 @@ HomeTab:CreateButton({
 })
 
 local autoSell = false
+local sellDelay = 2
+
+HomeTab:CreateSlider({
+    Name = "⏱️ Auto Sell Delay",
+    Range = {0.1, 10},
+    Increment = 0.1,
+    Suffix = " seconds",
+    CurrentValue = 2,
+    Flag = "AutoSellDelay",
+    Callback = function(Value)
+        sellDelay = Value
+    end,
+})
 
 HomeTab:CreateToggle({
     Name = "🔄 Auto Sell Inventory",
     CurrentValue = false,
     Flag = "AutoSellFlag",
+
     Callback = function(Value)
         autoSell = Value
 
@@ -936,14 +950,67 @@ HomeTab:CreateToggle({
             task.spawn(function()
                 while autoSell do
                     pcall(function()
-                        local gameEvents = game:GetService("ReplicatedStorage"):FindFirstChild("GameEvents")
+                        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                        local gameEvents = ReplicatedStorage:FindFirstChild("GameEvents")
                         local sellEvent = gameEvents and gameEvents:FindFirstChild("Sell_Inventory")
 
                         if sellEvent and sellEvent:IsA("RemoteEvent") then
                             sellEvent:FireServer()
                         end
                     end)
-                    task.wait(2)
+
+                    task.wait(sellDelay)
+                end
+            end)
+        end
+    end,
+})
+
+local autoSellFull = false
+
+HomeTab:CreateToggle({
+    Name = "🎒 Auto Sell All When Backpack Is Full",
+    CurrentValue = false,
+    Flag = "AutoSellFullFlag",
+
+    Callback = function(Value)
+        autoSellFull = Value
+
+        if Value then
+            task.spawn(function()
+                while autoSellFull do
+                    pcall(function()
+                        local Players = game:GetService("Players")
+                        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+                        local player = Players.LocalPlayer
+                        local backpack = player:FindFirstChild("Backpack")
+
+                        if backpack then
+                            local capacity =
+                                player:GetAttribute("BackpackCapacity")
+                                or player:GetAttribute("InventoryCapacity")
+                                or backpack:GetAttribute("Capacity")
+
+                            local current = #backpack:GetChildren()
+
+                            if typeof(capacity) == "number"
+                                and current >= capacity then
+
+                                local gameEvents =
+                                    ReplicatedStorage:FindFirstChild("GameEvents")
+
+                                local sellEvent =
+                                    gameEvents and gameEvents:FindFirstChild("Sell_Inventory")
+
+                                if sellEvent and sellEvent:IsA("RemoteEvent") then
+                                    sellEvent:FireServer()
+                                end
+                            end
+                        end
+                    end)
+
+                    task.wait(0.5)
                 end
             end)
         end
