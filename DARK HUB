@@ -1130,6 +1130,86 @@ EventTab:CreateToggle({
     end,
 })
 
+EventTab:CreateSection("🛠️ FALL MARKET GEAR SHOP")
+
+local FallMarketGear = {
+    "Firefly Jar",
+    "Sky Lantern",
+    "Maple Leaf Kite",
+    "Leaf Blower",
+    "Maple Syrup",
+    "Maple Sprinkler",
+    "Bonfire",
+    "Harvest Basket",
+    "Maple Leaf Charm",
+    "Golden Acorn",
+    "Rake",
+    "Acorn Bell",
+    "Acorn Lollipop",
+    "Super Leaf Blower",
+}
+
+local selectedFallMarketGear = {}
+local autoBuyFallMarketGear = false
+
+EventTab:CreateDropdown({
+    Name = "🛠️ Select Fall Market Gear",
+    Options = FallMarketGear,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "FallMarketGearDropdownFlag",
+
+    Callback = function(Options)
+        selectedFallMarketGear =
+            typeof(Options) == "table" and Options or {Options}
+    end,
+})
+
+EventTab:CreateToggle({
+    Name = "🛒 Auto Buy Fall Market Gear",
+    CurrentValue = false,
+    Flag = "AutoBuyFallMarketGearFlag",
+
+    Callback = function(Value)
+        autoBuyFallMarketGear = Value
+
+        if Value then
+            task.spawn(function()
+                while autoBuyFallMarketGear do
+
+                    if #selectedFallMarketGear > 0 then
+                        pcall(function()
+                            local GameEvents =
+                                ReplicatedStorage:FindFirstChild("GameEvents")
+
+                            local BuyEvent =
+                                GameEvents
+                                and GameEvents:FindFirstChild("BuyEventShopStock")
+
+                            if BuyEvent and BuyEvent:IsA("RemoteEvent") then
+                                for _, item in ipairs(selectedFallMarketGear) do
+                                    if not autoBuyFallMarketGear then
+                                        break
+                                    end
+
+                                    BuyEvent:FireServer(
+                                        item,
+                                        "Fall Market Gear Shop"
+                                    )
+
+                                    task.wait(0.2)
+                                end
+                            end
+                        end)
+                    end
+
+                    task.wait(1)
+                end
+            end)
+        end
+    end,
+})
+
 EventTab:CreateSection("🌱 FALL MARKET SEED SHOP")
 
 local FallMarketSeeds = {
@@ -1272,64 +1352,6 @@ EventTab:CreateToggle({
                         end)
                     end
 
-                    task.wait(1)
-                end
-            end)
-        end
-    end,
-})
-
-EventTab:CreateSection("🤝 GOLIATH FRIENDSHIP DEALS")
-
-local GoliathFriendshipItems = {
-    "Skyroot Chest",
-    "Griffin Statue",
-    "Bouncy Mushroom",
-    "Beanstalk Painting",
-    "Can Of Beans",
-    "Glowpod",
-    "Flare Melon",
-    "Pet Shard GiantBean",
-    "Gnome",
-}
-
-local selectedFriendshipItems = {}
-local autoBuyFriendshipGoods = false
-
-EventTab:CreateDropdown({
-    Name = "🌱 Select Items to Auto Buy",
-    Options = GoliathFriendshipItems,
-    CurrentOption = {},
-    MultipleOptions = true,
-    Flag = "EventGoliathFriendshipDropdownFlag",
-    Callback = function(Options)
-        selectedFriendshipItems = typeof(Options) == "table" and Options or {Options}
-    end,
-})
-
-EventTab:CreateToggle({
-    Name = "🛒 Auto Buy Friendship Items",
-    CurrentValue = false,
-    Flag = "AutoBuyGoliathFriendshipFlag",
-    Callback = function(Value)
-        autoBuyFriendshipGoods = Value
-
-        if Value then
-            task.spawn(function()
-                while autoBuyFriendshipGoods do
-                    if selectedFriendshipItems and #selectedFriendshipItems > 0 then
-                        pcall(function()
-                            local gameEvents = ReplicatedStorage:FindFirstChild("GameEvents")
-                            local buyEvent = gameEvents and gameEvents:FindFirstChild("BuyEventShopStock")
-
-                            if buyEvent and buyEvent:IsA("RemoteEvent") then
-                                for _, item in ipairs(selectedFriendshipItems) do
-                                    if not autoBuyFriendshipGoods then break end
-                                    buyEvent:FireServer(item, "Goliath's Friends Deals")
-                                end
-                            end
-                        end)
-                    end
                     task.wait(1)
                 end
             end)
