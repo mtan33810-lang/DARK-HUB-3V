@@ -1204,59 +1204,74 @@ EventTab:CreateToggle({
     end,
 })
 
-EventTab:CreateSection("🪵 GOLIATH'S GOODS SHOP")
+EventTab:CreateSection("🎨 FALL MARKET COSMETIC SHOP")
 
-local GoliathsGoods = {
-    "Sprout Seed Pack",
-    "Sprout Egg",
-    "Mandrake Seed",
-    "Sprout Crate",
-    "Silver Fertilizer",
-    "Canary Melon Seed",
-    "Amberheart",
-    "Spriggan",
-    "Golden Goose Painting",
-    "Bean Chair",
-    "Giant Painting",
+local FallMarketCosmetics = {
+    "Fall Crate",
+    "Fall Leaf Chair",
+    "Maple Flag",
+    "Fall Wreath",
+    "Fall Hay Bale",
+    "Pile of Leaves",
+    "Flying Kite",
+    "Maple Crate",
+    "Fall Fountain",
 }
 
-local selectedGoliathItems = {}
-local autoBuyGoliathGoods = false
+local selectedFallMarketCosmetics = {}
+local autoBuyFallMarketCosmetics = false
 
 EventTab:CreateDropdown({
-    Name = "🌱 Select Goliath Items to Auto Buy",
-    Options = GoliathsGoods,
+    Name = "🎨 Select Fall Market Cosmetics",
+    Options = FallMarketCosmetics,
     CurrentOption = {},
     MultipleOptions = true,
-    Flag = "EventGoliathDropdownFlag",
+    Flag = "FallMarketCosmeticDropdownFlag",
+
     Callback = function(Options)
-        selectedGoliathItems = typeof(Options) == "table" and Options or {Options}
+        selectedFallMarketCosmetics =
+            typeof(Options) == "table" and Options or {Options}
     end,
 })
 
 EventTab:CreateToggle({
-    Name = "🛒 Auto Buy Goliath Goods",
+    Name = "🛒 Auto Buy Fall Market Cosmetics",
     CurrentValue = false,
-    Flag = "AutoBuyGoliathGoodsFlag",
+    Flag = "AutoBuyFallMarketCosmeticsFlag",
+
     Callback = function(Value)
-        autoBuyGoliathGoods = Value
+        autoBuyFallMarketCosmetics = Value
 
         if Value then
             task.spawn(function()
-                while autoBuyGoliathGoods do
-                    if selectedGoliathItems and #selectedGoliathItems > 0 then
-                        pcall(function()
-                            local gameEvents = ReplicatedStorage:FindFirstChild("GameEvents")
-                            local buyEvent = gameEvents and gameEvents:FindFirstChild("BuyEventShopStock")
+                while autoBuyFallMarketCosmetics do
 
-                            if buyEvent and buyEvent:IsA("RemoteEvent") then
-                                for _, item in ipairs(selectedGoliathItems) do
-                                    if not autoBuyGoliathGoods then break end
-                                    buyEvent:FireServer(item, "Goliath's Goods", 1)
+                    if #selectedFallMarketCosmetics > 0 then
+                        pcall(function()
+                            local GameEvents =
+                                ReplicatedStorage:FindFirstChild("GameEvents")
+
+                            local BuyEvent =
+                                GameEvents
+                                and GameEvents:FindFirstChild("BuyEventShopStock")
+
+                            if BuyEvent and BuyEvent:IsA("RemoteEvent") then
+                                for _, item in ipairs(selectedFallMarketCosmetics) do
+                                    if not autoBuyFallMarketCosmetics then
+                                        break
+                                    end
+
+                                    BuyEvent:FireServer(
+                                        item,
+                                        "Fall Market Cosmetic Shop"
+                                    )
+
+                                    task.wait(0.2)
                                 end
                             end
                         end)
                     end
+
                     task.wait(1)
                 end
             end)
