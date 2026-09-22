@@ -1130,25 +1130,74 @@ EventTab:CreateToggle({
     end,
 })
 
-EventTab:CreateSection("🍲 GOLD CAULDRON")
+EventTab:CreateSection("🌱 FALL MARKET SEED SHOP")
 
-local GoldCauldronSubmitAll = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Events"):WaitForChild("BeanstalkEvent"):WaitForChild("GoldCauldronSubmitAll")
+local FallMarketSeeds = {
+    "Turnip Seed",
+    "Parsley Seed",
+    "Autumn Seed Pack",
+    "Meyer Lemon Seed",
+    "Carnival Pumpkin Seed",
+    "Kniphofia Seed",
+    "Golden Peach Seed",
+    "Maple Resin Seed",
+}
 
-local toggledCauldron = false
+local selectedFallMarketSeeds = {}
+local autoBuyFallMarketSeeds = false
+
+EventTab:CreateDropdown({
+    Name = "🌱 Select Fall Market Seeds",
+    Options = FallMarketSeeds,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "FallMarketSeedDropdownFlag",
+
+    Callback = function(Options)
+        selectedFallMarketSeeds =
+            typeof(Options) == "table" and Options or {Options}
+    end,
+})
 
 EventTab:CreateToggle({
-    Name = "Auto Submit Gold Cauldron",
+    Name = "🛒 Auto Buy Fall Market Seeds",
     CurrentValue = false,
-    Flag = "GoldCauldronToggle",
+    Flag = "AutoBuyFallMarketSeedsFlag",
+
     Callback = function(Value)
-        toggledCauldron = Value
-        if toggledCauldron then
+        autoBuyFallMarketSeeds = Value
+
+        if Value then
             task.spawn(function()
-                while toggledCauldron do
-                    pcall(function()
-                        GoldCauldronSubmitAll:FireServer()
-                    end)
-                    task.wait(5)
+                while autoBuyFallMarketSeeds do
+
+                    if #selectedFallMarketSeeds > 0 then
+                        pcall(function()
+                            local GameEvents =
+                                ReplicatedStorage:FindFirstChild("GameEvents")
+
+                            local BuyEvent =
+                                GameEvents
+                                and GameEvents:FindFirstChild("BuyEventShopStock")
+
+                            if BuyEvent and BuyEvent:IsA("RemoteEvent") then
+                                for _, seed in ipairs(selectedFallMarketSeeds) do
+                                    if not autoBuyFallMarketSeeds then
+                                        break
+                                    end
+
+                                    BuyEvent:FireServer(
+                                        seed,
+                                        "Fall Market Seed Shop"
+                                    )
+
+                                    task.wait(0.2)
+                                end
+                            end
+                        end)
+                    end
+
+                    task.wait(1)
                 end
             end)
         end
