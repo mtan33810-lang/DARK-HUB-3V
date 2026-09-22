@@ -1047,28 +1047,83 @@ EventTab:CreateToggle({
     end
 })
 
-local ClaimRewardRE = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Events"):WaitForChild("BeanstalkEvent"):WaitForChild("BeanstalkREClaimReward")
+--============================================================
+-- 🍂 FALL MARKET PET SHOP - AUTO BUY
+--============================================================
 
-local toggledRewards = false
-local MAX_REWARDS = 5
+EventTab:CreateSection("🍂 FALL MARKET PET SHOP")
+
+local FallMarketItems = {
+    "Fall Egg",
+    "Chipmunk",
+    "Woodpecker",
+    "Salmon",
+    "Red Squirrel",
+    "Marmot",
+    "Mallard",
+    "Sugar Glider",
+    "Space Squirrel",
+    "Red Panda",
+}
+
+local selectedFallMarketItems = {}
+local autoBuyFallMarket = false
+
+EventTab:CreateDropdown({
+    Name = "🥚 Select Fall Market Items",
+    Options = FallMarketItems,
+    CurrentOption = {},
+    MultipleOptions = true,
+    Flag = "FallMarketDropdownFlag",
+
+    Callback = function(Options)
+        selectedFallMarketItems =
+            typeof(Options) == "table" and Options or {Options}
+    end,
+})
 
 EventTab:CreateToggle({
-    Name = "🌿 Auto Claim All Rewards",
+    Name = "🛒 Auto Buy Fall Market",
     CurrentValue = false,
-    Flag = "AutoClaimRewardsToggle",
+    Flag = "AutoBuyFallMarketFlag",
+
     Callback = function(Value)
-        toggledRewards = Value
-        if toggledRewards then
+        autoBuyFallMarket = Value
+
+        if Value then
             task.spawn(function()
-                while toggledRewards do
-                    for i = 1, MAX_REWARDS do
-                        if not toggledRewards then break end
+                while autoBuyFallMarket do
+
+                    if #selectedFallMarketItems > 0 then
                         pcall(function()
-                            ClaimRewardRE:FireServer(i)
+
+                            local GameEvents =
+                                ReplicatedStorage:FindFirstChild("GameEvents")
+
+                            local BuyEvent =
+                                GameEvents
+                                and GameEvents:FindFirstChild("BuyEventShopStock")
+
+                            if BuyEvent and BuyEvent:IsA("RemoteEvent") then
+
+                                for _, item in ipairs(selectedFallMarketItems) do
+                                    if not autoBuyFallMarket then
+                                        break
+                                    end
+
+                                    BuyEvent:FireServer(
+                                        item,
+                                        "Fall Market Pet Shop"
+                                    )
+
+                                    task.wait(0.2)
+                                end
+
+                            end
                         end)
-                        task.wait(2)
                     end
-                    task.wait(3)
+
+                    task.wait(1)
                 end
             end)
         end
