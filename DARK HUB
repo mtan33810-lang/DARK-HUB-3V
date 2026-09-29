@@ -306,8 +306,8 @@ local function StartFly()
         return
     end
 
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
+    local Character = LocalPlayer.Character
+    or LocalPlayer.CharacterAdded:Wait()
 
     local Humanoid = Character:WaitForChild("Humanoid")
     local Root = Character:WaitForChild("HumanoidRootPart")
@@ -431,7 +431,7 @@ local function StopFly()
         FlyConnection = nil
     end
 
-    local Character = Player.Character
+    local Character = LocalPlayer.Character
 
     if Character then
 
