@@ -1,0 +1,1522 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--==================================================
+-- RAYFIELD WINDOW
+--==================================================
+
+local Window = Rayfield:CreateWindow({
+    Name = "DARK HUB",
+    LoadingTitle = "DARK HUB",
+    LoadingSubtitle = "MaX",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+    KeySystem = false
+})
+
+local TeleportsTab = Window:CreateTab("Teleports", 4483362458)
+
+--==================================================
+-- TWEEN TELEPORT FUNCTION
+--==================================================
+
+local function TweenTeleport(TargetCFrame, Duration)
+
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
+
+    local TweenInfoData = TweenInfo.new(
+        Duration or 1,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.Out
+    )
+
+    local Tween = TweenService:Create(
+        Root,
+        TweenInfoData,
+        {
+            CFrame = TargetCFrame
+        }
+    )
+
+    Tween:Play()
+    Tween.Completed:Wait()
+end
+
+--==================================================
+-- POSITIONS
+--==================================================
+
+local SAVED_POSITION = CFrame.new(
+    150.71,
+    40316.16,
+    913.61
+)
+
+local VOLCANO_POSITION = CFrame.new(
+    -5134.38,
+    41405.40,
+    -3484.89
+)
+
+--==================================================
+-- FLOW SETTINGS
+--==================================================
+
+local SavedPositionTween = false
+local VolcanoDipTween = false
+
+local PostPickupRunning = false
+
+--==================================================
+-- FIND MY PLOT
+--==================================================
+
+local function FindMyPlot()
+
+    local PlotsFolder =
+        workspace:FindFirstChild("Plots")
+
+    if not PlotsFolder then
+        return nil
+    end
+
+    for _, Plot in ipairs(PlotsFolder:GetChildren()) do
+
+        local Data =
+            Plot:FindFirstChild("Data")
+
+        local Owner =
+            Data and Data:FindFirstChild("Owner")
+
+        -- StringValue
+        if Owner and Owner:IsA("StringValue") then
+
+            if Owner.Value == Player.Name then
+                return Plot
+            end
+        end
+
+        -- ObjectValue
+        if Owner and Owner:IsA("ObjectValue") then
+
+            if Owner.Value == Player then
+                return Plot
+            end
+        end
+
+        -- Attribute fallback
+        local NestsOwnerLoaded =
+            Plot:GetAttribute("NestsOwnerLoaded")
+
+        if NestsOwnerLoaded == Player.UserId then
+            return Plot
+        end
+    end
+
+    return nil
+end
+
+--==================================================
+-- GET PLOT POSITION
+--==================================================
+
+local function GetPlotCFrame(Plot)
+
+    if not Plot then
+        return nil
+    end
+
+    local PreferredNames = {
+        "SpawnLocation",
+        "Spawn",
+        "PlotSpawn",
+        "Main",
+        "Base"
+    }
+
+    for _, Name in ipairs(PreferredNames) do
+
+        local Part =
+            Plot:FindFirstChild(Name, true)
+
+        if Part and Part:IsA("BasePart") then
+            return Part.CFrame
+        end
+    end
+
+    -- Model / BasePart pivot fallback
+    local Success, Pivot =
+        pcall(function()
+            return Plot:GetPivot()
+        end)
+
+    if Success then
+        return Pivot
+    end
+
+    return nil
+end
+
+--==================================================
+-- TELEPORT TO MY PLOT → UNEQUIP EGG
+--==================================================
+
+local function TeleportToMyPlot()
+
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
+
+    --==============================================
+    -- FIND MY PLOT
+    --==============================================
+
+    local Plot =
+        FindMyPlot()
+
+    if not Plot then
+
+        Rayfield:Notify({
+            Title = "🏠 My Plot",
+            Content = "Could not find your plot.",
+            Duration = 3
+        })
+
+        return false
+    end
+
+    --==============================================
+    -- GET PLOT POSITION
+    --==============================================
+
+    local PlotCFrame =
+        GetPlotCFrame(Plot)
+
+    if not PlotCFrame then
+
+        Rayfield:Notify({
+            Title = "🏠 My Plot",
+            Content = "Could not find plot position.",
+            Duration = 3
+        })
+
+        return false
+    end
+
+    --==============================================
+    -- TELEPORT TO MY PLOT FIRST
+    --==============================================
+
+    Root.CFrame =
+        PlotCFrame + Vector3.new(0, 5, 0)
+
+    Rayfield:Notify({
+        Title = "🏠 My Plot",
+        Content = "Teleported to your plot.",
+        Duration = 2
+    })
+
+    --==============================================
+    -- THEN UNEQUIP EGG
+    --==============================================
+
+    task.wait(0.3)
+
+    local Humanoid =
+        Character:FindFirstChildOfClass("Humanoid")
+
+    if Humanoid then
+
+        local EquippedTool =
+            Character:FindFirstChildOfClass("Tool")
+
+        if EquippedTool then
+
+            local ToolName =
+                string.lower(EquippedTool.Name)
+
+            -- Only unequip tools containing "egg"
+            if string.find(ToolName, "egg", 1, true) then
+
+                Humanoid:UnequipTools()
+
+                Rayfield:Notify({
+                    Title = "🥚 Egg",
+                    Content = "Egg unequipped at your plot.",
+                    Duration = 2
+                })
+
+            end
+        end
+    end
+
+    return true
+end
+
+--==================================================
+-- TWEEN TO SAVED POSITION
+--==================================================
+
+local function TweenToSavedPosition()
+
+    if not SavedPositionTween then
+        return false
+    end
+
+    Rayfield:Notify({
+        Title = "📍 Saved Position",
+        Content = "Tweening to saved position...",
+        Duration = 2
+    })
+
+    TweenTeleport(
+        SAVED_POSITION,
+        2
+    )
+
+    if not SavedPositionTween then
+        return false
+    end
+
+    Rayfield:Notify({
+        Title = "📍 Saved Position",
+        Content = "Saved position reached!",
+        Duration = 2
+    })
+
+    return true
+end
+
+--==================================================
+-- TWEEN TO VOLCANO + DIP
+--==================================================
+
+local function TweenToVolcanoDip()
+
+    if not VolcanoDipTween then
+        return false
+    end
+
+    Rayfield:Notify({
+        Title = "🌋 Volcano",
+        Content = "Tweening to Volcano Dip...",
+        Duration = 2
+    })
+
+    TweenTeleport(
+        VOLCANO_POSITION,
+        2
+    )
+
+    if not VolcanoDipTween then
+        return false
+    end
+
+    Rayfield:Notify({
+        Title = "🌋 Volcano",
+        Content = "Volcano Dip position reached!",
+        Duration = 2
+    })
+
+    task.wait(0.5)
+
+    local Packages =
+        ReplicatedStorage:FindFirstChild("packages")
+
+    local Net =
+        Packages and Packages:FindFirstChild("Net")
+
+    local Event =
+        Net and Net:FindFirstChild("RE/VolcanoDip")
+
+    if Event then
+
+        Event:FireServer()
+
+        Rayfield:Notify({
+            Title = "🌋 Volcano",
+            Content = "Volcano Dip used!",
+            Duration = 2
+        })
+
+    else
+
+        Rayfield:Notify({
+            Title = "🌋 Volcano",
+            Content = "Volcano Dip remote not found.",
+            Duration = 3
+        })
+
+    end
+
+    return true
+end
+
+--==================================================
+-- EGG DROP
+--==================================================
+
+local function DropEgg()
+
+    local Remotes =
+        ReplicatedStorage:FindFirstChild("Remotes")
+
+    if not Remotes then
+        return false
+    end
+
+    local GameRemotes =
+        Remotes:FindFirstChild("Game")
+
+    if not GameRemotes then
+        return false
+    end
+
+    local BasketDrop =
+        GameRemotes:FindFirstChild("BasketDrop")
+
+    if not BasketDrop then
+
+        Rayfield:Notify({
+            Title = "🥚 Egg Drop",
+            Content = "BasketDrop remote not found.",
+            Duration = 3
+        })
+
+        return false
+    end
+
+    local Success, ErrorMessage =
+        pcall(function()
+            BasketDrop:FireServer()
+        end)
+
+    if not Success then
+
+        Rayfield:Notify({
+            Title = "🥚 Egg Drop",
+            Content = "Failed to drop egg.",
+            Duration = 3
+        })
+
+        return false
+    end
+
+    Rayfield:Notify({
+        Title = "🥚 Egg Drop",
+        Content = "Egg dropped successfully!",
+        Duration = 2
+    })
+
+    return true
+end
+
+--==================================================
+-- POST EGG PICKUP FLOW
+--==================================================
+--
+-- Volcano ON + Saved ON
+--     Volcano
+--       ↓
+--     10 sec delay
+--       ↓
+--     Saved Position
+--       ↓
+--     Drop Egg
+--       ↓
+--     5 sec delay
+--       ↓
+--     END
+--
+-- Volcano ON + Saved OFF
+--     Volcano
+--       ↓
+--     10 sec delay
+--       ↓
+--     My Plot
+--       ↓
+--     END
+--
+-- Volcano OFF + Saved ON
+--     Saved Position
+--       ↓
+--     Drop Egg
+--       ↓
+--     5 sec delay
+--       ↓
+--     END
+--
+-- Volcano OFF + Saved OFF
+--     My Plot
+--       ↓
+--     END
+--
+--==================================================
+
+local VolcanoPostDelay = 10
+local EggDropPostDelay = 5
+
+local function RunAfterEggPickup()
+
+    if PostPickupRunning then
+        return
+    end
+
+    PostPickupRunning = true
+
+    task.spawn(function()
+
+        --==========================================
+        -- VOLCANO ON + SAVED ON
+        -- Volcano → Delay → Saved → Drop → Delay
+        --==========================================
+
+        if VolcanoDipTween
+            and SavedPositionTween
+        then
+
+            Rayfield:Notify({
+                Title = "🥚 Egg Flow",
+                Content = "Volcano → Saved Position → Drop",
+                Duration = 2
+            })
+
+            local VolcanoSuccess =
+                TweenToVolcanoDip()
+
+            if VolcanoSuccess
+                and VolcanoDipTween
+                and SavedPositionTween
+            then
+
+                -- Delay AFTER volcano
+                task.wait(VolcanoPostDelay)
+
+                if not PostPickupRunning then
+                    return
+                end
+
+                -- Tween to saved position
+                local SavedSuccess =
+                    TweenToSavedPosition()
+
+                if SavedSuccess
+                    and SavedPositionTween
+                then
+
+                    --==================================
+                    -- DROP EGG AT SAVED POSITION
+                    --==================================
+
+                    task.wait(0.5)
+
+                    local DropSuccess =
+                        DropEgg()
+
+                    if DropSuccess then
+
+                        --==================================
+                        -- 5 SECOND DELAY AFTER DROP
+                        --==================================
+
+                        Rayfield:Notify({
+                            Title = "🥚 Egg Flow",
+                            Content = "Egg dropped. Waiting 5 seconds...",
+                            Duration = 2
+                        })
+
+                        task.wait(EggDropPostDelay)
+                    end
+                end
+            end
+
+        --==========================================
+        -- VOLCANO ON + SAVED OFF
+        -- Volcano → Delay → My Plot
+        --==========================================
+
+        elseif VolcanoDipTween
+            and not SavedPositionTween
+        then
+
+            Rayfield:Notify({
+                Title = "🥚 Egg Flow",
+                Content = "Volcano → My Plot",
+                Duration = 2
+            })
+
+            local VolcanoSuccess =
+                TweenToVolcanoDip()
+
+            if VolcanoSuccess then
+
+                -- Delay AFTER volcano
+                task.wait(VolcanoPostDelay)
+
+                TeleportToMyPlot()
+            end
+
+        --==========================================
+        -- VOLCANO OFF + SAVED ON
+        -- Saved → Drop → 5 sec Delay
+        --==========================================
+
+        elseif not VolcanoDipTween
+            and SavedPositionTween
+        then
+
+            Rayfield:Notify({
+                Title = "🥚 Egg Flow",
+                Content = "Saved Position → Drop Egg",
+                Duration = 2
+            })
+
+            local SavedSuccess =
+                TweenToSavedPosition()
+
+            if SavedSuccess
+                and SavedPositionTween
+            then
+
+                -- Small delay after arriving
+                task.wait(0.5)
+
+                --==================================
+                -- DROP EGG
+                --==================================
+
+                local DropSuccess =
+                    DropEgg()
+
+                if DropSuccess then
+
+                    Rayfield:Notify({
+                        Title = "🥚 Egg Flow",
+                        Content = "Egg dropped. Waiting 5 seconds...",
+                        Duration = 2
+                    })
+
+                    --==================================
+                    -- 5 SECOND DELAY
+                    --==================================
+
+                    task.wait(EggDropPostDelay)
+                end
+            end
+
+        --==========================================
+        -- BOTH OFF
+        -- My Plot → END
+        --==========================================
+
+        else
+
+            Rayfield:Notify({
+                Title = "🥚 Egg Flow",
+                Content = "Both disabled → My Plot",
+                Duration = 2
+            })
+
+            TeleportToMyPlot()
+        end
+
+        PostPickupRunning = false
+    end)
+end
+
+--==================================================
+-- SAVED POSITION TOGGLE
+--==================================================
+
+TeleportsTab:CreateToggle({
+
+    Name = "📍 Tween Teleport to Saved Position",
+
+    CurrentValue = false,
+
+    Flag = "SavedPositionTween",
+
+    Callback = function(Value)
+
+        SavedPositionTween = Value
+
+        if Value then
+
+            Rayfield:Notify({
+                Title = "📍 Saved Position",
+                Content = "Saved position flow enabled.",
+                Duration = 2
+            })
+
+        else
+
+            Rayfield:Notify({
+                Title = "📍 Saved Position",
+                Content = "Saved position flow disabled.",
+                Duration = 2
+            })
+
+        end
+    end
+})
+
+--==================================================
+-- VOLCANO DIP TOGGLE
+--==================================================
+
+TeleportsTab:CreateToggle({
+
+    Name = "🌋 Tween Volcano Dip",
+
+    CurrentValue = false,
+
+    Flag = "VolcanoDipTween",
+
+    Callback = function(Value)
+
+        VolcanoDipTween = Value
+
+        if Value then
+
+            Rayfield:Notify({
+                Title = "🌋 Volcano",
+                Content = "Volcano Dip flow enabled.",
+                Duration = 2
+            })
+
+        else
+
+            Rayfield:Notify({
+                Title = "🌋 Volcano",
+                Content = "Volcano Dip flow disabled.",
+                Duration = 2
+            })
+
+        end
+    end
+})
+
+--==================================================
+-- MY PLOT SECTION
+--==================================================
+
+TeleportsTab:CreateSection("🏠 My Plot")
+
+TeleportsTab:CreateButton({
+
+    Name = "🏠 Teleport to Plot Now",
+
+    Callback = function()
+
+        TeleportToMyPlot()
+
+    end
+})
+
+--==================================================
+-- EGG RARITY SCANNER
+--==================================================
+
+TeleportsTab:CreateSection("🥚 Egg Rarity Scanner")
+
+local RarityDropdown
+local SelectedRarities = {}
+
+local EggData = {}
+local EggsByRarity = {}
+
+local AutoScanInterval = 60
+local CurrentEggIndex = 0
+
+local EggRarities = {
+    "Common",
+    "Uncommon",
+    "Rare",
+    "Epic",
+    "Legendary",
+    "Mythic",
+    "Divine",
+    "Ethereal"
+}
+
+local RarityOrder = EggRarities
+
+for _, Rarity in ipairs(EggRarities) do
+    EggsByRarity[Rarity] = {}
+end
+
+--==================================================
+-- VALID EGG NAMES
+--==================================================
+
+local ValidEggNames = {
+
+    ["White Egg"] = true,
+    ["Brown Egg"] = true,
+    ["Cracked Egg"] = true,
+    ["Easter Egg"] = true,
+
+    ["Stone Egg"] = true,
+    ["Leaf Egg"] = true,
+
+    ["Mushroom Egg"] = true,
+    ["Flower Egg"] = true,
+    ["Slime Egg"] = true,
+
+    ["Ice Egg"] = true,
+
+    ["Glass Egg"] = true,
+    ["Golden Egg"] = true,
+    ["Diamond Egg"] = true,
+
+    ["Crystal Egg"] = true,
+    ["Skull Egg"] = true,
+    ["Asteroid Egg"] = true,
+    ["Dominus Egg"] = true,
+    ["Flaming Egg"] = true,
+    ["Sinister Egg"] = true,
+    ["Soul Egg"] = true,
+    ["Tidal Egg"] = true,
+
+    ["Aurora Egg"] = true,
+    ["Galaxy Egg"] = true,
+    ["Bloom Egg"] = true,
+
+    ["Blackhole Egg"] = true,
+    ["Solaris Egg"] = true,
+    ["Cherub Egg"] = true,
+    ["Volcanic Egg"] = true
+}
+
+--==================================================
+-- EGG RARITIES
+--==================================================
+
+local EggRarity = {
+
+    ["White Egg"] = "Common",
+    ["Brown Egg"] = "Common",
+    ["Cracked Egg"] = "Common",
+    ["Easter Egg"] = "Common",
+
+    ["Stone Egg"] = "Uncommon",
+    ["Leaf Egg"] = "Uncommon",
+
+    ["Mushroom Egg"] = "Rare",
+    ["Flower Egg"] = "Rare",
+    ["Slime Egg"] = "Rare",
+
+    ["Ice Egg"] = "Epic",
+
+    ["Glass Egg"] = "Legendary",
+    ["Golden Egg"] = "Legendary",
+    ["Diamond Egg"] = "Legendary",
+
+    ["Crystal Egg"] = "Mythic",
+    ["Skull Egg"] = "Mythic",
+    ["Asteroid Egg"] = "Mythic",
+    ["Dominus Egg"] = "Mythic",
+    ["Flaming Egg"] = "Mythic",
+    ["Sinister Egg"] = "Mythic",
+    ["Soul Egg"] = "Mythic",
+    ["Tidal Egg"] = "Mythic",
+
+    ["Aurora Egg"] = "Divine",
+    ["Galaxy Egg"] = "Divine",
+    ["Bloom Egg"] = "Divine",
+
+    ["Blackhole Egg"] = "Ethereal",
+    ["Solaris Egg"] = "Ethereal",
+    ["Cherub Egg"] = "Ethereal",
+    ["Volcanic Egg"] = "Ethereal"
+}
+
+--==================================================
+-- FORMAT EGG NAME
+--==================================================
+
+local function FormatEggName(Name)
+
+    Name = Name:gsub("_", " ")
+    Name = Name:gsub("%s+", " ")
+    Name = Name:gsub("^%s+", "")
+    Name = Name:gsub("%s+$", "")
+
+    return Name
+end
+
+--==================================================
+-- GET OBJECT CFRAME
+--==================================================
+
+local function GetObjectCFrame(Object)
+
+    if Object:IsA("BasePart") then
+        return Object.CFrame
+
+    elseif Object:IsA("Model") then
+        return Object:GetPivot()
+    end
+
+    return nil
+end
+
+--==================================================
+-- CHECK IF INSIDE PLOT
+--==================================================
+
+local function IsInsidePlot(Object)
+
+    local Current = Object.Parent
+
+    while Current and Current ~= workspace do
+
+        local Name =
+            string.lower(Current.Name)
+
+        if string.find(Name, "plot", 1, true)
+            or string.find(Name, "farm", 1, true)
+            or string.find(Name, "garden", 1, true)
+        then
+            return true
+        end
+
+        Current = Current.Parent
+    end
+
+    return false
+end
+
+--==================================================
+-- GET ACTUAL EGG CONTAINER
+--==================================================
+
+local function GetEggObject(Object)
+
+    local Current = Object
+
+    while Current and Current ~= workspace do
+
+        local FormattedName =
+            FormatEggName(Current.Name)
+
+        if ValidEggNames[FormattedName] then
+            return Current, FormattedName
+        end
+
+        Current = Current.Parent
+    end
+
+    return nil, nil
+end
+
+--==================================================
+-- SCAN EGGS
+--==================================================
+
+local function ScanEggs()
+
+    EggData = {}
+
+    EggsByRarity = {}
+
+    for _, Rarity in ipairs(RarityOrder) do
+        EggsByRarity[Rarity] = {}
+    end
+
+    local SeenEggs = {}
+    local EggCounts = {}
+
+    for _, Object in ipairs(
+        workspace:GetDescendants()
+    ) do
+
+        local EggObject, EggName =
+            GetEggObject(Object)
+
+        if EggObject
+            and EggName
+            and not IsInsidePlot(EggObject)
+        then
+
+            if not SeenEggs[EggObject] then
+
+                SeenEggs[EggObject] = true
+
+                local ObjectCFrame =
+                    GetObjectCFrame(EggObject)
+
+                local Rarity =
+                    EggRarity[EggName]
+
+                if ObjectCFrame
+                    and Rarity
+                    and EggsByRarity[Rarity]
+                then
+
+                    EggCounts[EggName] =
+                        (EggCounts[EggName] or 0) + 1
+
+                    local Number =
+                        EggCounts[EggName]
+
+                    local DisplayName =
+                        EggName .. " #" .. Number
+
+                    local Data = {
+                        Object = EggObject,
+                        CFrame = ObjectCFrame,
+                        EggName = EggName,
+                        Rarity = Rarity,
+                        Number = Number
+                    }
+
+                    EggData[DisplayName] = Data
+
+                    table.insert(
+                        EggsByRarity[Rarity],
+                        Data
+                    )
+                end
+            end
+        end
+    end
+
+    -- Sort eggs
+    for _, EggList in pairs(EggsByRarity) do
+
+        table.sort(
+            EggList,
+            function(A, B)
+
+                if A.EggName == B.EggName then
+                    return A.Number < B.Number
+                end
+
+                return A.EggName < B.EggName
+            end
+        )
+    end
+
+    -- Refresh dropdown options while keeping existing selections intact
+    if RarityDropdown then
+
+        local Options = {}
+        local KeptSelections = {}
+
+        for _, Rarity in ipairs(RarityOrder) do
+
+            local Count = #EggsByRarity[Rarity]
+            local FormattedOption = Rarity .. " (" .. Count .. ")"
+
+            table.insert(Options, FormattedOption)
+
+            -- Check if this rarity was previously checked by the player
+            if SelectedRarities[Rarity] then
+                table.insert(KeptSelections, FormattedOption)
+            end
+        end
+
+        -- Refresh with the newly built selection list
+        RarityDropdown:Refresh(Options)
+        RarityDropdown:Set(KeptSelections)
+    end
+end
+
+--==================================================
+-- HELPER: GET COMBINED EGGS FOR SELECTED RARITIES
+--==================================================
+
+local function GetSelectedEggsList()
+    local CombinedList = {}
+
+    for Rarity, Selected in pairs(SelectedRarities) do
+        if Selected and EggsByRarity[Rarity] then
+            for _, Data in ipairs(EggsByRarity[Rarity]) do
+                table.insert(CombinedList, Data)
+            end
+        end
+    end
+
+    return CombinedList
+end
+
+--==================================================
+-- RARITY DROPDOWN
+--==================================================
+
+local RarityOptions = {}
+
+for _, Rarity in ipairs(RarityOrder) do
+    table.insert(
+        RarityOptions,
+        Rarity .. " (0)"
+    )
+end
+
+RarityDropdown =
+    TeleportsTab:CreateDropdown({
+
+        Name = "💎 Select Egg Rarities",
+
+        Options = RarityOptions,
+
+        CurrentOption = {},
+
+        MultipleOptions = true,
+
+        Flag = "SelectedEggRarities",
+
+        Callback = function(OptionsTable)
+
+            SelectedRarities = {}
+
+            if type(OptionsTable) == "table" then
+                for _, OptionStr in ipairs(OptionsTable) do
+                    local Cleaned = OptionStr:gsub("%s*%(%d+%)$", "")
+                    SelectedRarities[Cleaned] = true
+                end
+            end
+
+            local CombinedList = GetSelectedEggsList()
+
+        end
+    })
+
+--==================================================
+-- REFRESH SCAN
+--==================================================
+
+TeleportsTab:CreateButton({
+
+    Name = "🔄 Refresh Egg Scan",
+
+    Callback = function()
+
+        ScanEggs()
+
+        Rayfield:Notify({
+            Title = "Egg Scanner",
+            Content = "Unique eggs scanned!",
+            Duration = 2
+        })
+    end
+})
+
+--==================================================
+-- TWEEN TO NEXT EGG + PICK UP
+-- AUTO OFF WHEN NO EGGS
+-- AUTO ON WHEN EGGS RETURN
+--==================================================
+
+local AutoEggPickup = false
+local AutoEggWatcherRunning = false
+
+local AutoEggPickupToggle
+
+AutoEggPickupToggle = TeleportsTab:CreateToggle({
+    Name = "🥚 Tween to Next Egg + Pick Up",
+    CurrentValue = false,
+    Flag = "AutoEggPickup",
+
+    Callback = function(Value)
+        AutoEggPickup = Value
+
+        --==========================================
+        -- STOP
+        --==========================================
+        if not Value then
+            Rayfield:Notify({
+                Title = "Egg Pickup",
+                Content = "Auto egg pickup stopped.",
+                Duration = 2
+            })
+            return
+        end
+
+        --==========================================
+        -- CHECK RARITY SELECTION
+        --==========================================
+        local CombinedList = GetSelectedEggsList()
+
+        if #CombinedList == 0 then
+            local HasAnySelected = false
+            for _, v in pairs(SelectedRarities) do
+                if v then HasAnySelected = true break end
+            end
+
+            if not HasAnySelected then
+                AutoEggPickup = false
+                AutoEggPickupToggle:Set(false)
+
+                Rayfield:Notify({
+                    Title = "Egg Scanner",
+                    Content = "Select at least one rarity first.",
+                    Duration = 3
+                })
+                return
+            end
+        end
+
+        --==========================================
+        -- SCAN
+        --==========================================
+        ScanEggs()
+        CombinedList = GetSelectedEggsList()
+
+        --==========================================
+        -- NO EGGS
+        --==========================================
+        if #CombinedList == 0 then
+            AutoEggPickup = false
+            AutoEggPickupToggle:Set(false)
+
+            Rayfield:Notify({
+                Title = "Egg Pickup",
+                Content = "No eggs found for selected rarities.",
+                Duration = 2
+            })
+
+            return
+        end
+
+        --==========================================
+        -- START
+        --==========================================
+        Rayfield:Notify({
+            Title = "Egg Pickup",
+            Content = "Started auto pickup!",
+            Duration = 2
+        })
+
+        task.spawn(function()
+
+            while AutoEggPickup do
+
+                --==================================
+                -- GET CURRENT EGG LIST
+                --==================================
+                local EggList = GetSelectedEggsList()
+
+                --==================================
+                -- REMOVE STALE EGGS
+                --==================================
+                for i = #EggList, 1, -1 do
+                    local Data = EggList[i]
+
+                    if not Data
+                        or not Data.Object
+                        or not Data.Object.Parent then
+
+                        table.remove(EggList, i)
+                    end
+                end
+
+                --==================================
+                -- NO EGGS
+                --==================================
+                if #EggList == 0 then
+
+                    CurrentEggIndex = 0
+                    AutoEggPickup = false
+
+                    -- Turn toggle OFF
+                    if AutoEggPickupToggle then
+                        AutoEggPickupToggle:Set(false)
+                    end
+
+                    Rayfield:Notify({
+                        Title = "Egg Pickup",
+                        Content = "No eggs found. Toggle turned OFF.",
+                        Duration = 2
+                    })
+
+                    break
+                end
+
+                --==================================
+                -- NEXT EGG
+                --==================================
+                CurrentEggIndex = (CurrentEggIndex or 0) + 1
+
+                if CurrentEggIndex > #EggList then
+                    CurrentEggIndex = 1
+                end
+
+                local Data = EggList[CurrentEggIndex]
+
+                if not Data then
+                    ScanEggs()
+                    task.wait(0.3)
+                    continue
+                end
+
+                local Egg = Data.Object
+
+                --==================================
+                -- VERIFY EGG
+                --==================================
+                if not Egg or not Egg.Parent then
+                    table.remove(EggList, CurrentEggIndex)
+                    CurrentEggIndex = CurrentEggIndex - 1
+                    task.wait(0.2)
+                    continue
+                end
+
+                --==================================
+                -- UPDATE POSITION
+                --==================================
+                local CurrentCFrame = GetObjectCFrame(Egg)
+
+                if CurrentCFrame then
+                    Data.CFrame = CurrentCFrame
+                end
+
+                if not Data.CFrame then
+                    task.wait(0.5)
+                    continue
+                end
+
+                --==================================
+                -- EGG INFO
+                --==================================
+                local EggName =
+                    tostring(Data.EggName or Egg.Name or "Unknown Egg")
+
+                local EggNumber =
+                    tostring(Data.Number or "?")
+
+                local Rarity =
+                    tostring(Data.Rarity or "Unknown")
+
+                Rayfield:Notify({
+                    Title = "Egg Pickup",
+                    Content =
+                        EggName
+                        .. " #"
+                        .. EggNumber
+                        .. "\n"
+                        .. Rarity
+                        .. " • "
+                        .. CurrentEggIndex
+                        .. "/"
+                        .. #EggList,
+
+                    Duration = 2
+                })
+
+                --==================================
+                -- TWEEN TO EGG
+                --==================================
+                TweenTeleport(
+                    Data.CFrame + Vector3.new(0, 5, 0),
+                    1.5
+                )
+
+                if not AutoEggPickup then
+                    break
+                end
+
+                -- Give tween time to finish
+                task.wait(0.4)
+
+                --==================================
+                -- VERIFY AGAIN
+                --==================================
+                if not Egg or not Egg.Parent then
+                    ScanEggs()
+                    task.wait(0.3)
+                    continue
+                end
+
+                --==================================
+                -- FIND PICKUP PROMPT
+                --==================================
+                local FoundPrompt = nil
+
+                for _, Object in ipairs(Egg:GetDescendants()) do
+
+                    if Object:IsA("ProximityPrompt") then
+
+                        local PromptText =
+                            string.lower(
+                                tostring(Object.ActionText or "")
+                            )
+
+                        if PromptText == "pick up"
+                            or PromptText:find("pick", 1, true) then
+
+                            FoundPrompt = Object
+                            break
+                        end
+                    end
+                end
+
+                --==================================
+                -- PICK UP
+                --==================================
+                if FoundPrompt
+                    and typeof(fireproximityprompt) == "function" then
+
+                    fireproximityprompt(FoundPrompt)
+
+                    Rayfield:Notify({
+                        Title = "Egg Pickup",
+                        Content =
+                            "Picked up "
+                            .. EggName
+                            .. " #"
+                            .. EggNumber,
+
+                        Duration = 2
+                    })
+
+                    -- Allow pickup to register
+                    task.wait(0.8)
+
+                    --==================================
+                    -- POST PICKUP FLOW
+                    --==================================
+                    RunAfterEggPickup()
+
+                    while PostPickupRunning
+                        and AutoEggPickup do
+
+                        task.wait(0.1)
+                    end
+
+                    if not AutoEggPickup then
+                        break
+                    end
+
+                    --==================================
+                    -- RESCAN
+                    --==================================
+                    ScanEggs()
+                    task.wait(0.3)
+
+                    local RemainingEggs = GetSelectedEggsList()
+
+                    --==================================
+                    -- NO EGGS AFTER PICKUP
+                    --==================================
+                    if #RemainingEggs == 0 then
+
+                        CurrentEggIndex = 0
+                        AutoEggPickup = false
+
+                        -- Turn toggle OFF
+                        if AutoEggPickupToggle then
+                            AutoEggPickupToggle:Set(false)
+                        end
+
+                        Rayfield:Notify({
+                            Title = "Egg Pickup",
+                            Content =
+                                "No eggs. Toggle turned OFF until an egg respawns.",
+
+                            Duration = 2
+                        })
+
+                        break
+                    end
+
+                else
+                    --==================================
+                    -- NO PICKUP PROMPT
+                    --==================================
+                    task.wait(0.5)
+                end
+            end
+        end)
+    end
+})
+
+--==================================================
+-- AUTO EGG WATCHER
+-- Turns toggle ON when an egg comes back
+--==================================================
+
+if not AutoEggWatcherRunning then
+
+    AutoEggWatcherRunning = true
+
+    task.spawn(function()
+
+        while true do
+
+            task.wait(2)
+
+            local HasAnySelected = false
+            for _, v in pairs(SelectedRarities) do
+                if v then HasAnySelected = true break end
+            end
+
+            if HasAnySelected then
+
+                -- Refresh egg list
+                ScanEggs()
+
+                local EggList = GetSelectedEggsList()
+
+                --==================================
+                -- EGG EXISTS
+                --==================================
+                if #EggList > 0 then
+
+                    -- Only turn ON if currently OFF
+                    if not AutoEggPickup then
+
+                        AutoEggPickup = true
+
+                        if AutoEggPickupToggle then
+                            AutoEggPickupToggle:Set(true)
+                        end
+
+                        Rayfield:Notify({
+                            Title = "Egg Pickup",
+                            Content =
+                                "Egg detected! Auto pickup turned ON.",
+
+                            Duration = 2
+                        })
+                    end
+
+                end
+            end
+        end
+    end)
+end
+
+--==================================================
+-- INITIAL SCAN
+--==================================================
+
+task.spawn(function()
+
+    task.wait(1)
+
+    ScanEggs()
+end)
+
+--==================================================
+-- LOADED
+--==================================================
+
+Rayfield:Notify({
+    Title = "DARK HUB",
+    Content = "Loaded successfully!",
+    Duration = 3
+})
