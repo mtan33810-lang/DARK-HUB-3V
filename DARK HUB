@@ -285,6 +285,166 @@ local function getPlantPosition(Plant)
     return nil
 end
 
+--==================================================
+-- VARIABLES
+--==================================================
+
+local Flying = false
+local FlyConnection = nil
+local FlySpeed = 60
+
+-- Saved height while joystick is released
+local HoldY = nil
+
+--==================================================
+-- START FLY
+--==================================================
+
+local function StartFly()
+
+    if Flying then
+        return
+    end
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Humanoid = Character:WaitForChild("Humanoid")
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    Flying = true
+
+    -- Start by locking current height
+    HoldY = Root.Position.Y
+
+    FlyConnection = RunService.Heartbeat:Connect(function()
+
+        if not Flying then
+            return
+        end
+
+        if not Character.Parent then
+            return
+        end
+
+        if not Root.Parent then
+            return
+        end
+
+        local Camera = workspace.CurrentCamera
+
+        if not Camera then
+            return
+        end
+
+        local MoveDirection = Humanoid.MoveDirection
+        local LookVector = Camera.CFrame.LookVector
+
+        --==================================================
+        -- JOYSTICK MOVING
+        --==================================================
+
+        if MoveDirection.Magnitude > 0.05 then
+
+            -- Joystick horizontal movement
+            local HorizontalMovement = Vector3.new(
+                MoveDirection.X,
+                0,
+                MoveDirection.Z
+            )
+
+            local Direction = HorizontalMovement
+
+            --==================================================
+            -- CAMERA UP / DOWN
+            --==================================================
+
+            local VerticalAmount = LookVector.Y
+
+            if math.abs(VerticalAmount) > 0.08 then
+
+                Direction += Vector3.new(
+                    0,
+                    VerticalAmount,
+                    0
+                )
+
+            end
+
+            --==================================================
+            -- APPLY MOVEMENT
+            --==================================================
+
+            if Direction.Magnitude > 0 then
+
+                Direction = Direction.Unit * FlySpeed
+
+                Root.AssemblyLinearVelocity = Direction
+
+            end
+
+            -- Update hold height while moving
+            HoldY = Root.Position.Y
+
+        else
+
+            --==================================================
+            -- JOYSTICK RELEASED
+            -- LOCK POSITION
+            --==================================================
+
+            if HoldY == nil then
+                HoldY = Root.Position.Y
+            end
+
+            local CurrentPosition = Root.Position
+
+            -- Keep exact X/Z but restore saved Y
+            Root.CFrame = CFrame.new(
+                CurrentPosition.X,
+                HoldY,
+                CurrentPosition.Z
+            ) * Root.CFrame.Rotation
+
+            -- Completely cancel physics velocity
+            Root.AssemblyLinearVelocity = Vector3.zero
+
+            -- Also cancel rotational physics
+            Root.AssemblyAngularVelocity = Vector3.zero
+
+        end
+
+    end)
+end
+
+--==================================================
+-- STOP FLY
+--==================================================
+
+local function StopFly()
+
+    Flying = false
+    HoldY = nil
+
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+
+    local Character = Player.Character
+
+    if Character then
+
+        local Root = Character:FindFirstChild("HumanoidRootPart")
+
+        if Root then
+            Root.AssemblyLinearVelocity = Vector3.zero
+            Root.AssemblyAngularVelocity = Vector3.zero
+        end
+
+    end
+end
+
 --============================================================
 -- AUTO WATER SYSTEM
 --============================================================
@@ -885,166 +1045,6 @@ HomeTab:CreateSlider({
         end
     end
 })
-
---==================================================
--- VARIABLES
---==================================================
-
-local Flying = false
-local FlyConnection = nil
-local FlySpeed = 60
-
--- Saved height while joystick is released
-local HoldY = nil
-
---==================================================
--- START FLY
---==================================================
-
-local function StartFly()
-
-    if Flying then
-        return
-    end
-
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Humanoid = Character:WaitForChild("Humanoid")
-    local Root = Character:WaitForChild("HumanoidRootPart")
-
-    Flying = true
-
-    -- Start by locking current height
-    HoldY = Root.Position.Y
-
-    FlyConnection = RunService.Heartbeat:Connect(function()
-
-        if not Flying then
-            return
-        end
-
-        if not Character.Parent then
-            return
-        end
-
-        if not Root.Parent then
-            return
-        end
-
-        local Camera = workspace.CurrentCamera
-
-        if not Camera then
-            return
-        end
-
-        local MoveDirection = Humanoid.MoveDirection
-        local LookVector = Camera.CFrame.LookVector
-
-        --==================================================
-        -- JOYSTICK MOVING
-        --==================================================
-
-        if MoveDirection.Magnitude > 0.05 then
-
-            -- Joystick horizontal movement
-            local HorizontalMovement = Vector3.new(
-                MoveDirection.X,
-                0,
-                MoveDirection.Z
-            )
-
-            local Direction = HorizontalMovement
-
-            --==================================================
-            -- CAMERA UP / DOWN
-            --==================================================
-
-            local VerticalAmount = LookVector.Y
-
-            if math.abs(VerticalAmount) > 0.08 then
-
-                Direction += Vector3.new(
-                    0,
-                    VerticalAmount,
-                    0
-                )
-
-            end
-
-            --==================================================
-            -- APPLY MOVEMENT
-            --==================================================
-
-            if Direction.Magnitude > 0 then
-
-                Direction = Direction.Unit * FlySpeed
-
-                Root.AssemblyLinearVelocity = Direction
-
-            end
-
-            -- Update hold height while moving
-            HoldY = Root.Position.Y
-
-        else
-
-            --==================================================
-            -- JOYSTICK RELEASED
-            -- LOCK POSITION
-            --==================================================
-
-            if HoldY == nil then
-                HoldY = Root.Position.Y
-            end
-
-            local CurrentPosition = Root.Position
-
-            -- Keep exact X/Z but restore saved Y
-            Root.CFrame = CFrame.new(
-                CurrentPosition.X,
-                HoldY,
-                CurrentPosition.Z
-            ) * Root.CFrame.Rotation
-
-            -- Completely cancel physics velocity
-            Root.AssemblyLinearVelocity = Vector3.zero
-
-            -- Also cancel rotational physics
-            Root.AssemblyAngularVelocity = Vector3.zero
-
-        end
-
-    end)
-end
-
---==================================================
--- STOP FLY
---==================================================
-
-local function StopFly()
-
-    Flying = false
-    HoldY = nil
-
-    if FlyConnection then
-        FlyConnection:Disconnect()
-        FlyConnection = nil
-    end
-
-    local Character = Player.Character
-
-    if Character then
-
-        local Root = Character:FindFirstChild("HumanoidRootPart")
-
-        if Root then
-            Root.AssemblyLinearVelocity = Vector3.zero
-            Root.AssemblyAngularVelocity = Vector3.zero
-        end
-
-    end
-end
 
 --==================================================
 -- FLY TOGGLE
