@@ -12,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Window = Rayfield:CreateWindow({
     Name = "DARK HUB",
-    LoadingTitle = "DARK HUB",
+    LoadingTitle = "DARK HUB | Raid A Pet",
     LoadingSubtitle = "by MaX",
     Theme = "Default",
     ToggleUIKeybind = "K",
