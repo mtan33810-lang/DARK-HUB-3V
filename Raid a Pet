@@ -1119,6 +1119,7 @@ TeleportsTab:CreateButton({
 -- TWEEN TO NEXT EGG + PICK UP
 -- AUTO OFF WHEN NO EGGS
 -- AUTO ON WHEN EGGS RETURN
+-- IGNORE CURRENTLY EQUIPPED EGG
 --==================================================
 
 local AutoEggPickup = false
@@ -1126,38 +1127,97 @@ local AutoEggWatcherRunning = false
 
 local AutoEggPickupToggle
 
+--==================================================
+-- CHECK IF EGG IS CURRENTLY EQUIPPED
+--==================================================
+
+local function IsEggEquipped(EggObject)
+
+    if not EggObject then
+        return false
+    end
+
+    local Character = Player.Character
+
+    if not Character then
+        return false
+    end
+
+    -- Egg is directly inside the Character
+    if EggObject:IsDescendantOf(Character) then
+        return true
+    end
+
+    -- Check equipped Tools
+    for _, Object in ipairs(Character:GetChildren()) do
+
+        if Object:IsA("Tool") then
+
+            -- Egg object is inside the equipped Tool
+            if EggObject == Object
+                or EggObject:IsDescendantOf(Object) then
+
+                return true
+            end
+
+            -- Same-name safety check
+            if EggObject.Name == Object.Name then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+--==================================================
+-- AUTO EGG PICKUP
+--==================================================
+
 AutoEggPickupToggle = TeleportsTab:CreateToggle({
     Name = "🥚 Tween to Next Egg + Pick Up",
     CurrentValue = false,
     Flag = "AutoEggPickup",
 
     Callback = function(Value)
+
         AutoEggPickup = Value
 
         --==========================================
         -- STOP
         --==========================================
+
         if not Value then
+
             Rayfield:Notify({
                 Title = "Egg Pickup",
                 Content = "Auto egg pickup stopped.",
                 Duration = 2
             })
+
             return
         end
 
         --==========================================
         -- CHECK RARITY SELECTION
         --==========================================
+
         local CombinedList = GetSelectedEggsList()
 
         if #CombinedList == 0 then
+
             local HasAnySelected = false
+
             for _, v in pairs(SelectedRarities) do
-                if v then HasAnySelected = true break end
+
+                if v then
+                    HasAnySelected = true
+                    break
+                end
             end
 
             if not HasAnySelected then
+
                 AutoEggPickup = false
                 AutoEggPickupToggle:Set(false)
 
@@ -1166,6 +1226,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                     Content = "Select at least one rarity first.",
                     Duration = 3
                 })
+
                 return
             end
         end
@@ -1173,19 +1234,39 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
         --==========================================
         -- SCAN
         --==========================================
+
         ScanEggs()
+
         CombinedList = GetSelectedEggsList()
+
+        --==========================================
+        -- REMOVE EQUIPPED EGGS FROM LIST
+        --==========================================
+
+        for i = #CombinedList, 1, -1 do
+
+            local Data = CombinedList[i]
+
+            if Data
+                and Data.Object
+                and IsEggEquipped(Data.Object) then
+
+                table.remove(CombinedList, i)
+            end
+        end
 
         --==========================================
         -- NO EGGS
         --==========================================
+
         if #CombinedList == 0 then
+
             AutoEggPickup = false
             AutoEggPickupToggle:Set(false)
 
             Rayfield:Notify({
                 Title = "Egg Pickup",
-                Content = "No eggs found for selected rarities.",
+                Content = "No available eggs found.",
                 Duration = 2
             })
 
@@ -1195,6 +1276,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
         --==========================================
         -- START
         --==========================================
+
         Rayfield:Notify({
             Title = "Egg Pickup",
             Content = "Started auto pickup!",
@@ -1208,12 +1290,15 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- GET CURRENT EGG LIST
                 --==================================
+
                 local EggList = GetSelectedEggsList()
 
                 --==================================
-                -- REMOVE STALE EGGS
+                -- REMOVE STALE / EQUIPPED EGGS
                 --==================================
+
                 for i = #EggList, 1, -1 do
+
                     local Data = EggList[i]
 
                     if not Data
@@ -1221,25 +1306,32 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                         or not Data.Object.Parent then
 
                         table.remove(EggList, i)
+
+                    elseif IsEggEquipped(Data.Object) then
+
+                        -- Ignore currently equipped egg
+                        table.remove(EggList, i)
                     end
                 end
 
                 --==================================
                 -- NO EGGS
                 --==================================
+
                 if #EggList == 0 then
 
                     CurrentEggIndex = 0
                     AutoEggPickup = false
 
-                    -- Turn toggle OFF
                     if AutoEggPickupToggle then
                         AutoEggPickupToggle:Set(false)
                     end
 
                     Rayfield:Notify({
                         Title = "Egg Pickup",
-                        Content = "No eggs found. Toggle turned OFF.",
+                        Content =
+                            "No available eggs found. Toggle turned OFF.",
+
                         Duration = 2
                     })
 
@@ -1249,6 +1341,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- NEXT EGG
                 --==================================
+
                 CurrentEggIndex = (CurrentEggIndex or 0) + 1
 
                 if CurrentEggIndex > #EggList then
@@ -1258,8 +1351,10 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 local Data = EggList[CurrentEggIndex]
 
                 if not Data then
+
                     ScanEggs()
                     task.wait(0.3)
+
                     continue
                 end
 
@@ -1268,9 +1363,25 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- VERIFY EGG
                 --==================================
+
                 if not Egg or not Egg.Parent then
+
                     table.remove(EggList, CurrentEggIndex)
-                    CurrentEggIndex = CurrentEggIndex - 1
+
+                    CurrentEggIndex =
+                        math.max(CurrentEggIndex - 1, 0)
+
+                    task.wait(0.2)
+
+                    continue
+                end
+
+                --==================================
+                -- CHECK EQUIPPED AGAIN
+                --==================================
+
+                if IsEggEquipped(Egg) then
+
                     task.wait(0.2)
                     continue
                 end
@@ -1278,6 +1389,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- UPDATE POSITION
                 --==================================
+
                 local CurrentCFrame = GetObjectCFrame(Egg)
 
                 if CurrentCFrame then
@@ -1285,6 +1397,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 end
 
                 if not Data.CFrame then
+
                     task.wait(0.5)
                     continue
                 end
@@ -1292,8 +1405,13 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- EGG INFO
                 --==================================
+
                 local EggName =
-                    tostring(Data.EggName or Egg.Name or "Unknown Egg")
+                    tostring(
+                        Data.EggName
+                        or Egg.Name
+                        or "Unknown Egg"
+                    )
 
                 local EggNumber =
                     tostring(Data.Number or "?")
@@ -1303,6 +1421,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
 
                 Rayfield:Notify({
                     Title = "Egg Pickup",
+
                     Content =
                         EggName
                         .. " #"
@@ -1320,6 +1439,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- TWEEN TO EGG
                 --==================================
+
                 TweenTeleport(
                     Data.CFrame + Vector3.new(0, 5, 0),
                     1.5
@@ -1335,8 +1455,21 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- VERIFY AGAIN
                 --==================================
+
                 if not Egg or not Egg.Parent then
+
                     ScanEggs()
+                    task.wait(0.3)
+
+                    continue
+                end
+
+                --==================================
+                -- DO NOT PICK UP EQUIPPED EGG
+                --==================================
+
+                if IsEggEquipped(Egg) then
+
                     task.wait(0.3)
                     continue
                 end
@@ -1344,6 +1477,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- FIND PICKUP PROMPT
                 --==================================
+
                 local FoundPrompt = nil
 
                 for _, Object in ipairs(Egg:GetDescendants()) do
@@ -1352,11 +1486,17 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
 
                         local PromptText =
                             string.lower(
-                                tostring(Object.ActionText or "")
+                                tostring(
+                                    Object.ActionText or ""
+                                )
                             )
 
                         if PromptText == "pick up"
-                            or PromptText:find("pick", 1, true) then
+                            or PromptText:find(
+                                "pick",
+                                1,
+                                true
+                            ) then
 
                             FoundPrompt = Object
                             break
@@ -1367,13 +1507,22 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                 --==================================
                 -- PICK UP
                 --==================================
+
                 if FoundPrompt
                     and typeof(fireproximityprompt) == "function" then
+
+                    -- Final safety check
+                    if IsEggEquipped(Egg) then
+
+                        task.wait(0.3)
+                        continue
+                    end
 
                     fireproximityprompt(FoundPrompt)
 
                     Rayfield:Notify({
                         Title = "Egg Pickup",
+
                         Content =
                             "Picked up "
                             .. EggName
@@ -1389,6 +1538,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                     --==================================
                     -- POST PICKUP FLOW
                     --==================================
+
                     RunAfterEggPickup()
 
                     while PostPickupRunning
@@ -1404,28 +1554,53 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                     --==================================
                     -- RESCAN
                     --==================================
+
                     ScanEggs()
                     task.wait(0.3)
 
-                    local RemainingEggs = GetSelectedEggsList()
+                    local RemainingEggs =
+                        GetSelectedEggsList()
+
+                    --==================================
+                    -- REMOVE EQUIPPED EGGS
+                    --==================================
+
+                    for i = #RemainingEggs, 1, -1 do
+
+                        local RemainingData =
+                            RemainingEggs[i]
+
+                        if RemainingData
+                            and RemainingData.Object
+                            and IsEggEquipped(
+                                RemainingData.Object
+                            ) then
+
+                            table.remove(
+                                RemainingEggs,
+                                i
+                            )
+                        end
+                    end
 
                     --==================================
                     -- NO EGGS AFTER PICKUP
                     --==================================
+
                     if #RemainingEggs == 0 then
 
                         CurrentEggIndex = 0
                         AutoEggPickup = false
 
-                        -- Turn toggle OFF
                         if AutoEggPickupToggle then
                             AutoEggPickupToggle:Set(false)
                         end
 
                         Rayfield:Notify({
                             Title = "Egg Pickup",
+
                             Content =
-                                "No eggs. Toggle turned OFF until an egg respawns.",
+                                "No available eggs. Toggle turned OFF until an egg respawns.",
 
                             Duration = 2
                         })
@@ -1434,9 +1609,11 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                     end
 
                 else
+
                     --==================================
                     -- NO PICKUP PROMPT
                     --==================================
+
                     task.wait(0.5)
                 end
             end
@@ -1446,7 +1623,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
 
 --==================================================
 -- AUTO EGG WATCHER
--- Turns toggle ON when an egg comes back
+-- Turns toggle ON when an available egg comes back
 --==================================================
 
 if not AutoEggWatcherRunning then
@@ -1460,23 +1637,52 @@ if not AutoEggWatcherRunning then
             task.wait(2)
 
             local HasAnySelected = false
+
             for _, v in pairs(SelectedRarities) do
-                if v then HasAnySelected = true break end
+
+                if v then
+                    HasAnySelected = true
+                    break
+                end
             end
 
             if HasAnySelected then
 
-                -- Refresh egg list
+                --==================================
+                -- REFRESH EGG LIST
+                --==================================
+
                 ScanEggs()
 
-                local EggList = GetSelectedEggsList()
+                local EggList =
+                    GetSelectedEggsList()
 
                 --==================================
-                -- EGG EXISTS
+                -- REMOVE EQUIPPED EGGS
                 --==================================
+
+                for i = #EggList, 1, -1 do
+
+                    local Data = EggList[i]
+
+                    if not Data
+                        or not Data.Object
+                        or not Data.Object.Parent then
+
+                        table.remove(EggList, i)
+
+                    elseif IsEggEquipped(Data.Object) then
+
+                        table.remove(EggList, i)
+                    end
+                end
+
+                --==================================
+                -- AVAILABLE EGG EXISTS
+                --==================================
+
                 if #EggList > 0 then
 
-                    -- Only turn ON if currently OFF
                     if not AutoEggPickup then
 
                         AutoEggPickup = true
@@ -1487,13 +1693,13 @@ if not AutoEggWatcherRunning then
 
                         Rayfield:Notify({
                             Title = "Egg Pickup",
+
                             Content =
-                                "Egg detected! Auto pickup turned ON.",
+                                "Available egg detected! Auto pickup turned ON.",
 
                             Duration = 2
                         })
                     end
-
                 end
             end
         end
