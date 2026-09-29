@@ -18,7 +18,7 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
-local TeleportsTab = Window:CreateTab("Farm Egg", 4483362458)
+local TeleportsTab = Window:CreateTab("Farm Egg", 8997385940)
 
 --==================================================
 -- TWEEN TELEPORT FUNCTION
