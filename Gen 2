@@ -291,3 +291,9 @@ hometab:CreateSlider({
         FlySpeed = value
     end,
 })
+
+--==================================================
+-- FARM TAB
+--==================================================
+
+local farmtab = Window:CreateTab("Farm Egg", 8997385940)
