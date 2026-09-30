@@ -1015,6 +1015,26 @@ local function IsIgnoredDroppedEgg(EggObject)
 end
 
 --==================================================
+-- IGNORE EGGS CURRENTLY HELD BY ANY PLAYER
+--==================================================
+
+local function IsEggHeldByPlayer(EggObject)
+    if not EggObject or not EggObject.Parent then
+        return false
+    end
+
+    for _, OtherPlayer in ipairs(Players:GetPlayers()) do
+        local Character = OtherPlayer.Character
+
+        if Character and EggObject:IsDescendantOf(Character) then
+            return true
+        end
+    end
+
+    return false
+end
+
+--==================================================
 -- EGG RARITIES
 --==================================================
 
