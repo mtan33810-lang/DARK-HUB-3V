@@ -1935,7 +1935,7 @@ end)
 
 local SettingTab = Window:CreateTab("⚙️ Setting", nil)
 
-SettingTab:CreateSection("Settings")
+SettingTab:CreateSection("⚙️ Settings")
 
 SettingTab:CreateButton({
     Name = "🧹 Remove Other Player Plots",
@@ -1957,7 +1957,7 @@ SettingTab:CreateButton({
     end
 })
 
-SettingTab:CreateSection("Themes")
+SettingTab:CreateSection("🎨 Themes")
 
 local Themes = {
     "Default",
