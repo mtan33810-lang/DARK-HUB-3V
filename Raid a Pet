@@ -1759,12 +1759,57 @@ end)
 
 local SettingTab = Window:CreateTab("Setting", 4483362458)
 
+SettingTab:CreateSection("Settings")
+
 SettingTab:CreateButton({
     Name = "🧹 Remove Other Player Plots",
     Callback = function()
         RemoveOtherPlayerPlots()
     end
 })
+
+SettingTab:CreateButton({
+
+    Name = "Destroy UI",
+
+    Callback = function()
+
+        AutoPlantEnabled = false
+
+        Rayfield:Destroy()
+
+    end
+})
+
+SettingTab:CreateSection("Themes")
+
+local Themes = {
+    "Default",
+    "AmberGlow",
+    "Amethyst",
+    "Bloom",
+    "DarkBlue",
+    "Green",
+    "Light",
+    "Ocean",
+    "Serenity"
+}
+
+for _, ThemeName in ipairs(Themes) do
+    HomeTab:CreateButton({
+        Name = ThemeName,
+
+        Callback = function()
+            Window.ModifyTheme(ThemeName)
+
+            Rayfield:Notify({
+                Title = "Theme Changed",
+                Content = "Theme: " .. ThemeName,
+                Duration = 2
+            })
+        end
+    })
+end
 
 --==================================================
 -- LOADED
