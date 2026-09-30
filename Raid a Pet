@@ -1002,7 +1002,7 @@ TeleportsTab:CreateToggle({
 
     Name = "🌋 Tween Volcano Dip",
 
-    CurrentValue = true,
+    CurrentValue = false,
 
     Flag = "VolcanoDipTween",
 
