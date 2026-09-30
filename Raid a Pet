@@ -883,13 +883,6 @@ local function RunAfterEggPickup(Egg)
                 "[EGG FLOW ERROR]",
                 ErrorMessage
             )
-
-            Rayfield:Notify({
-                Title = "🥚 Egg Flow Error",
-                Content = tostring(ErrorMessage),
-                Duration = 4
-            })
-
         end
 
         -- ALWAYS unlock the pickup loop
