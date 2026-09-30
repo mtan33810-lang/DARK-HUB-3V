@@ -1205,11 +1205,12 @@ local function ScanEggs()
             GetEggObject(Object)
 
         if EggObject
-            and EggName
-            and not IsInsidePlot(EggObject)
-        then
+    and EggName
+    and not IsInsidePlot(EggObject)
+    and not IsIgnoredDroppedEgg(EggObject)
+then
 
-            if not SeenEggs[EggObject] then
+    if not SeenEggs[EggObject] then
 
                 SeenEggs[EggObject] = true
 
