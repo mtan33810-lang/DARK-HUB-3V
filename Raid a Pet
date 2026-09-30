@@ -1753,6 +1753,10 @@ task.spawn(function()
     ScanEggs()
 end)
 
+--==================================================
+-- SETTING TAB
+--==================================================
+
 local SettingTab = Window:CreateTab("Setting", 4483362458)
 
 SettingTab:CreateButton({
