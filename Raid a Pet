@@ -1366,6 +1366,24 @@ local AutoEggWatcherRunning = false
 local AutoEggPickupToggle
 
 --==================================================
+-- DROPPED EGGS TO IGNORE
+--==================================================
+
+local IgnoredDroppedEggs = {}
+
+local function MarkEggAsDropped(EggObject)
+    if not EggObject then
+        return
+    end
+
+    IgnoredDroppedEggs[EggObject] = true
+end
+
+local function IsIgnoredDroppedEgg(EggObject)
+    return EggObject and IgnoredDroppedEggs[EggObject] == true
+end
+
+--==================================================
 -- CHECK IF EGG IS CURRENTLY EQUIPPED
 --==================================================
 
