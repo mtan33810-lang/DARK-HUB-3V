@@ -11,8 +11,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 --==================================================
 
 local Window = Rayfield:CreateWindow({
-    Name = "DARK HUB",
-    LoadingTitle = "DARK HUB | Raid A Pet",
+    Name = "DARK HUB | Raid A Pet",
+    LoadingTitle = "DARK HUB",
     LoadingSubtitle = "by MaX",
     Theme = "Default",
     ToggleUIKeybind = "K",
@@ -25,14 +25,14 @@ local TeleportsTab = Window:CreateTab("Farm Egg", 8997385940)
 -- TWEEN SPEED
 --==================================================
 
-local TweenSpeed = 2
+local TweenSpeed = 5
 
 TeleportsTab:CreateSlider({
     Name = "⚡ Tween Speed",
     Range = {0.1, 10},
     Increment = 0.1,
     Suffix = " sec",
-    CurrentValue = 2,
+    CurrentValue = 5,
     Flag = "TweenSpeed",
 
     Callback = function(Value)
