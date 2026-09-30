@@ -815,19 +815,18 @@ local function RunAfterEggPickup(Egg)
                     -- Drop egg
                     local DropSuccess = DropEgg()
 
-                    if DropSuccess then
+                    
+                        if DropSuccess then
+    MarkEggAsDropped(Egg)
 
-                        -- Mark the egg we just delivered as ignored
-                        MarkEggAsDropped(Egg)
+    Rayfield:Notify({
+        Title = "🥚 Egg Flow",
+        Content = "Egg dropped at saved position. Ignoring it.",
+        Duration = 3
+    })
 
-                        Rayfield:Notify({
-                            Title = "🥚 Egg Flow",
-                            Content = "Egg dropped at saved position. Ignoring it from future pickup.",
-                            Duration = 3
-                        })
-
-                        task.wait(EggDropPostDelay)
-                    end
+    task.wait(EggDropPostDelay)
+end
                 end
             end
 
