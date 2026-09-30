@@ -228,7 +228,7 @@ end)
 HomeTab:CreateSlider({
     Name = "Walk Speed",
     Range = {0, 300},
-    Increment = 1,
+    Increment = 10,
     Suffix = " Speed",
     CurrentValue = 16,
     Flag = "WalkSpeed",
@@ -1078,7 +1078,7 @@ local SelectedRarities = {}
 local EggData = {}
 local EggsByRarity = {}
 
-local AutoScanInterval = 60
+local AutoScanInterval = 10
 local CurrentEggIndex = 0
 
 local EggRarities = {
