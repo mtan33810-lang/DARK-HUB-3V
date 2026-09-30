@@ -3,7 +3,6 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -303,36 +302,6 @@ HomeTab:CreateSlider({
         FlySpeed = Value
     end
 })
-
---==================================================
--- TWEEN TELEPORT FUNCTION
---==================================================
-
-local function TweenTeleport(TargetCFrame, Duration)
-    local Character =
-        Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
-
-    local TweenInfoData = TweenInfo.new(
-        Duration or TweenSpeed,
-        Enum.EasingStyle.Linear,
-        Enum.EasingDirection.Out
-    )
-
-    local Tween = TweenService:Create(
-        Root,
-        TweenInfoData,
-        {
-            CFrame = TargetCFrame
-        }
-    )
-
-    Tween:Play()
-    Tween.Completed:Wait()
-end
 
 --==================================================
 -- POSITIONS
