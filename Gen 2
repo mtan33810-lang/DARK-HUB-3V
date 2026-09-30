@@ -179,7 +179,7 @@ end
 -- HOME TAB
 --==================================================
 
-local hometab = window:CreateTab({ name = "Home", icon = 93364949241311 })
+local hometab = window:CreateTab({ name = "Home", icon = 7733960981 })
 
 local infinitejump = hometab:CreateToggle({
     name = "Infinite Jump",
