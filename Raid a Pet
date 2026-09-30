@@ -22,11 +22,29 @@ local Window = Rayfield:CreateWindow({
 local TeleportsTab = Window:CreateTab("Farm Egg", 8997385940)
 
 --==================================================
+-- TWEEN SPEED
+--==================================================
+
+local TweenSpeed = 2
+
+TeleportsTab:CreateSlider({
+    Name = "⚡ Tween Speed",
+    Range = {0.1, 10},
+    Increment = 0.1,
+    Suffix = " sec",
+    CurrentValue = 2,
+    Flag = "TweenSpeed",
+
+    Callback = function(Value)
+        TweenSpeed = Value
+    end
+})
+
+--==================================================
 -- TWEEN TELEPORT FUNCTION
 --==================================================
 
 local function TweenTeleport(TargetCFrame, Duration)
-
     local Character =
         Player.Character
         or Player.CharacterAdded:Wait()
@@ -35,7 +53,7 @@ local function TweenTeleport(TargetCFrame, Duration)
         Character:WaitForChild("HumanoidRootPart")
 
     local TweenInfoData = TweenInfo.new(
-        Duration or 1,
+        Duration or TweenSpeed,
         Enum.EasingStyle.Linear,
         Enum.EasingDirection.Out
     )
@@ -283,9 +301,9 @@ local function TweenToSavedPosition()
     })
 
     TweenTeleport(
-        SAVED_POSITION,
-        2
-    )
+    SAVED_POSITION,
+    TweenSpeed
+)
 
     if not SavedPositionTween then
         return false
@@ -317,10 +335,9 @@ local function TweenToVolcanoDip()
     })
 
     TweenTeleport(
-        VOLCANO_POSITION,
-        2
-    )
-
+    VOLCANO_POSITION,
+    TweenSpeed
+)
     if not VolcanoDipTween then
         return false
     end
