@@ -1320,6 +1320,7 @@ local function ScanEggs()
     and not SeenEggs[EggObject]
     and not IsInsidePlot(EggObject)
     and not IsIgnoredDroppedEgg(EggObject)
+    and not IsEggHeldByPlayer(EggObject)
     and not IsEggEquipped(EggObject)
     and not IsNearSavedPosition(EggObject)
 then
