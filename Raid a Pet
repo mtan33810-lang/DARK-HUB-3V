@@ -1054,6 +1054,17 @@ local function ScanEggs()
 end
 
 --==================================================
+-- AUTO EGG SCANNER
+--==================================================
+
+task.spawn(function()
+    while true do
+        ScanEggs()
+        task.wait(AutoScanInterval)
+    end
+end)
+
+--==================================================
 -- HELPER: GET COMBINED EGGS FOR SELECTED RARITIES
 --==================================================
 
