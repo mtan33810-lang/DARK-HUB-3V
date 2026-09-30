@@ -1688,6 +1688,13 @@ EggBlacklistDropdown =
         end
     })
 
+local Label = TeleportsTab:CreateLabel(
+    "Select an egg you want to skip to the Volcano dip",
+    4483362458,
+    Color3.fromRGB(255, 255, 255),
+    false
+)
+
 --==================================================
 -- INITIAL EGG SCAN
 --==================================================
