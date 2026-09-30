@@ -175,7 +175,65 @@ local function StopFly()
     end
 end
 
+--==================================================
+-- HOME TAB
+--==================================================
+
 local hometab = window:CreateTab({ name = "Home", icon = 93364949241311 })
+
+local infinitejump = hometab:CreateToggle({
+    name = "Infinite Jump",
+    flag = "infinitejump",
+    value = false,
+    callback = function(value)
+        infiniteJump = value
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if not infiniteJump then
+        return
+    end
+
+    local Humanoid = getHumanoid()
+
+    if Humanoid then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.Jumping
+        )
+    end
+end)
+
+hometab:CreateSlider({
+    name = "Walk Speed",
+    range = { 0, 300 },
+    increment = 1,
+    value = 16,
+    suffix = "Speed",
+    callback = function(value)
+        local Humanoid = getHumanoid()
+
+        if Humanoid then
+            Humanoid.WalkSpeed = value
+        end
+    end
+})
+
+hometab:CreateSlider({
+    name = "Jump Height",
+    range = { 0, 300 },
+    increment = 1,
+    value = 7,
+    suffix = "Height",
+    callback = function(value)
+        local Humanoid = getHumanoid()
+
+        if Humanoid then
+            Humanoid.UseJumpPower = false
+            Humanoid.JumpHeight = value
+        end
+    end
+})
 
 --==================================================
 -- FLY TOGGLE
