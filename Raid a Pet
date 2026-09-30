@@ -989,7 +989,7 @@ local TeleportsTab = Window:CreateTab("🥚 Farm Egg", nil)
 
 TeleportsTab:CreateToggle({
 
-    Name = "📍 Teleport to Saved Position",
+    Name = "📍 Teleport to Center",
 
     CurrentValue = false,
 
