@@ -1264,6 +1264,23 @@ local function IsEggEquipped(EggObject)
 end
 
 --==================================================
+-- SAVED POSITION EGG FILTER
+--==================================================
+
+local SavedEggIgnoreRadius = 20
+
+local function IsNearSavedPosition(EggObject)
+    local EggCFrame = GetObjectCFrame(EggObject)
+
+    if not EggCFrame then
+        return false
+    end
+
+    return (EggCFrame.Position - SAVED_POSITION.Position).Magnitude
+        <= SavedEggIgnoreRadius
+end
+
+--==================================================
 -- SCAN EGGS
 --==================================================
 
@@ -1286,12 +1303,13 @@ local function ScanEggs()
             GetEggObject(Object)
 
         if EggObject
-            and EggName
-            and not SeenEggs[EggObject]
-            and not IsInsidePlot(EggObject)
-            and not IsIgnoredDroppedEgg(EggObject)
-            and not IsEggEquipped(EggObject)
-        then
+    and EggName
+    and not SeenEggs[EggObject]
+    and not IsInsidePlot(EggObject)
+    and not IsIgnoredDroppedEgg(EggObject)
+    and not IsEggEquipped(EggObject)
+    and not IsNearSavedPosition(EggObject)
+then
 
             local ObjectCFrame =
                 GetObjectCFrame(EggObject)
