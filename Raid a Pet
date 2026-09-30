@@ -1752,10 +1752,10 @@ task.spawn(function()
 
     ScanEggs()
 end)
-local SettingTab = Window:CreateTab("Setting", 8997385940)
 
--- BUTTON
-farmtab:CreateButton({
+local SettingTab = Window:CreateTab("Setting", 4483362458)
+
+Setting Tab:CreateButton({
     Name = "🧹 Remove Other Player Plots",
     Callback = function()
         RemoveOtherPlayerPlots()
