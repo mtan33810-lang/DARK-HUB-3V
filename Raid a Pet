@@ -1633,6 +1633,13 @@ RarityDropdown =
         end
     })
 
+local Label = Tab:CreateLabel(
+    "Select an egg rarities to collect",
+    4483362458,
+    Color3.fromRGB(255, 255, 255),
+    false
+)
+
 --==================================================
 -- EGG BLACKLIST DROPDOWN
 --==================================================
