@@ -12,8 +12,18 @@ local window = Rayfield:CreateWindow({
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Player = Players.LocalPlayer
+
+--==================================================
+-- CHARACTER / HUMANOID
+--==================================================
+
+local function getHumanoid()
+    local Character = Player.Character or Player.CharacterAdded:Wait()
+    return Character:FindFirstChildOfClass("Humanoid")
+end
 
 --==================================================
 -- VARIABLES
@@ -181,6 +191,11 @@ end
 
 local hometab = window:CreateTab({ name = "Home", icon = 7733960981 })
 
+--==================================================
+-- INFINITE JUMP
+--==================================================
+
+local infiniteJump = false
 local infinitejump = hometab:CreateToggle({
     name = "Infinite Jump",
     flag = "infinitejump",
@@ -204,6 +219,10 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+--==================================================
+-- WALK SPEED
+--==================================================
+
 hometab:CreateSlider({
     name = "Walk Speed",
     range = { 0, 300 },
@@ -218,6 +237,10 @@ hometab:CreateSlider({
         end
     end
 })
+
+--==================================================
+-- JUMP HEIGHT
+--==================================================
 
 hometab:CreateSlider({
     name = "Jump Height",
