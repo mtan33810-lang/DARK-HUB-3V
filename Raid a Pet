@@ -774,7 +774,7 @@ end
 local VolcanoPostDelay = 10
 local EggDropPostDelay = 5
 
-local function RunAfterEggPickup()
+local function RunAfterEggPickup(Egg)
 
     if PostPickupRunning then
         return
@@ -817,11 +817,13 @@ local function RunAfterEggPickup()
 
                     if DropSuccess then
 
-                        -- Wait 5 seconds after dropping
+                        -- Mark the egg we just delivered as ignored
+                        MarkEggAsDropped(Egg)
+
                         Rayfield:Notify({
                             Title = "🥚 Egg Flow",
-                            Content = "Egg dropped. Waiting 5 seconds...",
-                            Duration = 2
+                            Content = "Egg dropped at saved position. Ignoring it from future pickup.",
+                            Duration = 3
                         })
 
                         task.wait(EggDropPostDelay)
@@ -1796,7 +1798,7 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
                     -- POST PICKUP FLOW
                     --==================================
 
-                    RunAfterEggPickup()
+                    RunAfterEggPickup(Egg)
 
                     while PostPickupRunning
                         and AutoEggPickup do
