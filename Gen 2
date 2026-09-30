@@ -187,7 +187,7 @@ local fly = hometab:CreateToggle({
     value = false,
     callback = function(value)
 
-        if Value then
+        if value then
             StartFly()
         else
             StopFly()
@@ -207,6 +207,6 @@ hometab:CreateSlider({
     value = 60,
     suffix = "Speed",
     callback = function(value)
-        FlySpeed = Value
+        FlySpeed = value
     end,
 })
