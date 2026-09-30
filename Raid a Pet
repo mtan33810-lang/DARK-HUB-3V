@@ -1570,7 +1570,7 @@ local AutoEggPickupToggle
 AutoEggPickupToggle =
     TeleportsTab:CreateToggle({
 
-        Name = "🥚 Tween to Next Egg + Pick Up",
+        Name = "🥚 Teleport to Next Egg + Pick Up",
 
         CurrentValue = false,
 
