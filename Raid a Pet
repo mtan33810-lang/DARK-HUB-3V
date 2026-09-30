@@ -1757,7 +1757,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-local SettingTab = Window:CreateTab("Setting", 4483362458)
+local SettingTab = Window:CreateTab("Setting", 6031280882)
 
 SettingTab:CreateSection("Settings")
 
