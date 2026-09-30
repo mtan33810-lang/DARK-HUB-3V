@@ -1755,7 +1755,7 @@ end)
 
 local SettingTab = Window:CreateTab("Setting", 4483362458)
 
-Setting Tab:CreateButton({
+SettingTab:CreateButton({
     Name = "🧹 Remove Other Player Plots",
     Callback = function()
         RemoveOtherPlayerPlots()
