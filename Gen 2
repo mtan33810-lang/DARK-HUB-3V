@@ -1,3 +1,4 @@
+getgenv().RAYFIELD_SECURE = true
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
 local window = Rayfield:CreateWindow({
@@ -296,4 +297,4 @@ hometab:CreateSlider({
 -- FARM TAB
 --==================================================
 
-local farmtab = Window:CreateTab("Farm Egg", 8997385940)
+local farmtab = window:CreateTab({ name = "Farm Egg", icon = 8997385940 })
