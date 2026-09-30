@@ -1796,7 +1796,7 @@ local Themes = {
 }
 
 for _, ThemeName in ipairs(Themes) do
-    HomeTab:CreateButton({
+    SettingTab:CreateButton({
         Name = ThemeName,
 
         Callback = function()
