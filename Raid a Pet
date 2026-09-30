@@ -587,7 +587,7 @@ local function TeleportToMyPlot()
 end
 
 --==================================================
--- TWEEN TO SAVED POSITION
+-- INSTANT TELEPORT TO SAVED POSITION
 --==================================================
 
 local function TweenToSavedPosition()
@@ -596,32 +596,27 @@ local function TweenToSavedPosition()
         return false
     end
 
-    Rayfield:Notify({
-        Title = "📍 Saved Position",
-        Content = "Tweening to saved position...",
-        Duration = 2
-    })
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
 
-    TweenTeleport(
-    SAVED_POSITION,
-    TweenSpeed
-)
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
 
-    if not SavedPositionTween then
-        return false
-    end
+    Root.CFrame = SAVED_POSITION
 
     Rayfield:Notify({
         Title = "📍 Saved Position",
-        Content = "Saved position reached!",
+        Content = "Teleported instantly!",
         Duration = 2
     })
 
     return true
 end
 
+
 --==================================================
--- TWEEN TO VOLCANO + DIP
+-- INSTANT TELEPORT TO VOLCANO + DIP
 --==================================================
 
 local function TweenToVolcanoDip()
@@ -630,23 +625,18 @@ local function TweenToVolcanoDip()
         return false
     end
 
-    Rayfield:Notify({
-        Title = "🌋 Volcano",
-        Content = "Tweening to Volcano Dip...",
-        Duration = 2
-    })
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
 
-    TweenTeleport(
-    VOLCANO_POSITION,
-    TweenSpeed
-)
-    if not VolcanoDipTween then
-        return false
-    end
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
+
+    Root.CFrame = VOLCANO_POSITION
 
     Rayfield:Notify({
         Title = "🌋 Volcano",
-        Content = "Volcano Dip position reached!",
+        Content = "Teleported instantly!",
         Duration = 2
     })
 
@@ -662,7 +652,6 @@ local function TweenToVolcanoDip()
         Net and Net:FindFirstChild("RE/VolcanoDip")
 
     if Event then
-
         Event:FireServer()
 
         Rayfield:Notify({
@@ -670,15 +659,12 @@ local function TweenToVolcanoDip()
             Content = "Volcano Dip used!",
             Duration = 2
         })
-
     else
-
         Rayfield:Notify({
             Title = "🌋 Volcano",
             Content = "Volcano Dip remote not found.",
             Duration = 3
         })
-
     end
 
     return true
