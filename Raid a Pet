@@ -329,6 +329,29 @@ local VolcanoDipTween = false
 local PostPickupRunning = false
 
 --==================================================
+-- EGG BLACKLIST
+-- Blacklisted eggs are still picked up,
+-- but they SKIP the Volcano.
+--==================================================
+
+local BlacklistedEggs = {}
+
+local function IsBlacklistedEgg(Egg)
+    if not Egg then
+        return false
+    end
+
+    local Name = tostring(Egg.Name or "")
+
+    Name = Name:gsub("_", " ")
+    Name = Name:gsub("%s+", " ")
+    Name = Name:gsub("^%s+", "")
+    Name = Name:gsub("%s+$", "")
+
+    return BlacklistedEggs[Name] == true
+end
+
+--==================================================
 -- FIND MY PLOT
 --==================================================
 
@@ -718,9 +741,87 @@ local function RunAfterEggPickup(Egg)
         local Success, ErrorMessage = pcall(function()
 
             --==================================================
-            -- VOLCANO ON + SAVED POSITION ON
-            -- Volcano → Saved → Drop → END
+            -- BLACKLISTED EGG
+            -- SKIP VOLCANO COMPLETELY
             --==================================================
+
+            if IsBlacklistedEgg(Egg) then
+
+                Rayfield:Notify({
+                    Title = "🚫 Blacklisted Egg",
+                    Content = "Volcano skipped.",
+                    Duration = 2
+                })
+
+                --==============================================
+                -- BLACKLIST + SAVED POSITION
+                -- Pick Up → Saved → Drop
+                --==============================================
+
+                if SavedPositionTween then
+
+                    Rayfield:Notify({
+                        Title = "🥚 Egg Flow",
+                        Content = "🚫 Volcano skipped → 📍 Saved → 🥚 Drop",
+                        Duration = 2
+                    })
+
+                    local SavedSuccess =
+                        TweenToSavedPosition()
+
+                    if not SavedSuccess then
+                        return
+                    end
+
+                    task.wait(0.5)
+
+                    local DropSuccess =
+                        DropEgg()
+
+                    if DropSuccess then
+
+                        MarkEggAsDropped(Egg)
+
+                        Rayfield:Notify({
+                            Title = "🥚 Egg Flow",
+                            Content = "Blacklisted egg dropped at saved position.",
+                            Duration = 2
+                        })
+
+                        task.wait(EggDropPostDelay)
+
+                    end
+
+                --==============================================
+                -- BLACKLIST + NO SAVED POSITION
+                -- Pick Up → My Plot
+                --==============================================
+
+                else
+
+                    Rayfield:Notify({
+                        Title = "🥚 Egg Flow",
+                        Content = "🚫 Volcano skipped → 🏠 My Plot",
+                        Duration = 2
+                    })
+
+                    TeleportToMyPlot()
+
+                end
+
+                return
+            end
+
+
+            --==================================================
+            -- NORMAL EGG
+            --==================================================
+
+            --==================================================
+            -- VOLCANO ON + SAVED POSITION ON
+            -- Volcano → Saved → Drop
+            --==================================================
+
             if VolcanoDipTween and SavedPositionTween then
 
                 Rayfield:Notify({
@@ -730,7 +831,8 @@ local function RunAfterEggPickup(Egg)
                 })
 
                 -- 1. Volcano
-                local VolcanoSuccess = TweenToVolcanoDip()
+                local VolcanoSuccess =
+                    TweenToVolcanoDip()
 
                 if not VolcanoSuccess then
                     return
@@ -740,7 +842,8 @@ local function RunAfterEggPickup(Egg)
                 task.wait(VolcanoPostDelay)
 
                 -- 3. Saved position
-                local SavedSuccess = TweenToSavedPosition()
+                local SavedSuccess =
+                    TweenToSavedPosition()
 
                 if not SavedSuccess then
                     return
@@ -748,10 +851,12 @@ local function RunAfterEggPickup(Egg)
 
                 task.wait(0.5)
 
-                -- 4. Drop egg
-                local DropSuccess = DropEgg()
+                -- 4. Drop
+                local DropSuccess =
+                    DropEgg()
 
                 if DropSuccess then
+
                     MarkEggAsDropped(Egg)
 
                     Rayfield:Notify({
@@ -761,13 +866,17 @@ local function RunAfterEggPickup(Egg)
                     })
 
                     task.wait(EggDropPostDelay)
+
                 end
+
 
             --==================================================
             -- VOLCANO ON + SAVED POSITION OFF
-            -- Volcano → My Plot → END
+            -- Volcano → My Plot
             --==================================================
-            elseif VolcanoDipTween and not SavedPositionTween then
+
+            elseif VolcanoDipTween
+                and not SavedPositionTween then
 
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
@@ -776,7 +885,8 @@ local function RunAfterEggPickup(Egg)
                 })
 
                 -- 1. Volcano
-                local VolcanoSuccess = TweenToVolcanoDip()
+                local VolcanoSuccess =
+                    TweenToVolcanoDip()
 
                 if not VolcanoSuccess then
                     return
@@ -788,11 +898,14 @@ local function RunAfterEggPickup(Egg)
                 -- 3. My plot
                 TeleportToMyPlot()
 
+
             --==================================================
             -- VOLCANO OFF + SAVED POSITION ON
-            -- Saved → Drop → END
+            -- Saved → Drop
             --==================================================
-            elseif not VolcanoDipTween and SavedPositionTween then
+
+            elseif not VolcanoDipTween
+                and SavedPositionTween then
 
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
@@ -800,8 +913,9 @@ local function RunAfterEggPickup(Egg)
                     Duration = 2
                 })
 
-                -- 1. Saved position
-                local SavedSuccess = TweenToSavedPosition()
+                -- 1. Saved
+                local SavedSuccess =
+                    TweenToSavedPosition()
 
                 if not SavedSuccess then
                     return
@@ -809,10 +923,12 @@ local function RunAfterEggPickup(Egg)
 
                 task.wait(0.5)
 
-                -- 2. Drop egg
-                local DropSuccess = DropEgg()
+                -- 2. Drop
+                local DropSuccess =
+                    DropEgg()
 
                 if DropSuccess then
+
                     MarkEggAsDropped(Egg)
 
                     Rayfield:Notify({
@@ -822,12 +938,15 @@ local function RunAfterEggPickup(Egg)
                     })
 
                     task.wait(EggDropPostDelay)
+
                 end
+
 
             --==================================================
             -- BOTH OFF
-            -- My Plot → END
+            -- My Plot
             --==================================================
+
             else
 
                 Rayfield:Notify({
@@ -842,6 +961,7 @@ local function RunAfterEggPickup(Egg)
 
         end)
 
+
         --==================================================
         -- ERROR HANDLING
         --==================================================
@@ -852,9 +972,10 @@ local function RunAfterEggPickup(Egg)
                 "[EGG FLOW ERROR]",
                 ErrorMessage
             )
+
         end
 
-        -- ALWAYS unlock the pickup loop
+        -- Unlock pickup loop
         PostPickupRunning = false
 
     end)
@@ -1509,6 +1630,61 @@ RarityDropdown =
                         true
                 end
             end
+        end
+    })
+
+--==================================================
+-- EGG BLACKLIST DROPDOWN
+--==================================================
+
+local EggBlacklistDropdown
+
+local EggBlacklistOptions = {}
+
+for EggName, _ in pairs(ValidEggNames) do
+    table.insert(
+        EggBlacklistOptions,
+        EggName
+    )
+end
+
+table.sort(EggBlacklistOptions)
+
+EggBlacklistDropdown =
+    TeleportsTab:CreateDropdown({
+
+        Name = "🚫 Blacklist Eggs",
+
+        Options = EggBlacklistOptions,
+
+        CurrentOption = {},
+
+        MultipleOptions = true,
+
+        Flag = "EggBlacklist",
+
+        Callback = function(OptionsTable)
+
+            BlacklistedEggs = {}
+
+            if type(OptionsTable) == "table" then
+
+                for _, EggName in ipairs(OptionsTable) do
+
+                    BlacklistedEggs[EggName] = true
+
+                end
+
+            end
+
+            Rayfield:Notify({
+                Title = "🚫 Egg Blacklist",
+                Content =
+                    tostring(#OptionsTable)
+                    .. " egg(s) will skip Volcano.",
+                Duration = 2
+            })
+
         end
     })
 
