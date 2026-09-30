@@ -1751,15 +1751,24 @@ AutoEggPickupToggle =
                     })
 
                     --==================================================
-                    -- TWEEN TO EGG
+                    -- TELEPORT DIRECTLY TO NEXT EGG
                     --==================================================
 
-                    TweenTeleport(
-                        Data.CFrame
-                            + Vector3.new(0, 5, 0),
-                        1.5
-                    )
+local LiveEggCFrame = GetObjectCFrame(Egg)
 
+if LiveEggCFrame then
+    Data.CFrame = LiveEggCFrame
+
+    local Character = LocalPlayer.Character
+    local HRP = Character and Character:FindFirstChild("HumanoidRootPart")
+
+    if HRP then
+        HRP.CFrame = LiveEggCFrame + Vector3.new(0, 5, 0)
+    end
+else
+    task.wait(0.3)
+    continue
+end
                     if not AutoEggPickup then
                         break
                     end
