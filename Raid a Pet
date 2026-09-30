@@ -195,7 +195,7 @@ end
 -- HOME TAB
 --============================================================
 
-local HomeTab = Window:CreateTab("Home", "house")
+local HomeTab = Window:CreateTab("🏠 Home", nil)
 
 HomeTab:CreateSection("🚶Movement")
 
@@ -891,7 +891,7 @@ local function RunAfterEggPickup(Egg)
     end)
 end
 
-local TeleportsTab = Window:CreateTab("Farm Egg", "egg")
+local TeleportsTab = Window:CreateTab("🥚 Farm Egg", nil)
 
 --==================================================
 -- SAVED POSITION TOGGLE
@@ -1933,7 +1933,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-local SettingTab = Window:CreateTab("Setting", "settings")
+local SettingTab = Window:CreateTab("⚙️ Setting", nil)
 
 SettingTab:CreateSection("Settings")
 
