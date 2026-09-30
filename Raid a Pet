@@ -1000,6 +1000,27 @@ local EggsByRarity = {}
 local AutoScanInterval = 45
 local CurrentEggIndex = 0
 
+--==================================================
+-- DROPPED EGGS TO IGNORE
+--==================================================
+
+local IgnoredDroppedEggs = {}
+
+local function MarkEggAsDropped(EggObject)
+    if EggObject then
+        IgnoredDroppedEggs[EggObject] = true
+    end
+end
+
+local function IsIgnoredDroppedEgg(EggObject)
+    return EggObject
+        and IgnoredDroppedEggs[EggObject] == true
+end
+
+--==================================================
+-- EGG RARITIES
+--==================================================
+
 local EggRarities = {
     "Common",
     "Uncommon",
@@ -1013,7 +1034,7 @@ local EggRarities = {
 
 local RarityOrder = EggRarities
 
-for _, Rarity in ipairs(EggRarities) do
+for _, Rarity in ipairs(RarityOrder) do
     EggsByRarity[Rarity] = {}
 end
 
@@ -1036,7 +1057,6 @@ local ValidEggNames = {
     ["Slime Egg"] = true,
 
     ["Ice Egg"] = true,
-
     ["Glass Egg"] = true,
     ["Golden Egg"] = true,
     ["Diamond Egg"] = true,
@@ -1061,7 +1081,7 @@ local ValidEggNames = {
 }
 
 --==================================================
--- EGG RARITIES
+-- EGG RARITY MAP
 --==================================================
 
 local EggRarity = {
@@ -1109,6 +1129,8 @@ local EggRarity = {
 
 local function FormatEggName(Name)
 
+    Name = tostring(Name or "")
+
     Name = Name:gsub("_", " ")
     Name = Name:gsub("%s+", " ")
     Name = Name:gsub("^%s+", "")
@@ -1123,11 +1145,23 @@ end
 
 local function GetObjectCFrame(Object)
 
+    if not Object then
+        return nil
+    end
+
     if Object:IsA("BasePart") then
         return Object.CFrame
 
     elseif Object:IsA("Model") then
-        return Object:GetPivot()
+
+        local Success, Pivot =
+            pcall(function()
+                return Object:GetPivot()
+            end)
+
+        if Success then
+            return Pivot
+        end
     end
 
     return nil
@@ -1138,6 +1172,10 @@ end
 --==================================================
 
 local function IsInsidePlot(Object)
+
+    if not Object then
+        return false
+    end
 
     local Current = Object.Parent
 
@@ -1199,63 +1237,63 @@ local function ScanEggs()
     local SeenEggs = {}
     local EggCounts = {}
 
-    for _, Object in ipairs(
-        workspace:GetDescendants()
-    ) do
+    for _, Object in ipairs(workspace:GetDescendants()) do
 
         local EggObject, EggName =
             GetEggObject(Object)
 
         if EggObject
-    and EggName
-    and not IsInsidePlot(EggObject)
-    and not IsIgnoredDroppedEgg(EggObject)
-then
+            and EggName
+            and not SeenEggs[EggObject]
+            and not IsInsidePlot(EggObject)
+            and not IsIgnoredDroppedEgg(EggObject)
+            and not IsEggEquipped(EggObject)
+        then
 
-    if not SeenEggs[EggObject] then
+            SeenEggs[EggObject] = true
 
-                SeenEggs[EggObject] = true
+            local ObjectCFrame =
+                GetObjectCFrame(EggObject)
 
-                local ObjectCFrame =
-                    GetObjectCFrame(EggObject)
+            local Rarity =
+                EggRarity[EggName]
 
-                local Rarity =
-                    EggRarity[EggName]
+            if ObjectCFrame
+                and Rarity
+                and EggsByRarity[Rarity]
+            then
 
-                if ObjectCFrame
-                    and Rarity
-                    and EggsByRarity[Rarity]
-                then
+                EggCounts[EggName] =
+                    (EggCounts[EggName] or 0) + 1
 
-                    EggCounts[EggName] =
-                        (EggCounts[EggName] or 0) + 1
+                local Number =
+                    EggCounts[EggName]
 
-                    local Number =
-                        EggCounts[EggName]
+                local DisplayName =
+                    EggName .. " #" .. Number
 
-                    local DisplayName =
-                        EggName .. " #" .. Number
+                local Data = {
+                    Object = EggObject,
+                    CFrame = ObjectCFrame,
+                    EggName = EggName,
+                    Rarity = Rarity,
+                    Number = Number
+                }
 
-                    local Data = {
-                        Object = EggObject,
-                        CFrame = ObjectCFrame,
-                        EggName = EggName,
-                        Rarity = Rarity,
-                        Number = Number
-                    }
+                EggData[DisplayName] = Data
 
-                    EggData[DisplayName] = Data
-
-                    table.insert(
-                        EggsByRarity[Rarity],
-                        Data
-                    )
-                end
+                table.insert(
+                    EggsByRarity[Rarity],
+                    Data
+                )
             end
         end
     end
 
-    -- Sort eggs
+    --==================================================
+    -- SORT
+    --==================================================
+
     for _, EggList in pairs(EggsByRarity) do
 
         table.sort(
@@ -1271,7 +1309,10 @@ then
         )
     end
 
-    -- Refresh dropdown options while keeping existing selections intact
+    --==================================================
+    -- UPDATE DROPDOWN
+    --==================================================
+
     if RarityDropdown then
 
         local Options = {}
@@ -1279,34 +1320,68 @@ then
 
         for _, Rarity in ipairs(RarityOrder) do
 
-            local Count = #EggsByRarity[Rarity]
-            local FormattedOption = Rarity .. " (" .. Count .. ")"
+            local Count =
+                #EggsByRarity[Rarity]
 
-            table.insert(Options, FormattedOption)
+            local FormattedOption =
+                Rarity .. " (" .. Count .. ")"
 
-            -- Check if this rarity was previously checked by the player
+            table.insert(
+                Options,
+                FormattedOption
+            )
+
             if SelectedRarities[Rarity] then
-                table.insert(KeptSelections, FormattedOption)
+
+                table.insert(
+                    KeptSelections,
+                    FormattedOption
+                )
             end
         end
 
-        -- Refresh with the newly built selection list
         RarityDropdown:Refresh(Options)
-        RarityDropdown:Set(KeptSelections)
+
+        if #KeptSelections > 0 then
+            RarityDropdown:Set(KeptSelections)
+        end
     end
 end
 
 --==================================================
--- HELPER: GET COMBINED EGGS FOR SELECTED RARITIES
+-- GET SELECTED EGGS
 --==================================================
 
 local function GetSelectedEggsList()
+
     local CombinedList = {}
 
     for Rarity, Selected in pairs(SelectedRarities) do
-        if Selected and EggsByRarity[Rarity] then
-            for _, Data in ipairs(EggsByRarity[Rarity]) do
-                table.insert(CombinedList, Data)
+
+        if Selected
+            and EggsByRarity[Rarity]
+        then
+
+            for _, Data in ipairs(
+                EggsByRarity[Rarity]
+            ) do
+
+                if Data
+                    and Data.Object
+                    and Data.Object.Parent
+                    and not IsIgnoredDroppedEgg(
+                        Data.Object
+                    )
+                    and not IsEggEquipped(
+                        Data.Object
+                    )
+                then
+
+                    table.insert(
+                        CombinedList,
+                        Data
+                    )
+                end
             end
         end
     end
@@ -1321,6 +1396,7 @@ end
 local RarityOptions = {}
 
 for _, Rarity in ipairs(RarityOrder) do
+
     table.insert(
         RarityOptions,
         Rarity .. " (0)"
@@ -1345,49 +1421,34 @@ RarityDropdown =
             SelectedRarities = {}
 
             if type(OptionsTable) == "table" then
-                for _, OptionStr in ipairs(OptionsTable) do
-                    local Cleaned = OptionStr:gsub("%s*%(%d+%)$", "")
-                    SelectedRarities[Cleaned] = true
+
+                for _, OptionStr in ipairs(
+                    OptionsTable
+                ) do
+
+                    local Cleaned =
+                        OptionStr:gsub(
+                            "%s*%(%d+%)$",
+                            ""
+                        )
+
+                    SelectedRarities[Cleaned] =
+                        true
                 end
             end
-
-            local CombinedList = GetSelectedEggsList()
-
         end
     })
 
 --==================================================
--- TWEEN TO NEXT EGG + PICK UP
--- AUTO OFF WHEN NO EGGS
--- AUTO ON WHEN EGGS RETURN
--- IGNORE CURRENTLY EQUIPPED EGG
+-- AUTO EGG PICKUP
 --==================================================
 
 local AutoEggPickup = false
 local AutoEggWatcherRunning = false
-
 local AutoEggPickupToggle
 
 --==================================================
--- DROPPED EGGS TO IGNORE
---==================================================
-
-local IgnoredDroppedEggs = {}
-
-local function MarkEggAsDropped(EggObject)
-    if not EggObject then
-        return
-    end
-
-    IgnoredDroppedEggs[EggObject] = true
-end
-
-local function IsIgnoredDroppedEgg(EggObject)
-    return EggObject and IgnoredDroppedEggs[EggObject] == true
-end
-
---==================================================
--- CHECK IF EGG IS CURRENTLY EQUIPPED
+-- CHECK CURRENTLY EQUIPPED EGG
 --==================================================
 
 local function IsEggEquipped(EggObject)
@@ -1396,31 +1457,36 @@ local function IsEggEquipped(EggObject)
         return false
     end
 
-    local Character = Player.Character
+    local Character =
+        Player.Character
 
     if not Character then
         return false
     end
 
-    -- Egg is directly inside the Character
-    if EggObject:IsDescendantOf(Character) then
+    if EggObject:IsDescendantOf(
+        Character
+    ) then
         return true
     end
 
-    -- Check equipped Tools
-    for _, Object in ipairs(Character:GetChildren()) do
+    for _, Object in ipairs(
+        Character:GetChildren()
+    ) do
 
         if Object:IsA("Tool") then
 
-            -- Egg object is inside the equipped Tool
             if EggObject == Object
-                or EggObject:IsDescendantOf(Object) then
-
+                or EggObject:IsDescendantOf(
+                    Object
+                )
+            then
                 return true
             end
 
-            -- Same-name safety check
-            if EggObject.Name == Object.Name then
+            if EggObject.Name ==
+                Object.Name
+            then
                 return true
             end
         end
@@ -1433,420 +1499,94 @@ end
 -- AUTO EGG PICKUP
 --==================================================
 
-AutoEggPickupToggle = TeleportsTab:CreateToggle({
-    Name = "🥚 Tween to Next Egg + Pick Up",
-    CurrentValue = false,
-    Flag = "AutoEggPickup",
+AutoEggPickupToggle =
+    TeleportsTab:CreateToggle({
 
-    Callback = function(Value)
+        Name = "🥚 Tween to Next Egg + Pick Up",
 
-        AutoEggPickup = Value
+        CurrentValue = false,
 
-        --==========================================
-        -- STOP
-        --==========================================
+        Flag = "AutoEggPickup",
 
-        if not Value then
+        Callback = function(Value)
 
-            Rayfield:Notify({
-                Title = "Egg Pickup",
-                Content = "Auto egg pickup stopped.",
-                Duration = 2
-            })
+            AutoEggPickup = Value
 
-            return
-        end
+            if not Value then
 
-        --==========================================
-        -- CHECK RARITY SELECTION
-        --==========================================
+                Rayfield:Notify({
+                    Title = "Egg Pickup",
+                    Content = "Auto egg pickup stopped.",
+                    Duration = 2
+                })
 
-        local CombinedList = GetSelectedEggsList()
-
-        if #CombinedList == 0 then
-
-            local HasAnySelected = false
-
-            for _, v in pairs(SelectedRarities) do
-
-                if v then
-                    HasAnySelected = true
-                    break
-                end
+                return
             end
 
-            if not HasAnySelected then
+            -- Always scan before checking eggs
+            ScanEggs()
+
+            local CombinedList =
+                GetSelectedEggsList()
+
+            if #CombinedList == 0 then
+
+                local HasAnySelected = false
+
+                for _, v in pairs(
+                    SelectedRarities
+                ) do
+
+                    if v then
+                        HasAnySelected = true
+                        break
+                    end
+                end
+
+                if not HasAnySelected then
+
+                    AutoEggPickup = false
+                    AutoEggPickupToggle:Set(false)
+
+                    Rayfield:Notify({
+                        Title = "Egg Scanner",
+                        Content = "Select at least one rarity first.",
+                        Duration = 3
+                    })
+
+                    return
+                end
 
                 AutoEggPickup = false
                 AutoEggPickupToggle:Set(false)
 
                 Rayfield:Notify({
-                    Title = "Egg Scanner",
-                    Content = "Select at least one rarity first.",
-                    Duration = 3
+                    Title = "Egg Pickup",
+                    Content = "No available eggs found.",
+                    Duration = 2
                 })
 
                 return
             end
-        end
 
-        --==========================================
-        -- SCAN
-        --==========================================
-
-        ScanEggs()
-
-        CombinedList = GetSelectedEggsList()
-
-        --==========================================
-        -- REMOVE EQUIPPED EGGS FROM LIST
-        --==========================================
-
-        for i = #CombinedList, 1, -1 do
-
-            local Data = CombinedList[i]
-
-            if Data
-                and Data.Object
-                and IsEggEquipped(Data.Object) then
-
-                table.remove(CombinedList, i)
-            end
-        end
-
-        --==========================================
-        -- NO EGGS
-        --==========================================
-
-        if #CombinedList == 0 then
-
-            AutoEggPickup = false
-            AutoEggPickupToggle:Set(false)
+            CurrentEggIndex = 0
 
             Rayfield:Notify({
                 Title = "Egg Pickup",
-                Content = "No available eggs found.",
+                Content = "Started auto pickup!",
                 Duration = 2
             })
 
-            return
-        end
+            task.spawn(function()
 
-        --==========================================
-        -- START
-        --==========================================
-
-        Rayfield:Notify({
-            Title = "Egg Pickup",
-            Content = "Started auto pickup!",
-            Duration = 2
-        })
-
-        task.spawn(function()
-
-            while AutoEggPickup do
-
-                --==================================
-                -- GET CURRENT EGG LIST
-                --==================================
-
-                local EggList = GetSelectedEggsList()
-
-                --==================================
-                -- REMOVE STALE / EQUIPPED EGGS
-                --==================================
-
-                for i = #EggList, 1, -1 do
-
-                    local Data = EggList[i]
-
-                    if not Data
-                        or not Data.Object
-                        or not Data.Object.Parent then
-
-                        table.remove(EggList, i)
-
-                    elseif IsEggEquipped(Data.Object) then
-
-                        -- Ignore currently equipped egg
-                        table.remove(EggList, i)
-                    end
-                end
-
-                --==================================
-                -- NO EGGS
-                --==================================
-
-                if #EggList == 0 then
-
-                    CurrentEggIndex = 0
-                    AutoEggPickup = false
-
-                    if AutoEggPickupToggle then
-                        AutoEggPickupToggle:Set(false)
-                    end
-
-                    Rayfield:Notify({
-                        Title = "Egg Pickup",
-                        Content =
-                            "No available eggs found. Toggle turned OFF.",
-
-                        Duration = 2
-                    })
-
-                    break
-                end
-
-                --==================================
-                -- NEXT EGG
-                --==================================
-
-                CurrentEggIndex = (CurrentEggIndex or 0) + 1
-
-                if CurrentEggIndex > #EggList then
-                    CurrentEggIndex = 1
-                end
-
-                local Data = EggList[CurrentEggIndex]
-
-                if not Data then
+                while AutoEggPickup do
 
                     ScanEggs()
-                    task.wait(0.3)
 
-                    continue
-                end
-
-                local Egg = Data.Object
-
-                --==================================
-                -- VERIFY EGG
-                --==================================
-
-                if not Egg or not Egg.Parent then
-
-                    table.remove(EggList, CurrentEggIndex)
-
-                    CurrentEggIndex =
-                        math.max(CurrentEggIndex - 1, 0)
-
-                    task.wait(0.2)
-
-                    continue
-                end
-
-                --==================================
-                -- CHECK EQUIPPED AGAIN
-                --==================================
-
-                if IsEggEquipped(Egg) then
-
-                    task.wait(0.2)
-                    continue
-                end
-
-                --==================================
-                -- UPDATE POSITION
-                --==================================
-
-                local CurrentCFrame = GetObjectCFrame(Egg)
-
-                if CurrentCFrame then
-                    Data.CFrame = CurrentCFrame
-                end
-
-                if not Data.CFrame then
-
-                    task.wait(0.5)
-                    continue
-                end
-
-                --==================================
-                -- EGG INFO
-                --==================================
-
-                local EggName =
-                    tostring(
-                        Data.EggName
-                        or Egg.Name
-                        or "Unknown Egg"
-                    )
-
-                local EggNumber =
-                    tostring(Data.Number or "?")
-
-                local Rarity =
-                    tostring(Data.Rarity or "Unknown")
-
-                Rayfield:Notify({
-                    Title = "Egg Pickup",
-
-                    Content =
-                        EggName
-                        .. " #"
-                        .. EggNumber
-                        .. "\n"
-                        .. Rarity
-                        .. " • "
-                        .. CurrentEggIndex
-                        .. "/"
-                        .. #EggList,
-
-                    Duration = 2
-                })
-
-                --==================================
-                -- TWEEN TO EGG
-                --==================================
-
-                TweenTeleport(
-                    Data.CFrame + Vector3.new(0, 5, 0),
-                    1.5
-                )
-
-                if not AutoEggPickup then
-                    break
-                end
-
-                -- Give tween time to finish
-                task.wait(0.4)
-
-                --==================================
-                -- VERIFY AGAIN
-                --==================================
-
-                if not Egg or not Egg.Parent then
-
-                    ScanEggs()
-                    task.wait(0.3)
-
-                    continue
-                end
-
-                --==================================
-                -- DO NOT PICK UP EQUIPPED EGG
-                --==================================
-
-                if IsEggEquipped(Egg) then
-
-                    task.wait(0.3)
-                    continue
-                end
-
-                --==================================
-                -- FIND PICKUP PROMPT
-                --==================================
-
-                local FoundPrompt = nil
-
-                for _, Object in ipairs(Egg:GetDescendants()) do
-
-                    if Object:IsA("ProximityPrompt") then
-
-                        local PromptText =
-                            string.lower(
-                                tostring(
-                                    Object.ActionText or ""
-                                )
-                            )
-
-                        if PromptText == "pick up"
-                            or PromptText:find(
-                                "pick",
-                                1,
-                                true
-                            ) then
-
-                            FoundPrompt = Object
-                            break
-                        end
-                    end
-                end
-
-                --==================================
-                -- PICK UP
-                --==================================
-
-                if FoundPrompt
-                    and typeof(fireproximityprompt) == "function" then
-
-                    -- Final safety check
-                    if IsEggEquipped(Egg) then
-
-                        task.wait(0.3)
-                        continue
-                    end
-
-                    fireproximityprompt(FoundPrompt)
-
-                    Rayfield:Notify({
-                        Title = "Egg Pickup",
-
-                        Content =
-                            "Picked up "
-                            .. EggName
-                            .. " #"
-                            .. EggNumber,
-
-                        Duration = 2
-                    })
-
-                    -- Allow pickup to register
-                    task.wait(0.8)
-
-                    --==================================
-                    -- POST PICKUP FLOW
-                    --==================================
-
-                    RunAfterEggPickup(Egg)
-
-                    while PostPickupRunning
-                        and AutoEggPickup do
-
-                        task.wait(0.1)
-                    end
-
-                    if not AutoEggPickup then
-                        break
-                    end
-
-                    --==================================
-                    -- RESCAN
-                    --==================================
-
-                    ScanEggs()
-                    task.wait(0.3)
-
-                    local RemainingEggs =
+                    local EggList =
                         GetSelectedEggsList()
 
-                    --==================================
-                    -- REMOVE EQUIPPED EGGS
-                    --==================================
-
-                    for i = #RemainingEggs, 1, -1 do
-
-                        local RemainingData =
-                            RemainingEggs[i]
-
-                        if RemainingData
-                            and RemainingData.Object
-                            and IsEggEquipped(
-                                RemainingData.Object
-                            ) then
-
-                            table.remove(
-                                RemainingEggs,
-                                i
-                            )
-                        end
-                    end
-
-                    --==================================
-                    -- NO EGGS AFTER PICKUP
-                    --==================================
-
-                    if #RemainingEggs == 0 then
+                    if #EggList == 0 then
 
                         CurrentEggIndex = 0
                         AutoEggPickup = false
@@ -1857,32 +1597,227 @@ AutoEggPickupToggle = TeleportsTab:CreateToggle({
 
                         Rayfield:Notify({
                             Title = "Egg Pickup",
-
-                            Content =
-                                "No available eggs. Toggle turned OFF until an egg respawns.",
-
+                            Content = "No available eggs found.",
                             Duration = 2
                         })
 
                         break
                     end
 
-                else
+                    CurrentEggIndex =
+                        (CurrentEggIndex or 0) + 1
 
-                    --==================================
-                    -- NO PICKUP PROMPT
-                    --==================================
+                    if CurrentEggIndex >
+                        #EggList
+                    then
+                        CurrentEggIndex = 1
+                    end
 
-                    task.wait(0.5)
+                    local Data =
+                        EggList[CurrentEggIndex]
+
+                    if not Data
+                        or not Data.Object
+                        or not Data.Object.Parent
+                    then
+                        task.wait(0.3)
+                        continue
+                    end
+
+                    local Egg =
+                        Data.Object
+
+                    if IsIgnoredDroppedEgg(Egg)
+                        or IsEggEquipped(Egg)
+                    then
+                        task.wait(0.2)
+                        continue
+                    end
+
+                    local CurrentCFrame =
+                        GetObjectCFrame(Egg)
+
+                    if CurrentCFrame then
+                        Data.CFrame =
+                            CurrentCFrame
+                    end
+
+                    if not Data.CFrame then
+                        task.wait(0.3)
+                        continue
+                    end
+
+                    local EggName =
+                        tostring(
+                            Data.EggName
+                            or Egg.Name
+                            or "Unknown Egg"
+                        )
+
+                    local EggNumber =
+                        tostring(
+                            Data.Number or "?"
+                        )
+
+                    local Rarity =
+                        tostring(
+                            Data.Rarity
+                            or "Unknown"
+                        )
+
+                    Rayfield:Notify({
+                        Title = "Egg Pickup",
+
+                        Content =
+                            EggName
+                            .. " #"
+                            .. EggNumber
+                            .. "\n"
+                            .. Rarity
+                            .. " • "
+                            .. CurrentEggIndex
+                            .. "/"
+                            .. #EggList,
+
+                        Duration = 2
+                    })
+
+                    --==================================================
+                    -- TWEEN TO EGG
+                    --==================================================
+
+                    TweenTeleport(
+                        Data.CFrame
+                            + Vector3.new(0, 5, 0),
+                        1.5
+                    )
+
+                    if not AutoEggPickup then
+                        break
+                    end
+
+                    task.wait(0.4)
+
+                    --==================================================
+                    -- VERIFY
+                    --==================================================
+
+                    if not Egg
+                        or not Egg.Parent
+                        or IsIgnoredDroppedEgg(Egg)
+                        or IsEggEquipped(Egg)
+                    then
+                        task.wait(0.2)
+                        continue
+                    end
+
+                    --==================================================
+                    -- FIND PICKUP PROMPT
+                    --==================================================
+
+                    local FoundPrompt = nil
+
+                    for _, Object in ipairs(
+                        Egg:GetDescendants()
+                    ) do
+
+                        if Object:IsA(
+                            "ProximityPrompt"
+                        ) then
+
+                            local PromptText =
+                                string.lower(
+                                    tostring(
+                                        Object.ActionText
+                                        or ""
+                                    )
+                                )
+
+                            if PromptText == "pick up"
+                                or PromptText:find(
+                                    "pick",
+                                    1,
+                                    true
+                                )
+                            then
+
+                                FoundPrompt =
+                                    Object
+
+                                break
+                            end
+                        end
+                    end
+
+                    --==================================================
+                    -- PICK UP
+                    --==================================================
+
+                    if FoundPrompt
+                        and typeof(
+                            fireproximityprompt
+                        ) == "function"
+                    then
+
+                        if IsEggEquipped(Egg)
+                            or IsIgnoredDroppedEgg(Egg)
+                        then
+                            task.wait(0.2)
+                            continue
+                        end
+
+                        fireproximityprompt(
+                            FoundPrompt
+                        )
+
+                        Rayfield:Notify({
+                            Title = "Egg Pickup",
+
+                            Content =
+                                "Picked up "
+                                .. EggName
+                                .. " #"
+                                .. EggNumber,
+
+                            Duration = 2
+                        })
+
+                        task.wait(0.8)
+
+                        --==================================================
+                        -- POST PICKUP FLOW
+                        --==================================================
+
+                        RunAfterEggPickup(Egg)
+
+                        while PostPickupRunning
+                            and AutoEggPickup
+                        do
+                            task.wait(0.1)
+                        end
+
+                        if not AutoEggPickup then
+                            break
+                        end
+
+                        --==================================================
+                        -- RESCAN AFTER DROP
+                        --==================================================
+
+                        ScanEggs()
+
+                        task.wait(0.3)
+                    else
+
+                        task.wait(0.5)
+                    end
                 end
-            end
-        end)
-    end
-})
+            end)
+        end
+    })
 
 --==================================================
 -- AUTO EGG WATCHER
--- Turns toggle ON when an available egg comes back
 --==================================================
 
 if not AutoEggWatcherRunning then
@@ -1897,7 +1832,9 @@ if not AutoEggWatcherRunning then
 
             local HasAnySelected = false
 
-            for _, v in pairs(SelectedRarities) do
+            for _, v in pairs(
+                SelectedRarities
+            ) do
 
                 if v then
                     HasAnySelected = true
@@ -1907,38 +1844,10 @@ if not AutoEggWatcherRunning then
 
             if HasAnySelected then
 
-                --==================================
-                -- REFRESH EGG LIST
-                --==================================
-
                 ScanEggs()
 
                 local EggList =
                     GetSelectedEggsList()
-
-                --==================================
-                -- REMOVE EQUIPPED EGGS
-                --==================================
-
-                for i = #EggList, 1, -1 do
-
-                    local Data = EggList[i]
-
-                    if not Data
-                        or not Data.Object
-                        or not Data.Object.Parent then
-
-                        table.remove(EggList, i)
-
-                    elseif IsEggEquipped(Data.Object) then
-
-                        table.remove(EggList, i)
-                    end
-                end
-
-                --==================================
-                -- AVAILABLE EGG EXISTS
-                --==================================
 
                 if #EggList > 0 then
 
@@ -1952,10 +1861,7 @@ if not AutoEggWatcherRunning then
 
                         Rayfield:Notify({
                             Title = "Egg Pickup",
-
-                            Content =
-                                "Available egg detected! Auto pickup turned ON.",
-
+                            Content = "Available egg detected! Auto pickup turned ON.",
                             Duration = 2
                         })
                     end
