@@ -1720,24 +1720,37 @@ AutoEggPickupToggle =
                     })
 
                     --==================================================
-                    -- TELEPORT DIRECTLY TO NEXT EGG
-                    --==================================================
+-- TELEPORT DIRECTLY TO NEXT EGG
+--==================================================
 
 local LiveEggCFrame = GetObjectCFrame(Egg)
 
-if LiveEggCFrame then
-    Data.CFrame = LiveEggCFrame
-
-    local Character = LocalPlayer.Character
-    local HRP = Character and Character:FindFirstChild("HumanoidRootPart")
-
-    if HRP then
-        HRP.CFrame = LiveEggCFrame + Vector3.new(0, 5, 0)
-    end
-else
+if not LiveEggCFrame then
     task.wait(0.3)
     continue
 end
+
+Data.CFrame = LiveEggCFrame
+
+local Character = Player.Character
+
+if not Character then
+    task.wait(0.3)
+    continue
+end
+
+local HRP = Character:FindFirstChild("HumanoidRootPart")
+
+if not HRP then
+    task.wait(0.3)
+    continue
+end
+
+-- Instant teleport to the egg
+HRP.CFrame = LiveEggCFrame + Vector3.new(0, 5, 0)
+
+task.wait(0.2)
+    
                     if not AutoEggPickup then
                         break
                     end
