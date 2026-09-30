@@ -1002,7 +1002,7 @@ TeleportsTab:CreateToggle({
 
     Name = "🌋 Tween Volcano Dip",
 
-    CurrentValue = false,
+    CurrentValue = true,
 
     Flag = "VolcanoDipTween",
 
@@ -1078,7 +1078,7 @@ local SelectedRarities = {}
 local EggData = {}
 local EggsByRarity = {}
 
-local AutoScanInterval = 10
+local AutoScanInterval = 45
 local CurrentEggIndex = 0
 
 local EggRarities = {
