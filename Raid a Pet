@@ -1220,6 +1220,45 @@ local function GetEggObject(Object)
 end
 
 --==================================================
+-- CHECK CURRENTLY EQUIPPED EGG
+--==================================================
+
+local function IsEggEquipped(EggObject)
+
+    if not EggObject then
+        return false
+    end
+
+    local Character = Player.Character
+
+    if not Character then
+        return false
+    end
+
+    if EggObject:IsDescendantOf(Character) then
+        return true
+    end
+
+    for _, Object in ipairs(Character:GetChildren()) do
+
+        if Object:IsA("Tool") then
+
+            if EggObject == Object
+                or EggObject:IsDescendantOf(Object)
+            then
+                return true
+            end
+
+            if EggObject.Name == Object.Name then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+--==================================================
 -- SCAN EGGS
 --==================================================
 
@@ -1486,54 +1525,6 @@ end)
 local AutoEggPickup = false
 local AutoEggWatcherRunning = false
 local AutoEggPickupToggle
-
---==================================================
--- CHECK CURRENTLY EQUIPPED EGG
---==================================================
-
-local function IsEggEquipped(EggObject)
-
-    if not EggObject then
-        return false
-    end
-
-    local Character =
-        Player.Character
-
-    if not Character then
-        return false
-    end
-
-    if EggObject:IsDescendantOf(
-        Character
-    ) then
-        return true
-    end
-
-    for _, Object in ipairs(
-        Character:GetChildren()
-    ) do
-
-        if Object:IsA("Tool") then
-
-            if EggObject == Object
-                or EggObject:IsDescendantOf(
-                    Object
-                )
-            then
-                return true
-            end
-
-            if EggObject.Name ==
-                Object.Name
-            then
-                return true
-            end
-        end
-    end
-
-    return false
-end
 
 --==================================================
 -- AUTO EGG PICKUP
