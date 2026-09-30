@@ -799,13 +799,11 @@ local function RunAfterEggPickup()
     task.spawn(function()
 
         --==========================================
-        -- VOLCANO ON + SAVED ON
-        -- Volcano → Delay → Saved → Drop → Delay
+        -- VOLCANO ON + SAVED POSITION ON
+        -- Volcano → 10 sec → Saved Position
+        -- → Drop Egg → 5 sec → END
         --==========================================
-
-        if VolcanoDipTween
-            and SavedPositionTween
-        then
+        if VolcanoDipTween and SavedPositionTween then
 
             Rayfield:Notify({
                 Title = "🥚 Egg Flow",
@@ -813,44 +811,27 @@ local function RunAfterEggPickup()
                 Duration = 2
             })
 
-            local VolcanoSuccess =
-                TweenToVolcanoDip()
+            local VolcanoSuccess = TweenToVolcanoDip()
 
-            if VolcanoSuccess
-                and VolcanoDipTween
-                and SavedPositionTween
-            then
+            if VolcanoSuccess then
 
-                -- Delay AFTER volcano
+                -- Wait 10 seconds at Volcano
                 task.wait(VolcanoPostDelay)
 
-                if not PostPickupRunning then
-                    return
-                end
+                -- Go to saved position
+                local SavedSuccess = TweenToSavedPosition()
 
-                -- Tween to saved position
-                local SavedSuccess =
-                    TweenToSavedPosition()
+                if SavedSuccess then
 
-                if SavedSuccess
-                    and SavedPositionTween
-                then
-
-                    --==================================
-                    -- DROP EGG AT SAVED POSITION
-                    --==================================
-
+                    -- Small delay after arriving
                     task.wait(0.5)
 
-                    local DropSuccess =
-                        DropEgg()
+                    -- Drop egg
+                    local DropSuccess = DropEgg()
 
                     if DropSuccess then
 
-                        --==================================
-                        -- 5 SECOND DELAY AFTER DROP
-                        --==================================
-
+                        -- Wait 5 seconds after dropping
                         Rayfield:Notify({
                             Title = "🥚 Egg Flow",
                             Content = "Egg dropped. Waiting 5 seconds...",
@@ -863,13 +844,10 @@ local function RunAfterEggPickup()
             end
 
         --==========================================
-        -- VOLCANO ON + SAVED OFF
-        -- Volcano → Delay → My Plot
+        -- VOLCANO ON + SAVED POSITION OFF
+        -- Volcano → 10 sec → My Plot
         --==========================================
-
-        elseif VolcanoDipTween
-            and not SavedPositionTween
-        then
+        elseif VolcanoDipTween and not SavedPositionTween then
 
             Rayfield:Notify({
                 Title = "🥚 Egg Flow",
@@ -877,25 +855,18 @@ local function RunAfterEggPickup()
                 Duration = 2
             })
 
-            local VolcanoSuccess =
-                TweenToVolcanoDip()
+            local VolcanoSuccess = TweenToVolcanoDip()
 
             if VolcanoSuccess then
-
-                -- Delay AFTER volcano
                 task.wait(VolcanoPostDelay)
-
                 TeleportToMyPlot()
             end
 
         --==========================================
-        -- VOLCANO OFF + SAVED ON
-        -- Saved → Drop → 5 sec Delay
+        -- VOLCANO OFF + SAVED POSITION ON
+        -- Saved Position → Drop → 5 sec → END
         --==========================================
-
-        elseif not VolcanoDipTween
-            and SavedPositionTween
-        then
+        elseif not VolcanoDipTween and SavedPositionTween then
 
             Rayfield:Notify({
                 Title = "🥚 Egg Flow",
@@ -903,35 +874,15 @@ local function RunAfterEggPickup()
                 Duration = 2
             })
 
-            local SavedSuccess =
-                TweenToSavedPosition()
+            local SavedSuccess = TweenToSavedPosition()
 
-            if SavedSuccess
-                and SavedPositionTween
-            then
+            if SavedSuccess then
 
-                -- Small delay after arriving
                 task.wait(0.5)
 
-                --==================================
-                -- DROP EGG
-                --==================================
-
-                local DropSuccess =
-                    DropEgg()
+                local DropSuccess = DropEgg()
 
                 if DropSuccess then
-
-                    Rayfield:Notify({
-                        Title = "🥚 Egg Flow",
-                        Content = "Egg dropped. Waiting 5 seconds...",
-                        Duration = 2
-                    })
-
-                    --==================================
-                    -- 5 SECOND DELAY
-                    --==================================
-
                     task.wait(EggDropPostDelay)
                 end
             end
@@ -940,7 +891,6 @@ local function RunAfterEggPickup()
         -- BOTH OFF
         -- My Plot → END
         --==========================================
-
         else
 
             Rayfield:Notify({
