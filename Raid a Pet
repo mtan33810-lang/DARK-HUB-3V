@@ -1249,18 +1249,21 @@ local function ScanEggs()
             and not IsEggEquipped(EggObject)
         then
 
-            SeenEggs[EggObject] = true
-
             local ObjectCFrame =
                 GetObjectCFrame(EggObject)
 
             local Rarity =
                 EggRarity[EggName]
 
+            -- Only accept eggs that have:
+            -- 1. A valid rarity
+            -- 2. A valid CFrame
             if ObjectCFrame
                 and Rarity
                 and EggsByRarity[Rarity]
             then
+
+                SeenEggs[EggObject] = true
 
                 EggCounts[EggName] =
                     (EggCounts[EggName] or 0) + 1
@@ -1290,7 +1293,7 @@ local function ScanEggs()
     end
 
     --==================================================
-    -- SORT
+    -- SORT EGGS
     --==================================================
 
     for _, EggList in pairs(EggsByRarity) do
@@ -1320,7 +1323,7 @@ local function ScanEggs()
         for _, Rarity in ipairs(RarityOrder) do
 
             local Count =
-                #EggsByRarity[Rarity]
+                #(EggsByRarity[Rarity] or {})
 
             local FormattedOption =
                 Rarity .. " (" .. Count .. ")"
@@ -1345,6 +1348,32 @@ local function ScanEggs()
             RarityDropdown:Set(KeptSelections)
         end
     end
+
+    --==================================================
+    -- DEBUG
+    --==================================================
+
+    local TotalEggs = 0
+
+    for _, Rarity in ipairs(RarityOrder) do
+
+        local Count =
+            #(EggsByRarity[Rarity] or {})
+
+        TotalEggs =
+            TotalEggs + Count
+
+        print(
+            "[EGG SCANNER]",
+            Rarity,
+            Count
+        )
+    end
+
+    print(
+        "[EGG SCANNER] Total valid eggs:",
+        TotalEggs
+    )
 end
 
 --==================================================
@@ -1437,6 +1466,18 @@ RarityDropdown =
             end
         end
     })
+
+--==================================================
+-- INITIAL EGG SCAN
+--==================================================
+
+task.defer(function()
+
+    task.wait(1)
+
+    ScanEggs()
+
+end)
 
 --==================================================
 -- AUTO EGG PICKUP
