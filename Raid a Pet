@@ -19,6 +19,120 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
+--============================================================
+-- HOME TAB
+--============================================================
+
+local HomeTab = Window:CreateTab("Home", 7733960981)
+
+HomeTab:CreateSection("🚶Movement")
+
+local infiniteJump = false
+
+HomeTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+
+    Callback = function(Value)
+        infiniteJump = Value
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if not infiniteJump then
+        return
+    end
+
+    local Humanoid = getHumanoid()
+
+    if Humanoid then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.Jumping
+        )
+    end
+end)
+
+HomeTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {0, 300},
+    Increment = 1,
+    Suffix = " Speed",
+    CurrentValue = 16,
+    Flag = "WalkSpeed",
+
+    Callback = function(Value)
+        local Humanoid = getHumanoid()
+
+        if Humanoid then
+            Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+HomeTab:CreateSlider({
+    Name = "Jump Height",
+    Range = {0, 300},
+    Increment = 1,
+    Suffix = " Height",
+    CurrentValue = 7,
+    Flag = "JumpHeight",
+
+    Callback = function(Value)
+        local Humanoid = getHumanoid()
+
+        if Humanoid then
+            Humanoid.UseJumpPower = false
+            Humanoid.JumpHeight = Value
+        end
+    end
+})
+
+--==================================================
+-- FLY TOGGLE
+--==================================================
+
+HomeTab:CreateToggle({
+    Name = "✈️ Fly Mode",
+    CurrentValue = false,
+    Flag = "FlyMode",
+
+    Callback = function(Value)
+
+        if Value then
+            StartFly()
+        else
+            StopFly()
+        end
+
+    end
+})
+
+--==================================================
+-- FLY SPEED
+--==================================================
+
+HomeTab:CreateSlider({
+    Name = "🚀 Fly Speed",
+
+    Range = {
+        10,
+        300
+    },
+
+    Increment = 5,
+    CurrentValue = 60,
+
+    Suffix = " Speed",
+
+    Flag = "FlySpeed",
+
+    Callback = function(Value)
+        FlySpeed = Value
+    end
+})
+
+
 local TeleportsTab = Window:CreateTab("Farm Egg", 8997385940)
 
 --==================================================
