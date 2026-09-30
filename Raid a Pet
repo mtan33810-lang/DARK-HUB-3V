@@ -900,7 +900,7 @@ local TeleportsTab = Window:CreateTab("Farm Egg", 8997385940)
 
 TeleportsTab:CreateToggle({
 
-    Name = "📍 Tween Teleport to Saved Position",
+    Name = "📍 Teleport to Saved Position",
 
     CurrentValue = false,
 
@@ -936,7 +936,7 @@ TeleportsTab:CreateToggle({
 
 TeleportsTab:CreateToggle({
 
-    Name = "🌋 Tween Volcano Dip",
+    Name = "🌋 Teleport Volcano Dip",
 
     CurrentValue = false,
 
@@ -963,25 +963,6 @@ TeleportsTab:CreateToggle({
             })
 
         end
-    end
-})
-
---==================================================
--- TWEEN SPEED
---==================================================
-
-local TweenSpeed = 5
-
-TeleportsTab:CreateSlider({
-    Name = "⚡ Tween Speed",
-    Range = {0.1, 10},
-    Increment = 0.1,
-    Suffix = " sec",
-    CurrentValue = 5,
-    Flag = "TweenSpeed",
-
-    Callback = function(Value)
-        TweenSpeed = Value
     end
 })
 
