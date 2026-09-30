@@ -145,6 +145,44 @@ local function FindMyPlot()
 end
 
 --==================================================
+-- REMOVE OTHER PLAYER PLOTS
+--==================================================
+
+local RemovedPlots = {}
+
+local function RemoveOtherPlayerPlots()
+    local PlotsFolder = workspace:FindFirstChild("Plots")
+    if not PlotsFolder then return end
+
+    local MyPlot = FindMyPlot()
+
+    if not MyPlot then
+        Rayfield:Notify({
+            Title = "🏠 Plot Protection",
+            Content = "Your plot could not be identified. Nothing was removed.",
+            Duration = 4
+        })
+        return
+    end
+
+    local Count = 0
+
+    for _, Plot in ipairs(PlotsFolder:GetChildren()) do
+        if Plot ~= MyPlot then
+            RemovedPlots[Plot] = true
+            Plot.Parent = nil
+            Count += 1
+        end
+    end
+
+    Rayfield:Notify({
+        Title = "🧹 Plots Removed",
+        Content = "Removed " .. Count .. " other player plot(s). Your plot was protected.",
+        Duration = 4
+    })
+end
+
+--==================================================
 -- GET PLOT POSITION
 --==================================================
 
@@ -1714,6 +1752,15 @@ task.spawn(function()
 
     ScanEggs()
 end)
+local SettingTab = Window:CreateTab("Setting", 8997385940)
+
+-- BUTTON
+farmtab:CreateButton({
+    Name = "🧹 Remove Other Player Plots",
+    Callback = function()
+        RemoveOtherPlayerPlots()
+    end
+})
 
 --==================================================
 -- LOADED
