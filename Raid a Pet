@@ -3,6 +3,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -2138,6 +2139,59 @@ end)
 local SettingTab = Window:CreateTab("⚙️ Setting", nil)
 
 SettingTab:CreateSection("⚙️ Settings")
+
+--==================================================
+-- ANTI-AFK
+--==================================================
+
+local AntiAFK = true
+local AntiAFKConnection
+
+SettingTab:CreateToggle({
+    Name = "🛡️ Anti-AFK",
+    CurrentValue = true,
+    Flag = "AntiAFK",
+
+    Callback = function(Value)
+        AntiAFK = Value
+
+        if AntiAFKConnection then
+            AntiAFKConnection:Disconnect()
+            AntiAFKConnection = nil
+        end
+
+        if AntiAFK then
+            AntiAFKConnection = Player.Idled:Connect(function()
+                if not AntiAFK then
+                    return
+                end
+
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(
+                    Vector2.new(
+                        math.random(100, 900),
+                        math.random(100, 600)
+                    )
+                )
+            end)
+        end
+    end
+})
+
+-- Automatically enable Anti-AFK
+AntiAFKConnection = Player.Idled:Connect(function()
+    if not AntiAFK then
+        return
+    end
+
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(
+        Vector2.new(
+            math.random(100, 900),
+            math.random(100, 600)
+        )
+    )
+end)
 
 SettingTab:CreateButton({
     Name = "🧹 Remove Other Player Plots",
