@@ -1810,7 +1810,7 @@ AutoEggPickupToggle =
                     Title = "Egg Pickup",
                     Content = "No available eggs found.",
                     Duration = 2,
-                    Image = "message-circle-x"
+                    Image = "search"
                 })
 
                 return
