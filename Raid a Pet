@@ -1821,7 +1821,8 @@ AutoEggPickupToggle =
             Rayfield:Notify({
                 Title = "Egg Pickup",
                 Content = "Started auto pickup!",
-                Duration = 2
+                Duration = 2,
+                Image = "play"
             })
 
             task.spawn(function()
