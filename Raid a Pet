@@ -1045,7 +1045,7 @@ TeleportsTab:CreateToggle({
             Rayfield:Notify({
                 Title = "Volcano",
                 Content = "Volcano Dip flow enabled.",
-                Duration = 2
+                Duration = 2,
                 Image = 13600033457
             })
 
@@ -1054,7 +1054,7 @@ TeleportsTab:CreateToggle({
             Rayfield:Notify({
                 Title = "Volcano",
                 Content = "Volcano Dip flow disabled.",
-                Duration = 2
+                Duration = 2,
                 Image = 13600033457
             })
 
