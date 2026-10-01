@@ -986,7 +986,7 @@ local function RunAfterEggPickup(Egg)
     end)
 end
 
-local TeleportsTab = Window:CreateTab("🥚 Farm Egg", nil)
+local TeleportsTab = Window:CreateTab("Farm Egg", "egg")
 
 --==================================================
 -- SAVED POSITION TOGGLE
@@ -2140,7 +2140,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-local SettingTab = Window:CreateTab("⚙️ Setting", nil)
+local SettingTab = Window:CreateTab("Setting", "setting")
 
 SettingTab:CreateSection("⚙️ Settings")
 
