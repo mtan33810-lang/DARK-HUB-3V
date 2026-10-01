@@ -835,7 +835,8 @@ local function RunAfterEggPickup(Egg)
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
                     Content = "🌋 Volcano → 📍 Saved → 🥚 Drop",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "infinity"
                 })
 
                 -- 1. Volcano
@@ -870,7 +871,8 @@ local function RunAfterEggPickup(Egg)
                     Rayfield:Notify({
                         Title = "🥚 Egg Flow",
                         Content = "Egg dropped at saved position.",
-                        Duration = 2
+                        Duration = 2,
+                        Image = "infinity"
                     })
 
                     task.wait(EggDropPostDelay)
@@ -889,7 +891,8 @@ local function RunAfterEggPickup(Egg)
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
                     Content = "🌋 Volcano → 🏠 My Plot",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "infinity"
                 })
 
                 -- 1. Volcano
@@ -918,7 +921,8 @@ local function RunAfterEggPickup(Egg)
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
                     Content = "📍 Saved → 🥚 Drop",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "infinity"
                 })
 
                 -- 1. Saved
@@ -942,7 +946,8 @@ local function RunAfterEggPickup(Egg)
                     Rayfield:Notify({
                         Title = "🥚 Egg Flow",
                         Content = "Egg dropped at saved position.",
-                        Duration = 2
+                        Duration = 2,
+                        Image = "infinity"
                     })
 
                     task.wait(EggDropPostDelay)
@@ -960,7 +965,8 @@ local function RunAfterEggPickup(Egg)
                 Rayfield:Notify({
                     Title = "🥚 Egg Flow",
                     Content = "🏠 My Plot",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "infinity"
                 })
 
                 TeleportToMyPlot()
