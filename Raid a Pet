@@ -1809,7 +1809,8 @@ AutoEggPickupToggle =
                 Rayfield:Notify({
                     Title = "Egg Pickup",
                     Content = "No available eggs found.",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "search-x"
                 })
 
                 return
