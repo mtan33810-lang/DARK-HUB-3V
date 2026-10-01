@@ -602,7 +602,8 @@ local function TweenToSavedPosition()
     Rayfield:Notify({
         Title = "📍 Saved Position",
         Content = "Teleported instantly!",
-        Duration = 2
+        Duration = 2,
+        Image = "pin"
     })
 
     return true
@@ -631,7 +632,8 @@ local function TweenToVolcanoDip()
     Rayfield:Notify({
         Title = "🌋 Volcano",
         Content = "Teleported instantly!",
-        Duration = 2
+        Duration = 2,
+        Image = "flame"
     })
 
     task.wait(0.5)
@@ -651,7 +653,8 @@ local function TweenToVolcanoDip()
         Rayfield:Notify({
             Title = "🌋 Volcano",
             Content = "Volcano Dip used!",
-            Duration = 2
+            Duration = 2,
+            Image = "flame"
         })
     else
         Rayfield:Notify({
@@ -692,7 +695,8 @@ local function DropEgg()
         Rayfield:Notify({
             Title = "🥚 Egg Drop",
             Content = "BasketDrop remote not found.",
-            Duration = 3
+            Duration = 3,
+            Image = "egg"
         })
 
         return false
@@ -708,7 +712,8 @@ local function DropEgg()
         Rayfield:Notify({
             Title = "🥚 Egg Drop",
             Content = "Failed to drop egg.",
-            Duration = 3
+            Duration = 3,
+            Image = "egg"
         })
 
         return false
@@ -717,7 +722,8 @@ local function DropEgg()
     Rayfield:Notify({
         Title = "🥚 Egg Drop",
         Content = "Egg dropped successfully!",
-        Duration = 2
+        Duration = 2,
+        Image = "egg"
     })
 
     return true
