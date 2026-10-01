@@ -1918,7 +1918,8 @@ AutoEggPickupToggle =
                             .. "/"
                             .. #EggList,
 
-                        Duration = 2
+                        Duration = 2,
+                        Image = "egg"
                     })
 
                     --==================================================
@@ -2040,7 +2041,8 @@ AutoEggPickupToggle =
                                 .. " #"
                                 .. EggNumber,
 
-                            Duration = 2
+                            Duration = 2,
+                            Image = "egg"
                         })
 
                         task.wait(0.8)
