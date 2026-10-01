@@ -995,6 +995,166 @@ local function RunAfterEggPickup(Egg)
     end)
 end
 
+--==================================================
+-- 🥚 EGG ESP
+--==================================================
+
+local EggESPEnabled = false
+
+local EggESPFolder = Instance.new("Folder")
+EggESPFolder.Name = "DARK_HUB_EggESP"
+EggESPFolder.Parent = workspace
+
+local EggColors = {}
+
+local ESPColors = {
+    Color3.fromRGB(255, 80, 80),
+    Color3.fromRGB(80, 170, 255),
+    Color3.fromRGB(100, 255, 140),
+    Color3.fromRGB(255, 210, 70),
+    Color3.fromRGB(200, 100, 255),
+    Color3.fromRGB(255, 120, 200),
+    Color3.fromRGB(80, 240, 220),
+    Color3.fromRGB(255, 150, 70),
+    Color3.fromRGB(180, 180, 255),
+    Color3.fromRGB(120, 255, 255)
+}
+
+local function GetEggESPColor(EggName)
+    if EggColors[EggName] then
+        return EggColors[EggName]
+    end
+
+    local Number = 0
+
+    for Character in EggName:gmatch(".") do
+        Number += string.byte(Character)
+    end
+
+    local Index = (Number % #ESPColors) + 1
+
+    EggColors[EggName] = ESPColors[Index]
+
+    return EggColors[EggName]
+end
+
+local function RemoveEggESP(Egg)
+    if not Egg then
+        return
+    end
+
+    local ESPName = Egg:GetDebugId()
+
+    local Existing = EggESPFolder:FindFirstChild(ESPName)
+
+    if Existing then
+        Existing:Destroy()
+    end
+end
+
+local function CreateEggESP(Egg)
+    if not EggESPEnabled then
+        return
+    end
+
+    if not Egg:IsA("Model") and not Egg:IsA("BasePart") then
+        return
+    end
+
+    local Adornee
+
+    if Egg:IsA("Model") then
+        Adornee =
+            Egg.PrimaryPart
+            or Egg:FindFirstChildWhichIsA("BasePart")
+    else
+        Adornee = Egg
+    end
+
+    if not Adornee then
+        return
+    end
+
+    local ESPName = Egg:GetDebugId()
+
+    if EggESPFolder:FindFirstChild(ESPName) then
+        return
+    end
+
+    local Billboard = Instance.new("BillboardGui")
+
+    Billboard.Name = ESPName
+    Billboard.Adornee = Adornee
+    Billboard.Size = UDim2.new(0, 180, 0, 40)
+    Billboard.StudsOffset = Vector3.new(0, 3, 0)
+    Billboard.AlwaysOnTop = true
+    Billboard.Parent = EggESPFolder
+
+    local Text = Instance.new("TextLabel")
+
+    Text.Size = UDim2.fromScale(1, 1)
+    Text.BackgroundTransparency = 1
+    Text.Text = "🥚 " .. Egg.Name
+    Text.TextColor3 = GetEggESPColor(Egg.Name)
+    Text.TextStrokeTransparency = 0
+    Text.TextScaled = true
+    Text.Font = Enum.Font.GothamBold
+    Text.Parent = Billboard
+end
+
+local function ClearEggESP()
+    for _, Object in ipairs(EggESPFolder:GetChildren()) do
+        Object:Destroy()
+    end
+end
+
+local function ScanEggESP()
+    ClearEggESP()
+
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if Object:IsA("Model")
+            and string.find(
+                string.lower(Object.Name),
+                "egg",
+                1,
+                true
+            )
+        then
+            CreateEggESP(Object)
+        end
+    end
+end
+
+workspace.DescendantAdded:Connect(function(Object)
+
+    if not EggESPEnabled then
+        return
+    end
+
+    task.wait()
+
+    if Object:IsA("Model")
+        and string.find(
+            string.lower(Object.Name),
+            "egg",
+            1,
+            true
+        )
+    then
+        CreateEggESP(Object)
+    end
+end)
+
+workspace.DescendantRemoving:Connect(function(Object)
+
+    if Object:IsA("Model") then
+        RemoveEggESP(Object)
+    end
+
+end)
+
+
+
 local TeleportsTab = Window:CreateTab("Farm Egg", "egg")
 
 --==================================================
@@ -1070,6 +1230,46 @@ TeleportsTab:CreateToggle({
             })
 
         end
+    end
+})
+
+--==================================================
+-- 🥚 EGG ESP TOGGLE
+--==================================================
+
+TeleportsTab:CreateToggle({
+    Name = "🥚 Egg ESP",
+    CurrentValue = false,
+    Flag = "EggESP",
+
+    Callback = function(Value)
+
+        EggESPEnabled = Value
+
+        if Value then
+
+            ScanEggESP()
+
+            Rayfield:Notify({
+                Title = "🥚 Egg ESP",
+                Content = "Egg ESP enabled.",
+                Duration = 2,
+                Image = "egg"
+            })
+
+        else
+
+            ClearEggESP()
+
+            Rayfield:Notify({
+                Title = "🥚 Egg ESP",
+                Content = "Egg ESP disabled.",
+                Duration = 2,
+                Image = "egg"
+            })
+
+        end
+
     end
 })
 
@@ -1805,13 +2005,6 @@ AutoEggPickupToggle =
 
                 AutoEggPickup = false
                 AutoEggPickupToggle:Set(false)
-
-                Rayfield:Notify({
-                    Title = "Egg Pickup",
-                    Content = "No available eggs found.",
-                    Duration = 2,
-                    Image = "search"
-                })
 
                 return
             end
