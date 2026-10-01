@@ -1,4 +1,7 @@
-
+if game.PlaceId ~= 124216119978534 then
+    warn("DARK HUB: Wrong PlaceId: " .. tostring(game.PlaceId))
+    return
+end
 
 getgenv().RAYFIELD_SECURE = true
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
