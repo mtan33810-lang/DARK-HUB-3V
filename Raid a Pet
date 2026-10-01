@@ -2140,7 +2140,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-
+local SettingTab = Window:CreateTab("Setting", "settings")
 
 SettingTab:CreateSection("⚙️ Settings")
 
