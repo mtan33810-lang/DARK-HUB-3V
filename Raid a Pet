@@ -573,12 +573,6 @@ local function TeleportToMyPlot()
 
                 Humanoid:UnequipTools()
 
-                Rayfield:Notify({
-                    Title = "🥚 Egg",
-                    Content = "Egg unequipped at your plot.",
-                    Duration = 2
-                })
-
             end
         end
     end
