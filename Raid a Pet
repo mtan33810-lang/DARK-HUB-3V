@@ -600,7 +600,7 @@ local function TweenToSavedPosition()
     Root.CFrame = SAVED_POSITION
 
     Rayfield:Notify({
-        Title = "📍 Saved Position",
+        Title = "Saved Position",
         Content = "Teleported instantly!",
         Duration = 2,
         Image = "pin"
@@ -630,7 +630,7 @@ local function TweenToVolcanoDip()
     Root.CFrame = VOLCANO_POSITION
 
     Rayfield:Notify({
-        Title = "🌋 Volcano",
+        Title = "Volcano",
         Content = "Teleported instantly!",
         Duration = 2,
         Image = "flame"
@@ -651,7 +651,7 @@ local function TweenToVolcanoDip()
         Event:FireServer()
 
         Rayfield:Notify({
-            Title = "🌋 Volcano",
+            Title = "Volcano",
             Content = "Volcano Dip used!",
             Duration = 2,
             Image = "flame"
@@ -693,7 +693,7 @@ local function DropEgg()
     if not BasketDrop then
 
         Rayfield:Notify({
-            Title = "🥚 Egg Drop",
+            Title = "Egg Drop",
             Content = "BasketDrop remote not found.",
             Duration = 3,
             Image = "egg"
@@ -710,7 +710,7 @@ local function DropEgg()
     if not Success then
 
         Rayfield:Notify({
-            Title = "🥚 Egg Drop",
+            Title = "Egg Drop",
             Content = "Failed to drop egg.",
             Duration = 3,
             Image = "egg"
@@ -720,7 +720,7 @@ local function DropEgg()
     end
 
     Rayfield:Notify({
-        Title = "🥚 Egg Drop",
+        Title = "Egg Drop",
         Content = "Egg dropped successfully!",
         Duration = 2,
         Image = "egg"
