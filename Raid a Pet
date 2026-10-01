@@ -2102,12 +2102,6 @@ AutoEggPickupToggle =
                             AutoEggPickupToggle:Set(false)
                         end
 
-                        Rayfield:Notify({
-                            Title = "Egg Pickup",
-                            Content = "No available eggs found.",
-                            Duration = 2
-                        })
-
                         break
                     end
 
