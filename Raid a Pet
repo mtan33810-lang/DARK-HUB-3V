@@ -1009,7 +1009,8 @@ TeleportsTab:CreateToggle({
             Rayfield:Notify({
                 Title = "📍 Saved Position",
                 Content = "Saved position flow enabled.",
-                Duration = 2
+                Duration = 2,
+                Image = "pin"
             })
 
         else
@@ -1017,7 +1018,8 @@ TeleportsTab:CreateToggle({
             Rayfield:Notify({
                 Title = "📍 Saved Position",
                 Content = "Saved position flow disabled.",
-                Duration = 2
+                Duration = 2,
+                Image = "pin"
             })
 
         end
