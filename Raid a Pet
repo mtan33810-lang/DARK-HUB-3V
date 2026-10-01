@@ -1,4 +1,4 @@
-if game.PlaceId ~= 124216119978534 then
+bif game.PlaceId ~= 124216119978534 then
     warn("DARK HUB: Wrong PlaceId: " .. tostring(game.PlaceId))
     return
 end
