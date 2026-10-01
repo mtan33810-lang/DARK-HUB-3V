@@ -1095,7 +1095,7 @@ end)
 
 local TeleportsTab = Window:CreateTab({
     name = "Farm Egg",
-    icon = "egg"
+    icon = 16836648673
 })
 
 --==================================================
@@ -2156,7 +2156,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-local SettingTab = Window:CreateTab({ name = "Setting", icon = "settings" })
+local SettingTab = Window:CreateTab({ name = "Setting", icon = 104919049969988 })
 
 SettingTab:CreateSection({ name = "Setting", icon = 93364949241311 })
 
@@ -2171,7 +2171,7 @@ local sprint = SettingTab:CreateToggle({
     name = "🛡️ Anti-AFK",
     flag = "AntiAFK",
     value = true,
-    callback = function(value)
+    callback = function(Value)
         AntiAFK = Value
 
         if AntiAFKConnection then
