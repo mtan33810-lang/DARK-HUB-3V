@@ -1007,7 +1007,7 @@ TeleportsTab:CreateToggle({
         if Value then
 
             Rayfield:Notify({
-                Title = "📍 Saved Position",
+                Title = "Saved Position",
                 Content = "Saved position flow enabled.",
                 Duration = 2,
                 Image = "pin"
@@ -1016,7 +1016,7 @@ TeleportsTab:CreateToggle({
         else
 
             Rayfield:Notify({
-                Title = "📍 Saved Position",
+                Title = "Saved Position",
                 Content = "Saved position flow disabled.",
                 Duration = 2,
                 Image = "pin"
@@ -1068,7 +1068,7 @@ TeleportsTab:CreateToggle({
 -- MY PLOT SECTION
 --==================================================
 
-TeleportsTab:CreateSection("🏠 My Plot")
+TeleportsTab:CreateSection("My Plot", "house")
 
 TeleportsTab:CreateButton({
 
