@@ -1922,36 +1922,36 @@ AutoEggPickupToggle =
                     })
 
                     --==================================================
--- TELEPORT DIRECTLY TO NEXT EGG
---==================================================
+                    -- TELEPORT DIRECTLY TO NEXT EGG
+                    --==================================================
 
-local LiveEggCFrame = GetObjectCFrame(Egg)
+                    local LiveEggCFrame = GetObjectCFrame(Egg)
 
-if not LiveEggCFrame then
-    task.wait(0.3)
-    continue
-end
+                    if not LiveEggCFrame then
+                        task.wait(0.3)
+                        continue
+                    end
 
-Data.CFrame = LiveEggCFrame
+                    Data.CFrame = LiveEggCFrame
 
-local Character = Player.Character
+                    local Character = Player.Character
 
-if not Character then
-    task.wait(0.3)
-    continue
-end
+                    if not Character then
+                        task.wait(0.3)
+                        continue
+                    end
 
-local HRP = Character:FindFirstChild("HumanoidRootPart")
+                    local HRP = Character:FindFirstChild("HumanoidRootPart")
 
-if not HRP then
-    task.wait(0.3)
-    continue
-end
+                    if not HRP then
+                        task.wait(0.3)
+                        continue
+                    end
 
--- Instant teleport to the egg
-HRP.CFrame = LiveEggCFrame + Vector3.new(0, 5, 0)
+                    -- Instant teleport to the egg
+                    HRP.CFrame = LiveEggCFrame + Vector3.new(0, 5, 0)
 
-task.wait(0.2)
+                        task.wait(0.2)
     
                     if not AutoEggPickup then
                         break
@@ -2255,5 +2255,6 @@ end
 Rayfield:Notify({
     Title = "DARK HUB",
     Content = "Loaded successfully!",
-    Duration = 3
+    Duration = 3,
+    Image = "check"
 })
