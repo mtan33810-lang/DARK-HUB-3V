@@ -1750,7 +1750,8 @@ AutoEggPickupToggle =
                 Rayfield:Notify({
                     Title = "Egg Pickup",
                     Content = "Auto egg pickup stopped.",
-                    Duration = 2
+                    Duration = 2,
+                    Image = "play-off"
                 })
 
                 return
@@ -2119,7 +2120,8 @@ if not AutoEggWatcherRunning then
                         Rayfield:Notify({
                             Title = "Egg Pickup",
                             Content = "Available egg detected! Auto pickup turned ON.",
-                            Duration = 2
+                            Duration = 2,
+                            Image = "play"
                         })
                     end
                 end
