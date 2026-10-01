@@ -535,19 +535,19 @@ local function TeleportToMyPlot()
 
     --==============================================
     --==============================================
--- TELEPORT TO MY PLOT FIRST
---==============================================
+    -- TELEPORT TO MY PLOT FIRST
+    --==============================================
 
-Root.CFrame = PlotCFrame + Vector3.new(0, 5, 0)
+    Root.CFrame = PlotCFrame + Vector3.new(0, 5, 0)
 
-task.wait(0.1)
+    task.wait(0.1)
 
-Rayfield:Notify({
-    Title = "My Plot",
-    Content = "Teleported to your plot.",
-    Duration = 2,
-    Image = 4483362458
-})
+    Rayfield:Notify({
+        Title = "My Plot",
+        Content = "Teleported to your plot.",
+        Duration = 2,
+        Image = "house"
+    })
 
     --==============================================
     -- THEN UNEQUIP EGG
