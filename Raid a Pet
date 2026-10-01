@@ -1127,7 +1127,8 @@ local function CreateEggESP(Egg)
     Text.TextColor3 = GetEggESPColor(Egg.Name)
 
     Text.TextStrokeTransparency = 0
-    Text.TextScaled = true
+    Text.TextScaled = false
+    Text.TextSize = 14
     Text.Font = Enum.Font.GothamBold
     Text.Parent = Billboard
 end
