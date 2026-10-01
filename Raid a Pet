@@ -997,7 +997,7 @@ end
 
 --==================================================
 -- 🥚 EGG ESP
--- Excludes eggs on YOUR plot
+-- Excludes ALL eggs inside plots
 --==================================================
 
 local EggESPEnabled = false
@@ -1041,18 +1041,26 @@ local function GetEggESPColor(EggName)
 end
 
 --==================================================
--- CHECK IF EGG IS ON MY PLOT
+-- CHECK IF EGG IS INSIDE ANY PLOT
 --==================================================
 
-local function IsEggOnMyPlot(Egg)
+local function IsEggInsidePlot(Egg)
 
-    local MyPlot = FindMyPlot()
+    local PlotsFolder = workspace:FindFirstChild("Plots")
 
-    if not MyPlot then
+    if not PlotsFolder then
         return false
     end
 
-    return Egg:IsDescendantOf(MyPlot)
+    for _, Plot in ipairs(PlotsFolder:GetChildren()) do
+
+        if Egg:IsDescendantOf(Plot) then
+            return true
+        end
+
+    end
+
+    return false
 end
 
 --==================================================
@@ -1065,8 +1073,8 @@ local function CreateEggESP(Egg)
         return
     end
 
-    -- 🚫 NEVER ESP EGGS ON MY PLOT
-    if IsEggOnMyPlot(Egg) then
+    -- 🚫 Do not ESP ANY egg inside a plot
+    if IsEggInsidePlot(Egg) then
         return
     end
 
@@ -1077,11 +1085,15 @@ local function CreateEggESP(Egg)
     local Adornee
 
     if Egg:IsA("Model") then
+
         Adornee =
             Egg.PrimaryPart
             or Egg:FindFirstChildWhichIsA("BasePart")
+
     else
+
         Adornee = Egg
+
     end
 
     if not Adornee then
@@ -1108,7 +1120,7 @@ local function CreateEggESP(Egg)
     Text.Size = UDim2.fromScale(1, 1)
     Text.BackgroundTransparency = 1
 
-    -- Egg name only — NO DISTANCE
+    -- Egg name only
     Text.Text = "🥚 " .. Egg.Name
 
     -- Different color for each egg name
@@ -1150,7 +1162,9 @@ local function ScanEggESP()
                 true
             )
         then
+
             CreateEggESP(Object)
+
         end
 
     end
@@ -1158,7 +1172,7 @@ local function ScanEggESP()
 end
 
 --==================================================
--- NEW EGGS
+-- NEW OBJECTS
 --==================================================
 
 workspace.DescendantAdded:Connect(function(Object)
@@ -1177,26 +1191,28 @@ workspace.DescendantAdded:Connect(function(Object)
             true
         )
     then
+
         CreateEggESP(Object)
+
     end
 
 end)
 
 --==================================================
--- REMOVED EGGS
+-- REMOVED OBJECTS
 --==================================================
 
 workspace.DescendantRemoving:Connect(function(Object)
 
-    if Object:IsA("Model") then
+    if not Object:IsA("Model") then
+        return
+    end
 
-        local ESPName = Object:GetDebugId()
-        local ESP = EggESPFolder:FindFirstChild(ESPName)
+    local ESPName = Object:GetDebugId()
+    local ESP = EggESPFolder:FindFirstChild(ESPName)
 
-        if ESP then
-            ESP:Destroy()
-        end
-
+    if ESP then
+        ESP:Destroy()
     end
 
 end)
@@ -1280,7 +1296,7 @@ TeleportsTab:CreateToggle({
 })
 
 --==================================================
--- EGG ESP TOGGLE
+-- 🥚 EGG ESP TOGGLE
 --==================================================
 
 TeleportsTab:CreateToggle({
@@ -1301,7 +1317,7 @@ TeleportsTab:CreateToggle({
 
             Rayfield:Notify({
                 Title = "🥚 Egg ESP",
-                Content = "Egg ESP enabled. Your plot is excluded.",
+                Content = "Enabled — plot eggs excluded.",
                 Duration = 2,
                 Image = "egg"
             })
@@ -1312,7 +1328,7 @@ TeleportsTab:CreateToggle({
 
             Rayfield:Notify({
                 Title = "🥚 Egg ESP",
-                Content = "Egg ESP disabled.",
+                Content = "Disabled.",
                 Duration = 2,
                 Image = "egg"
             })
