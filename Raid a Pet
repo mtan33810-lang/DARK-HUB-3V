@@ -2237,12 +2237,6 @@ for _, ThemeName in ipairs(Themes) do
 
         Callback = function()
             Window.ModifyTheme(ThemeName)
-
-            Rayfield:Notify({
-                Title = "Theme Changed",
-                Content = "Theme: " .. ThemeName,
-                Duration = 2
-            })
         end
     })
 end
