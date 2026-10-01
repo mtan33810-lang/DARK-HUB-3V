@@ -546,7 +546,7 @@ local function TeleportToMyPlot()
         Title = "My Plot",
         Content = "Teleported to your plot.",
         Duration = 2,
-        Image = "house"
+        Image = 7733960981
     })
 
     --==============================================
