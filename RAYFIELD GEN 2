@@ -1093,10 +1093,7 @@ end)
 -- 🥚 FARM EGG TAB
 --==================================================
 
-local TeleportsTab = Window:CreateTab({
-    name = "Farm Egg",
-    icon = 16836648673
-})
+local TeleportsTab = Window:CreateTab({ name = "Farm Egg", icon = 16836648673 })
 
 --==================================================
 -- TELEPORT TOGGLES
