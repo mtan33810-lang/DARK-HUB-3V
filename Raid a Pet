@@ -541,9 +541,10 @@ local function TeleportToMyPlot()
         PlotCFrame + Vector3.new(0, 5, 0)
 
     Rayfield:Notify({
-        Title = "🏠 My Plot",
+        Title = "My Plot",
         Content = "Teleported to your plot.",
-        Duration = 2
+        Duration = 2,
+        Image = "house"
     })
 
     --==============================================
@@ -1068,7 +1069,7 @@ TeleportsTab:CreateToggle({
 -- MY PLOT SECTION
 --==================================================
 
-TeleportsTab:CreateSection("My Plot", "house")
+TeleportsTab:CreateSection("🏠 My Plot")
 
 TeleportsTab:CreateButton({
 
