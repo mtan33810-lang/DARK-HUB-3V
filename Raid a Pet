@@ -1642,7 +1642,7 @@ RarityDropdown =
 
 local Label = TeleportsTab:CreateLabel(
     "Select an egg rarities to collect",
-    4483362458,
+    "book-open-text",
     Color3.fromRGB(255, 255, 255),
     false
 )
@@ -1704,7 +1704,7 @@ EggBlacklistDropdown =
 
 local Label = TeleportsTab:CreateLabel(
     "Select an egg you want to skip to the Volcano dip",
-    4483362458,
+    "book-open-text",
     Color3.fromRGB(255, 255, 255),
     false
 )
