@@ -1046,7 +1046,7 @@ TeleportsTab:CreateToggle({
                 Title = "Volcano",
                 Content = "Volcano Dip flow enabled.",
                 Duration = 2,
-                Image = 4483362458
+                Image = 107043815919036
             })
 
         else
@@ -1055,7 +1055,7 @@ TeleportsTab:CreateToggle({
                 Title = "Volcano",
                 Content = "Volcano Dip flow disabled.",
                 Duration = 2,
-                Image = 4483362458
+                Image = 107043815919036
             })
 
         end
