@@ -1189,7 +1189,7 @@ TeleportsTab:CreateButton({
 -- EGG RARITY SCANNER
 --==================================================
 
-TeleportsTab:CreateSection({ name = "Egg Rarity Scanner", icon = 93364949241311 })
+TeleportsTab:CreateSection({ name = "Egg Rarity Scanner", icon = "egg" })
 
 local RarityDropdown
 local SelectedRarities = {}
@@ -2156,7 +2156,7 @@ end)
 -- SETTING TAB
 --==================================================
 
-local SettingTab = Window:CreateTab({ name = "Setting", icon = 93364949241311 })
+local SettingTab = Window:CreateTab({ name = "Setting", icon = "settings" })
 
 SettingTab:CreateSection({ name = "Setting", icon = 93364949241311 })
 
