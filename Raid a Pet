@@ -1043,17 +1043,19 @@ TeleportsTab:CreateToggle({
         if Value then
 
             Rayfield:Notify({
-                Title = "🌋 Volcano",
+                Title = "Volcano",
                 Content = "Volcano Dip flow enabled.",
                 Duration = 2
+                Image = 13600033457
             })
 
         else
 
             Rayfield:Notify({
-                Title = "🌋 Volcano",
+                Title = "Volcano",
                 Content = "Volcano Dip flow disabled.",
                 Duration = 2
+                Image = 13600033457
             })
 
         end
