@@ -707,7 +707,6 @@ local function DropEgg()
     return true
 end
 
-
 --==================================================
 -- POST EGG PICKUP FLOW
 --==================================================
@@ -722,6 +721,12 @@ local function RunAfterEggPickup(Egg)
     end
 
     PostPickupRunning = true
+
+    --==================================================
+    -- AUTO NOCLIP ON
+    --==================================================
+
+    SetNoclip(true)
 
     task.spawn(function()
 
@@ -776,7 +781,6 @@ local function RunAfterEggPickup(Egg)
                     return
                 end
 
-
                 --==================================================
                 -- NORMAL EGG
                 --==================================================
@@ -789,7 +793,6 @@ local function RunAfterEggPickup(Egg)
                 if VolcanoDipTween and SavedPositionTween then
 
                     -- 1. Volcano
-
                     local VolcanoSuccess =
                         TweenToVolcanoDip()
 
@@ -798,11 +801,9 @@ local function RunAfterEggPickup(Egg)
                     end
 
                     -- 2. Wait at volcano
-
                     task.wait(VolcanoPostDelay)
 
                     -- 3. Saved position
-
                     local SavedSuccess =
                         TweenToSavedPosition()
 
@@ -813,7 +814,6 @@ local function RunAfterEggPickup(Egg)
                     task.wait(0.5)
 
                     -- 4. Drop
-
                     local DropSuccess =
                         DropEgg()
 
@@ -824,7 +824,6 @@ local function RunAfterEggPickup(Egg)
                         task.wait(EggDropPostDelay)
 
                     end
-
 
                 --==================================================
                 -- VOLCANO ON + SAVED POSITION OFF
@@ -835,7 +834,6 @@ local function RunAfterEggPickup(Egg)
                     and not SavedPositionTween then
 
                     -- 1. Volcano
-
                     local VolcanoSuccess =
                         TweenToVolcanoDip()
 
@@ -844,14 +842,12 @@ local function RunAfterEggPickup(Egg)
                     end
 
                     -- 2. Wait at volcano
-
                     task.wait(VolcanoPostDelay)
 
                     -- 3. My plot
-
                     TeleportToMyPlot()
 
-                                  --==================================================
+                --==================================================
                 -- VOLCANO OFF + SAVED POSITION ON
                 -- Saved → Drop
                 --==================================================
@@ -860,7 +856,6 @@ local function RunAfterEggPickup(Egg)
                     and SavedPositionTween then
 
                     -- 1. Saved
-
                     local SavedSuccess =
                         TweenToSavedPosition()
 
@@ -871,7 +866,6 @@ local function RunAfterEggPickup(Egg)
                     task.wait(0.5)
 
                     -- 2. Drop
-
                     local DropSuccess =
                         DropEgg()
 
@@ -882,7 +876,6 @@ local function RunAfterEggPickup(Egg)
                         task.wait(EggDropPostDelay)
 
                     end
-
 
                 --==================================================
                 -- BOTH OFF
@@ -897,6 +890,11 @@ local function RunAfterEggPickup(Egg)
 
             end)
 
+        --==================================================
+        -- AUTO NOCLIP OFF
+        --==================================================
+
+        SetNoclip(false)
 
         --==================================================
         -- ERROR HANDLING
