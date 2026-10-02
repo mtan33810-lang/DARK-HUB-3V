@@ -200,45 +200,6 @@ local function StopFly()
 end
 
 --==================================================
--- EGG TELEPORT NOCLIP
---==================================================
-
-local NoclipConnection = nil
-
-local function SetNoclip(Value)
-    if NoclipConnection then
-        NoclipConnection:Disconnect()
-        NoclipConnection = nil
-    end
-
-    local Character = Player.Character
-    if not Character then
-        return
-    end
-
-    if Value then
-        NoclipConnection = RunService.Stepped:Connect(function()
-            local CurrentCharacter = Player.Character
-            if not CurrentCharacter then
-                return
-            end
-
-            for _, Part in ipairs(CurrentCharacter:GetDescendants()) do
-                if Part:IsA("BasePart") then
-                    Part.CanCollide = false
-                end
-            end
-        end)
-    else
-        for _, Part in ipairs(Character:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                Part.CanCollide = true
-            end
-        end
-    end
-end
-
---==================================================
 -- HOME TAB
 --==================================================
 
@@ -2039,12 +2000,6 @@ TeleportsTab:CreateToggle({
                 end
 
                 --==================================================
-                -- NOCLIP ON
-                --==================================================
-
-                SetNoclip(true)
-
-                --==================================================
                 -- VOLCANIC EGG SPECIAL TELEPORT
                 --==================================================
 
@@ -2208,11 +2163,6 @@ end
 
                     task.wait(0.8)
 
-                    --==================================================
-                    -- NOCLIP OFF
-                    --==================================================
-
-                    SetNoclip(false)
 
                     --==================================================
                     -- POST PICKUP FLOW
