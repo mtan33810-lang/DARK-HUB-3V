@@ -1239,6 +1239,11 @@ TeleportsTab:CreateButton({
     end,
 })
 
+TeleportsTab:CreateText({
+    name = "🌋 Teleport to Volcano",
+    text = "On the Noclip before Teleport to Volcano.",
+})
+
 --==================================================
 -- EGG RARITY SCANNER
 --==================================================
