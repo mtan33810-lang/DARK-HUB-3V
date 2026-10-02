@@ -1,7 +1,7 @@
-if game.PlaceId ~= 124216119978534 then
-    warn("DARK HUB: Wrong PlaceId: " .. tostring(game.PlaceId))
-    return
-end
+local PlaceId = game.PlaceId
+local GameId = game.GameId
+
+if PlaceId == 124216119978534 then
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
@@ -2438,22 +2438,8 @@ SettingTab:CreateButton({
 -- ARSENAL 
 --==================================================
 
-local AllowedPlaceIds = {
-    [123974602339071] = true,
-}
-
-local AllowedGameIds = {
-    [6035872082] = true,
-}
-
-if not AllowedPlaceIds[game.PlaceId] and not AllowedGameIds[game.GameId] then
-    warn(
-        "DARK HUB: Unsupported game\n" ..
-        "PlaceId: " .. tostring(game.PlaceId) .. "\n" ..
-        "GameId: " .. tostring(game.GameId)
-    )
-    return
-end
+elseif PlaceId == 123974602339071
+    or GameId == 6035872082 then
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
@@ -3306,3 +3292,13 @@ end)
 pcall(function()
     Rayfield:LoadConfiguration()
 end)
+
+else
+    warn(
+        "DARK HUB: Unsupported game\n" ..
+        "PlaceId: " .. tostring(PlaceId) .. "\n" ..
+        "GameId: " .. tostring(GameId)
+    )
+    return
+end
+
