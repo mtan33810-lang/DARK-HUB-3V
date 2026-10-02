@@ -29,7 +29,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
 
 --==================================================
 -- CHARACTER / HUMANOID
@@ -2053,27 +2052,33 @@ TeleportsTab:CreateToggle({
                     or tostring(Egg.Name) == "Bloom Egg"
                 then
 
-                    local Tween = TweenService:Create(
-        HRP,
-        TweenInfo.new(
-            5,
-            Enum.EasingStyle.Linear,
-            Enum.EasingDirection.Out
-        ),
-        {
-            CFrame = CFrame.new(
-                -4993.55,
-                41272.32,
-                -3607.13
-            )
-        }
+                        local TargetCFrame = CFrame.new(
+        -4993.55,
+        41272.32,
+        -3607.13
     )
 
-    Tween:Play()
-    Tween.Completed:Wait()
+    -- Fly toward the special position
+    local Speed = 150
 
-    task.wait(3)
+    while (HRP.Position - TargetCFrame.Position).Magnitude > 5 do
+
+        local Direction =
+            (TargetCFrame.Position - HRP.Position).Unit
+
+        HRP.CFrame =
+            CFrame.new(
+                HRP.Position + Direction * Speed * task.wait(),
+                TargetCFrame.Position
+            )
+
+    end
+
+    HRP.CFrame = TargetCFrame
+
+    task.wait(0.2)
 end
+
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
                 --==================================================
