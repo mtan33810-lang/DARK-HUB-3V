@@ -2448,6 +2448,13 @@ local Window = Rayfield:CreateWindow({
     subtitle = "by Max",
     sidebarLayout = true,
     theme = "ember",
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
 })
 
 --============================================================
