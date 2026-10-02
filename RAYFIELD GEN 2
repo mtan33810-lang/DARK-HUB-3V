@@ -2053,49 +2053,70 @@ TeleportsTab:CreateToggle({
                 then
 
     local Location1 = CFrame.new(
-        -5042.11,
-        41271.99,
-        -3520.53
+    -4732.12,
+    41678.94,
+    -3945.08
+)
+
+local Location2 = CFrame.new(
+    -4865.88,
+    41284.00,
+    -3520.53
+)
+
+local Location3 = CFrame.new(
+    -5042.11,
+    41271.99,
+    -3520.53
+)
+
+local Speed = 250
+
+-- Fly to Location 1
+while (HRP.Position - Location1.Position).Magnitude > 5 do
+
+    local Direction =
+        (Location1.Position - HRP.Position).Unit
+
+    HRP.CFrame = CFrame.new(
+        HRP.Position + Direction * Speed * task.wait(),
+        Location1.Position
     )
-
-    local Location2 = CFrame.new(
-        -4865.88,
-        41284.00,
-        -3520.53
-    )
-
-    local Speed = 250
-
-    -- Fly to Location 1
-    while (HRP.Position - Location1.Position).Magnitude > 5 do
-
-        local Direction =
-            (Location1.Position - HRP.Position).Unit
-
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * task.wait(),
-            Location1.Position
-        )
-    end
-
-    HRP.CFrame = Location1
-    task.wait(3)
-
-    -- Fly to Location 2
-    while (HRP.Position - Location2.Position).Magnitude > 5 do
-
-        local Direction =
-            (Location2.Position - HRP.Position).Unit
-
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * task.wait(),
-            Location2.Position
-        )
-    end
-
-    HRP.CFrame = Location2
-    task.wait(3)
 end
+
+HRP.CFrame = Location1
+task.wait(3)
+
+-- Fly to Location 2
+while (HRP.Position - Location2.Position).Magnitude > 5 do
+
+    local Direction =
+        (Location2.Position - HRP.Position).Unit
+
+    HRP.CFrame = CFrame.new(
+        HRP.Position + Direction * Speed * task.wait(),
+        Location2.Position
+    )
+end
+
+HRP.CFrame = Location2
+task.wait(3)
+
+-- Fly to Location 3
+while (HRP.Position - Location3.Position).Magnitude > 5 do
+
+    local Direction =
+        (Location3.Position - HRP.Position).Unit
+
+    HRP.CFrame = CFrame.new(
+        HRP.Position + Direction * Speed * task.wait(),
+        Location3.Position
+    )
+end
+
+HRP.CFrame = Location3
+task.wait(3)
+
 
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
