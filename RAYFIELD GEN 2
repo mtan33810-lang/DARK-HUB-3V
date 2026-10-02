@@ -2048,7 +2048,9 @@ TeleportsTab:CreateToggle({
                 -- VOLCANIC EGG SPECIAL TELEPORT
                 --==================================================
 
-                if EggName == "Volcanic Egg" then
+                if EggName == "Volcanic Egg"
+                    or EggName == "Bloom Egg"
+                then
 
                  -- 1. Teleport to the special position first
                 HRP.CFrame = CFrame.new(
