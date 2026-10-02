@@ -2576,26 +2576,21 @@ local function isSameTeam(player)
         return false
     end
 
-    -- Standard Roblox Teams
-    if LocalPlayer.Team ~= nil and player.Team ~= nil then
-        return LocalPlayer.Team == player.Team
+    local character = player.Character
+    if not character then
+        return false
     end
 
-    -- TeamColor fallback
-    if LocalPlayer.TeamColor ~= BrickColor.new("White")
-        and player.TeamColor ~= BrickColor.new("White") then
-
-        if LocalPlayer.TeamColor == player.TeamColor then
-            return true
-        end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        return false
     end
 
-    -- Attribute fallback
-    local myTeam = getTeamIdentifier(LocalPlayer)
-    local enemyTeam = getTeamIdentifier(player)
+    -- TeammateLabel identifies teammates
+    local teammateLabel = root:FindFirstChild("TeammateLabel")
 
-    if myTeam ~= nil and enemyTeam ~= nil then
-        return myTeam == enemyTeam
+    if teammateLabel then
+        return true
     end
 
     return false
