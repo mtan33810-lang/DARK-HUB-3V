@@ -2022,12 +2022,6 @@ TeleportsTab:CreateToggle({
 
                 task.wait(0.2)
 
-                --==================================================
-                -- NOCLIP OFF
-                --==================================================
-
-                SetNoclip(false)
-
                 if not AutoEggPickup then
                     break
                 end
@@ -2107,6 +2101,12 @@ TeleportsTab:CreateToggle({
                     )
 
                     task.wait(0.8)
+
+                    --==================================================
+                    -- NOCLIP OFF
+                    --==================================================
+
+                    SetNoclip(false)
 
                     --==================================================
                     -- POST PICKUP FLOW
