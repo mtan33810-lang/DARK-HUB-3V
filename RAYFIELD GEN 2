@@ -722,12 +722,6 @@ local function RunAfterEggPickup(Egg)
 
     PostPickupRunning = true
 
-    --==================================================
-    -- AUTO NOCLIP ON
-    --==================================================
-
-    SetNoclip(true)
-
     task.spawn(function()
 
         local Success, ErrorMessage =
@@ -760,11 +754,8 @@ local function RunAfterEggPickup(Egg)
                             DropEgg()
 
                         if DropSuccess then
-
                             MarkEggAsDropped(Egg)
-
                             task.wait(EggDropPostDelay)
-
                         end
 
                     --==============================================
@@ -783,11 +774,6 @@ local function RunAfterEggPickup(Egg)
 
                 --==================================================
                 -- NORMAL EGG
-                --==================================================
-
-                --==================================================
-                -- VOLCANO ON + SAVED POSITION ON
-                -- Volcano → Saved → Drop
                 --==================================================
 
                 if VolcanoDipTween and SavedPositionTween then
@@ -818,17 +804,9 @@ local function RunAfterEggPickup(Egg)
                         DropEgg()
 
                     if DropSuccess then
-
                         MarkEggAsDropped(Egg)
-
                         task.wait(EggDropPostDelay)
-
                     end
-
-                --==================================================
-                -- VOLCANO ON + SAVED POSITION OFF
-                -- Volcano → My Plot
-                --==================================================
 
                 elseif VolcanoDipTween
                     and not SavedPositionTween then
@@ -846,11 +824,6 @@ local function RunAfterEggPickup(Egg)
 
                     -- 3. My plot
                     TeleportToMyPlot()
-
-                --==================================================
-                -- VOLCANO OFF + SAVED POSITION ON
-                -- Saved → Drop
-                --==================================================
 
                 elseif not VolcanoDipTween
                     and SavedPositionTween then
@@ -870,20 +843,13 @@ local function RunAfterEggPickup(Egg)
                         DropEgg()
 
                     if DropSuccess then
-
                         MarkEggAsDropped(Egg)
-
                         task.wait(EggDropPostDelay)
-
                     end
-
-                --==================================================
-                -- BOTH OFF
-                -- My Plot
-                --==================================================
 
                 else
 
+                    -- My Plot
                     TeleportToMyPlot()
 
                 end
@@ -891,25 +857,16 @@ local function RunAfterEggPickup(Egg)
             end)
 
         --==================================================
-        -- AUTO NOCLIP OFF
-        --==================================================
-
-        SetNoclip(false)
-
-        --==================================================
         -- ERROR HANDLING
         --==================================================
 
         if not Success then
-
             warn(
                 "[EGG FLOW ERROR]",
                 ErrorMessage
             )
-
         end
 
-        -- Unlock pickup loop
         PostPickupRunning = false
 
     end)
@@ -2049,12 +2006,27 @@ TeleportsTab:CreateToggle({
                     continue
                 end
 
-                -- Instant teleport to the egg
+                --==================================================
+                -- NOCLIP ON
+                --==================================================
+
+                SetNoclip(true)
+
+                --==================================================
+                -- INSTANT TELEPORT TO EGG
+                --==================================================
+
                 HRP.CFrame =
                     LiveEggCFrame
                     + Vector3.new(0, 5, 0)
 
                 task.wait(0.2)
+
+                --==================================================
+                -- NOCLIP OFF
+                --==================================================
+
+                SetNoclip(false)
 
                 if not AutoEggPickup then
                     break
