@@ -520,6 +520,13 @@ local function TeleportToMyPlot()
 
     task.wait(0.1)
 
+    Window:Notify({
+    title = "Auto-saved",
+    content = "Your configuration was saved.",
+    duration = 5,
+    icon = "save",
+})
+
     --==============================================
     -- THEN UNEQUIP EGG
     --==============================================
