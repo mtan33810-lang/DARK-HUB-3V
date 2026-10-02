@@ -2048,21 +2048,18 @@ TeleportsTab:CreateToggle({
                 -- VOLCANIC EGG SPECIAL TELEPORT
                 --==================================================
 
-                if EggName == "Volcanic Egg"
-                    or EggName == "Bloom Egg"
+                if tostring(Egg.Name) == "Volcanic Egg"
+                    or tostring(Egg.Name) == "Bloom Egg"
                 then
 
-                 -- 1. Teleport to the special position first
                 HRP.CFrame = CFrame.new(
                     -4993.55,
                     41272.32,
                     -3607.13
-                )
+               )
 
-                    task.wait(0.2)
-
-                end
-
+                task.wait(0.5)
+            end
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
                 --==================================================
