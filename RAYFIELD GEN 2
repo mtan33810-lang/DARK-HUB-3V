@@ -1152,6 +1152,23 @@ right:CreateToggle({
         VolcanoDipTween = Value
 
         if Value then
+          
+            Window:Notify({
+            title = "Volcano",
+            content = "Volcano Dip flow enabled.",
+            duration = 2,
+            icon = "flame"
+        })
+
+        else
+
+            Window:Notify({
+            title = "Volcano",
+            content = "Volcano Dip flow disabled.",
+            duration = 2,
+            icon = "flame"
+         })
+
 
         end
     end
