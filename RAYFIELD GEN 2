@@ -2052,11 +2052,6 @@ TeleportsTab:CreateToggle({
                     or tostring(Egg.Name) == "Bloom Egg"
                 then
 
-                        if tostring(Egg.Name) == "Volcanic Egg"
-    or tostring(Egg.Name) == "Forest Egg"
-    or tostring(Egg.Name) == "Desert Egg"
-then
-
     local Location1 = CFrame.new(
         -5042.11,
         41271.99,
