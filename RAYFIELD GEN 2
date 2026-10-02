@@ -431,6 +431,11 @@ local function RemoveOtherPlayerPlots()
 
         end
     end
+    Window:Notify({
+    title = "🧹 Plots Removed",
+    content = "Removed " .. Count .. " other player plot(s). Your plot was protected.",
+    duration = 4,
+})
 end
 
 
