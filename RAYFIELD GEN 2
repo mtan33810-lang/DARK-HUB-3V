@@ -1105,7 +1105,7 @@ end)
 -- 🥚 FARM EGG TAB
 --==================================================
 
-local TeleportsTab = Window:CreateTab({ name = "Farm Egg", icon = 16836648673 })
+local TeleportsTab = Window:CreateTab({ name = "Farm Egg", icon = "egg" })
 
 --==================================================
 -- TELEPORT TOGGLES
@@ -1174,7 +1174,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow enabled.",
             duration = 2,
-            image = "flame"
+            icon = 13600033457
         })
 
         else
@@ -1183,7 +1183,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow disabled.",
             duration = 2,
-            image = "flame"
+            icon = 13600033457
          })
 
 
