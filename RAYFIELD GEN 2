@@ -1131,6 +1131,23 @@ left:CreateToggle({
 
         if Value then
 
+            Window:Notify({
+            title = "Saved Position",
+            content = "Saved position flow enabled.",
+            duration = 2,
+            image = "pin"
+        })
+
+        else
+
+             Window:Notify({
+             title = "Saved Position",
+             content = "Saved position flow disabled.",
+             duration = 2,
+             image = "pin"
+        })
+
+
         end
     end
 })
@@ -1157,7 +1174,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow enabled.",
             duration = 2,
-            icon = "flame"
+            image = "flame"
         })
 
         else
@@ -1166,7 +1183,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow disabled.",
             duration = 2,
-            icon = "flame"
+            image = "flame"
          })
 
 
