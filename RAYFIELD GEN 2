@@ -2059,9 +2059,9 @@ TeleportsTab:CreateToggle({
 )
 
 local Location2 = CFrame.new(
-    -4816.72, 
-    41298.10,
-    -3813.61
+    -4904.99, 
+    41296.87, 
+    -3726.62
 )
 
 local Location3 = CFrame.new(
