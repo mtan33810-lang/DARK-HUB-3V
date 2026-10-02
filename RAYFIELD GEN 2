@@ -2354,3 +2354,73 @@ SettingTab:CreateButton({
         RemoveOtherPlayerPlots()
     end
 })
+
+--==================================================
+-- THEME SECTION
+--==================================================
+
+SettingTab:CreateSection({
+    name = "Theme"
+})
+
+SettingTab:CreateDropdown({
+    name = "Select Theme",
+    options = {
+        "default",
+        "cobalt",
+        "ember",
+        "amethyst",
+        "frost",
+        "rose"
+    },
+    currentOption = "cobalt",
+    callback = function(Theme)
+        Window:ChangeTheme(Theme)
+    end
+})
+
+--==================================================
+-- QUICK THEME BUTTONS
+--==================================================
+
+SettingTab:CreateButton({
+    name = "Default",
+    callback = function()
+        Window:ChangeTheme("default")
+    end
+})
+
+SettingTab:CreateButton({
+    name = "Cobalt",
+    callback = function()
+        Window:ChangeTheme("cobalt")
+    end
+})
+
+SettingTab:CreateButton({
+    name = "Ember",
+    callback = function()
+        Window:ChangeTheme("ember")
+    end
+})
+
+SettingTab:CreateButton({
+    name = "Amethyst",
+    callback = function()
+        Window:ChangeTheme("amethyst")
+    end
+})
+
+SettingTab:CreateButton({
+    name = "Frost",
+    callback = function()
+        Window:ChangeTheme("frost")
+    end
+})
+
+SettingTab:CreateButton({
+    name = "Rose",
+    callback = function()
+        Window:ChangeTheme("rose")
+    end
+})
