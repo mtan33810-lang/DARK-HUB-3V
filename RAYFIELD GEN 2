@@ -1211,7 +1211,7 @@ local sprint = TeleportsTab:CreateToggle({
 -- MY PLOT SECTION
 --==================================================
 
-TeleportsTab:CreateSection({ name = "My Plot", icon = 93364949241311 })
+TeleportsTab:CreateSection({ name = "Teleport Place", icon = nil })
 
 TeleportsTab:CreateButton({
     name = "🏠 Teleport to Plot Now",
@@ -1220,6 +1220,23 @@ TeleportsTab:CreateButton({
         TeleportToMyPlot()
 
     end
+})
+
+TeleportsTab:CreateButton({
+    name = "🌋 Teleport to Volcano Now",
+    callback = function()
+        local Character = Player.Character
+        if not Character then return end
+
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        if not RootPart then return end
+
+        RootPart.CFrame = CFrame.new(
+            -5313.54,
+            40912.41,
+            -3563.97
+        )
+    end,
 })
 
 --==================================================
@@ -2264,9 +2281,68 @@ AntiAFKConnection = Player.Idled:Connect(function()
     )
 end)
 
+--==================================================
+-- REMOVE OTHER PLAYER PLOTS 
+--==================================================
+
 SettingTab:CreateButton({
     name = "🧹 Remove Other Player Plots",
     callback = function()
         RemoveOtherPlayerPlots()
     end
+})
+
+--==================================================
+-- NOCLIP
+--==================================================
+
+local NoclipEnabled = false
+local NoclipConnection = nil
+
+local function SetNoclip(Value)
+    NoclipEnabled = Value
+
+    if NoclipConnection then
+        NoclipConnection:Disconnect()
+        NoclipConnection = nil
+    end
+
+    if not Value then
+        -- Restore collision when disabled
+        local Character = Player.Character
+        if Character then
+            for _, Part in ipairs(Character:GetDescendants()) do
+                if Part:IsA("BasePart") then
+                    Part.CanCollide = true
+                end
+            end
+        end
+        return
+    end
+
+    NoclipConnection = RunService.Stepped:Connect(function()
+        if not NoclipEnabled then
+            return
+        end
+
+        local Character = Player.Character
+        if not Character then
+            return
+        end
+
+        for _, Part in ipairs(Character:GetDescendants()) do
+            if Part:IsA("BasePart") then
+                Part.CanCollide = false
+            end
+        end
+    end)
+end
+
+SettingTab:CreateToggle({
+    name = "Noclip",
+    flag = "Noclip",
+    value = false,
+    callback = function(Value)
+        SetNoclip(Value)
+    end,
 })
