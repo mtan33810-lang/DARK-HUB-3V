@@ -1240,8 +1240,7 @@ TeleportsTab:CreateButton({
 })
 
 TeleportsTab:CreateText({
-    name = "nil",
-    text = "On the Noclip before Teleport to Volcano.",
+    text = "Turn on the Noclip before Teleport to Volcano.",
 })
 
 --==================================================
@@ -1839,7 +1838,6 @@ TeleportsTab:CreateDropdown({
     })
 
 TeleportsTab:CreateText({
-    name = "nil",
     text = "Select an Egg you Don't want to Dip",
 })
 
