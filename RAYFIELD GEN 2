@@ -1240,7 +1240,7 @@ TeleportsTab:CreateButton({
 })
 
 TeleportsTab:CreateText({
-    name = "🌋 Teleport to Volcano",
+    name = "nil",
     text = "On the Noclip before Teleport to Volcano.",
 })
 
@@ -1838,6 +1838,11 @@ TeleportsTab:CreateDropdown({
         end
     })
 
+TeleportsTab:CreateText({
+    name = "nil",
+    text = "Select an Egg you Don't want to Dip",
+})
+
 --==================================================
 -- INITIAL EGG SCAN
 --==================================================
@@ -2287,17 +2292,6 @@ AntiAFKConnection = Player.Idled:Connect(function()
 end)
 
 --==================================================
--- REMOVE OTHER PLAYER PLOTS 
---==================================================
-
-SettingTab:CreateButton({
-    name = "🧹 Remove Other Player Plots",
-    callback = function()
-        RemoveOtherPlayerPlots()
-    end
-})
-
---==================================================
 -- NOCLIP
 --==================================================
 
@@ -2350,4 +2344,15 @@ SettingTab:CreateToggle({
     callback = function(Value)
         SetNoclip(Value)
     end,
+})
+
+--==================================================
+-- REMOVE OTHER PLAYER PLOTS 
+--==================================================
+
+SettingTab:CreateButton({
+    name = "🧹 Remove Other Player Plots",
+    callback = function()
+        RemoveOtherPlayerPlots()
+    end
 })
