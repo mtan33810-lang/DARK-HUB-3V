@@ -9,6 +9,13 @@ local Window = Rayfield:CreateWindow({
     name = "Dark Hub",
     subtitle = "by MaX",
     sidebarLayout = true,
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
 })
 
 --==================================================
