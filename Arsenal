@@ -1,0 +1,837 @@
+-- [👑] Arsenal Aimbot + 🔪 Golden Knife Finish Off
+-- Delta / Xeno Compatible
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local function GetParent()
+    if gethui then return gethui() end
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local SG = Instance.new("ScreenGui")
+SG.Name = "ArsenalCombined"
+SG.ResetOnSpawn = false
+SG.IgnoreGuiInset = true
+SG.DisplayOrder = 9999
+SG.Parent = GetParent()
+
+-- ─────────────────────────────────────────
+--   LOADING SCREEN 8 seconds
+-- ─────────────────────────────────────────
+
+local LW, LH = 340, 200
+local Overlay = Instance.new("Frame")
+Overlay.Size = UDim2.new(1,0,1,0)
+Overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Overlay.BackgroundTransparency = 0.4
+Overlay.BorderSizePixel = 0
+Overlay.ZIndex = 199
+Overlay.Parent = SG
+
+local LoadBox = Instance.new("Frame")
+LoadBox.Size = UDim2.new(0,LW,0,LH)
+LoadBox.Position = UDim2.new(0.5,-LW/2,0.5,-LH/2)
+LoadBox.BackgroundColor3 = Color3.fromRGB(20,5,5)
+LoadBox.BorderSizePixel = 0
+LoadBox.ZIndex = 200
+LoadBox.Parent = SG
+Instance.new("UICorner",LoadBox).CornerRadius = UDim.new(0,16)
+
+local LBS=Instance.new("UIStroke"); LBS.Thickness=3; LBS.Parent=LoadBox
+local LBG=Instance.new("UIGradient")
+LBG.Color=ColorSequence.new({
+    ColorSequenceKeypoint.new(0,   Color3.fromRGB(255,0,0)),
+    ColorSequenceKeypoint.new(0.33,Color3.fromRGB(255,200,0)),
+    ColorSequenceKeypoint.new(0.66,Color3.fromRGB(255,80,80)),
+    ColorSequenceKeypoint.new(1,   Color3.fromRGB(255,0,0)),
+})
+LBG.Parent=LBS
+RunService.RenderStepped:Connect(function(dt) LBG.Rotation=(LBG.Rotation+60*dt)%360 end)
+
+local LTopBar=Instance.new("Frame"); LTopBar.Size=UDim2.new(1,0,0,5)
+LTopBar.BackgroundColor3=Color3.fromRGB(255,100,0); LTopBar.BorderSizePixel=0
+LTopBar.ZIndex=201; LTopBar.Parent=LoadBox
+Instance.new("UICorner",LTopBar).CornerRadius=UDim.new(0,16)
+
+local LoadLogo=Instance.new("TextLabel"); LoadLogo.Size=UDim2.new(1,0,0,55)
+LoadLogo.Position=UDim2.new(0,0,0,14); LoadLogo.BackgroundTransparency=1
+LoadLogo.Text="👑🔪"; LoadLogo.TextSize=40; LoadLogo.Font=Enum.Font.GothamBlack
+LoadLogo.ZIndex=201; LoadLogo.Parent=LoadBox
+
+local lt=0
+local logoConn=RunService.RenderStepped:Connect(function(dt)
+    lt+=dt
+    if LoadLogo and LoadLogo.Parent then LoadLogo.TextSize=36+math.sin(lt*2)*5 end
+end)
+
+local LoadTitle=Instance.new("TextLabel"); LoadTitle.Size=UDim2.new(1,-20,0,22)
+LoadTitle.Position=UDim2.new(0,10,0,70); LoadTitle.BackgroundTransparency=1
+LoadTitle.Text="[👑] Arsenal Aimbot + 🔪 Golden Knife"
+LoadTitle.TextColor3=Color3.fromRGB(255,180,40); LoadTitle.TextSize=15
+LoadTitle.Font=Enum.Font.GothamBlack; LoadTitle.ZIndex=201; LoadTitle.Parent=LoadBox
+
+local LDiv=Instance.new("Frame"); LDiv.Size=UDim2.new(1,-30,0,1)
+LDiv.Position=UDim2.new(0,15,0,98); LDiv.BackgroundColor3=Color3.fromRGB(100,60,0)
+LDiv.BorderSizePixel=0; LDiv.ZIndex=201; LDiv.Parent=LoadBox
+
+local LoadSub=Instance.new("TextLabel"); LoadSub.Size=UDim2.new(1,-20,0,16)
+LoadSub.Position=UDim2.new(0,10,0,106); LoadSub.BackgroundTransparency=1
+LoadSub.Text="Starting up..."; LoadSub.TextColor3=Color3.fromRGB(200,140,40)
+LoadSub.TextSize=11; LoadSub.Font=Enum.Font.GothamBold
+LoadSub.TextXAlignment=Enum.TextXAlignment.Left; LoadSub.ZIndex=201; LoadSub.Parent=LoadBox
+
+local PBG=Instance.new("Frame"); PBG.Size=UDim2.new(1,-30,0,10)
+PBG.Position=UDim2.new(0,15,0,128); PBG.BackgroundColor3=Color3.fromRGB(30,20,5)
+PBG.BorderSizePixel=0; PBG.ZIndex=201; PBG.Parent=LoadBox
+Instance.new("UICorner",PBG).CornerRadius=UDim.new(0,5)
+Instance.new("UIStroke",PBG).Color=Color3.fromRGB(80,50,0)
+
+local PFill=Instance.new("Frame"); PFill.Size=UDim2.new(0,0,1,0)
+PFill.BackgroundColor3=Color3.fromRGB(255,180,0); PFill.BorderSizePixel=0
+PFill.ZIndex=202; PFill.Parent=PBG
+Instance.new("UICorner",PFill).CornerRadius=UDim.new(0,5)
+local FillGrad=Instance.new("UIGradient")
+FillGrad.Color=ColorSequence.new({
+    ColorSequenceKeypoint.new(0,   Color3.fromRGB(255,220,80)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,100,0)),
+    ColorSequenceKeypoint.new(1,   Color3.fromRGB(255,220,80)),
+})
+FillGrad.Parent=PFill
+local gt=0
+RunService.RenderStepped:Connect(function(dt) gt+=dt; FillGrad.Rotation=(gt*80)%360 end)
+
+local StepLbl=Instance.new("TextLabel"); StepLbl.Size=UDim2.new(0.5,0,0,14)
+StepLbl.Position=UDim2.new(0,15,0,144); StepLbl.BackgroundTransparency=1
+StepLbl.Text="Step 1 / 8"; StepLbl.TextColor3=Color3.fromRGB(120,80,20)
+StepLbl.TextSize=9; StepLbl.Font=Enum.Font.Gotham
+StepLbl.TextXAlignment=Enum.TextXAlignment.Left; StepLbl.ZIndex=201; StepLbl.Parent=LoadBox
+
+local DotsLbl=Instance.new("TextLabel"); DotsLbl.Size=UDim2.new(0.5,0,0,14)
+DotsLbl.Position=UDim2.new(0.5,0,0,144); DotsLbl.BackgroundTransparency=1
+DotsLbl.Text="● ○ ○"; DotsLbl.TextColor3=Color3.fromRGB(200,140,40)
+DotsLbl.TextSize=10; DotsLbl.Font=Enum.Font.GothamBold
+DotsLbl.TextXAlignment=Enum.TextXAlignment.Right; DotsLbl.ZIndex=201; DotsLbl.Parent=LoadBox
+
+local VerLbl=Instance.new("TextLabel"); VerLbl.Size=UDim2.new(1,-20,0,14)
+VerLbl.Position=UDim2.new(0,10,0,180); VerLbl.BackgroundTransparency=1
+VerLbl.Text="[👑] Arsenal Suite — v2.0"
+VerLbl.TextColor3=Color3.fromRGB(80,50,10); VerLbl.TextSize=9
+VerLbl.Font=Enum.Font.Gotham; VerLbl.ZIndex=201; VerLbl.Parent=LoadBox
+
+task.spawn(function()
+    local states={"● ○ ○","○ ● ○","○ ○ ●","○ ● ○"}
+    local i=1
+    while LoadBox and LoadBox.Parent do
+        DotsLbl.Text=states[i]; i=i%#states+1; task.wait(0.18)
+    end
+end)
+
+local steps={
+    {t="Starting up...",          p=0.12},
+    {t="Please wait...",          p=0.25},
+    {t="Loading...",              p=0.37},
+    {t="Hang tight...",           p=0.50},
+    {t="Getting things ready...", p=0.62},
+    {t="Nearly done...",          p=0.75},
+    {t="Almost ready...",         p=0.87},
+    {t="✅ Done!",                p=1.00},
+}
+local totalTime=8
+local timePerStep=totalTime/#steps
+
+-- ─────────────────────────────────────────
+--   AIMBOT STATE
+-- ─────────────────────────────────────────
+
+local aimbotOn  = false
+local fovVisible= false
+local speedOn   = false
+local teamCheck = false
+local wsOn      = false
+local espOn     = false
+local fovSize   = 150
+local aimbotSpd = 0.2
+local walkSpeed = 50
+local aimbotConn= nil
+local wsConn    = nil
+local fovCircle = nil
+local espHighlights = {}
+local espConn   = nil
+
+-- ─────────────────────────────────────────
+--   KNIFE STATE
+-- ─────────────────────────────────────────
+
+local following      = false
+local knifeTarget    = nil
+local followConn     = nil
+local currentKeybind = Enum.KeyCode.E
+
+-- ─────────────────────────────────────────
+--   AIMBOT CORE
+-- ─────────────────────────────────────────
+
+local function MakeFOVCircle()
+    if fovCircle then pcall(function() fovCircle:Remove() end) end
+    fovCircle=Drawing.new("Circle")
+    fovCircle.Thickness=1.5; fovCircle.Color=Color3.fromRGB(255,80,80)
+    fovCircle.Radius=fovSize; fovCircle.Filled=false
+    fovCircle.Visible=false; fovCircle.Transparency=1
+    fovCircle.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+end
+pcall(MakeFOVCircle)
+
+local function GetNearestTarget()
+    local center=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    local closest,closestDist=nil,fovSize
+    for _,p in pairs(Players:GetPlayers()) do
+        if p==LocalPlayer then continue end
+        if not p.Character then continue end
+        if teamCheck and p.Team==LocalPlayer.Team then continue end
+        local hum=p.Character:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health<=0 then continue end
+        local head=p.Character:FindFirstChild("Head")
+        if not head then continue end
+        local sp,onScreen=Camera:WorldToScreenPoint(head.Position)
+        if not onScreen then continue end
+        local dist=Vector2.new(sp.X,sp.Y)-center
+        if dist.Magnitude<closestDist then closestDist=dist.Magnitude; closest=p end
+    end
+    return closest
+end
+
+local function StartAimbot()
+    if aimbotConn then aimbotConn:Disconnect() end
+    aimbotConn=RunService.RenderStepped:Connect(function()
+        if not aimbotOn then return end
+        pcall(function()
+            if fovCircle then
+                fovCircle.Visible=fovVisible
+                fovCircle.Radius=fovSize
+                fovCircle.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+            end
+        end)
+        local target=GetNearestTarget()
+        if not target or not target.Character then return end
+        local head=target.Character:FindFirstChild("Head")
+        if not head then return end
+        Camera.CFrame=Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position,head.Position),aimbotSpd)
+    end)
+end
+
+local function StopAimbot()
+    if aimbotConn then aimbotConn:Disconnect(); aimbotConn=nil end
+    pcall(function() if fovCircle then fovCircle.Visible=false end end)
+end
+
+local function StartWalkSpeed()
+    if wsConn then wsConn:Disconnect() end
+    wsConn=RunService.Heartbeat:Connect(function()
+        if not wsOn then return end
+        local char=LocalPlayer.Character
+        if not char then return end
+        local hum=char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed=walkSpeed end
+    end)
+end
+
+local function StopWalkSpeed()
+    wsOn=false
+    if wsConn then wsConn:Disconnect(); wsConn=nil end
+    local char=LocalPlayer.Character
+    if char then
+        local hum=char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed=16 end
+    end
+end
+
+local function AddESP(player)
+    if player==LocalPlayer then return end
+    if espHighlights[player] then return end
+    if not player.Character then return end
+    local h=Instance.new("Highlight")
+    h.Name="ArsenalESP"; h.Adornee=player.Character
+    h.FillColor=Color3.fromRGB(255,0,0); h.FillTransparency=0.5
+    h.OutlineColor=Color3.fromRGB(255,80,80); h.OutlineTransparency=0
+    h.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent=player.Character; espHighlights[player]=h
+end
+
+local function RemoveESP(player)
+    if espHighlights[player] then
+        pcall(function() espHighlights[player]:Destroy() end)
+        espHighlights[player]=nil
+    end
+end
+
+local function ClearAllESP()
+    for p,_ in pairs(espHighlights) do RemoveESP(p) end
+    espHighlights={}
+end
+
+local function StartESP()
+    ClearAllESP()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=LocalPlayer then AddESP(p) end
+    end
+    espConn=RunService.Heartbeat:Connect(function()
+        if not espOn then return end
+        for _,p in pairs(Players:GetPlayers()) do
+            if p~=LocalPlayer and p.Character then
+                if not espHighlights[p] then AddESP(p) end
+                if espHighlights[p] then espHighlights[p].Adornee=p.Character end
+            end
+        end
+    end)
+    Players.PlayerRemoving:Connect(RemoveESP)
+end
+
+local function StopESP()
+    espOn=false
+    if espConn then espConn:Disconnect(); espConn=nil end
+    ClearAllESP()
+end
+
+-- ─────────────────────────────────────────
+--   KNIFE CORE
+-- ─────────────────────────────────────────
+
+local function StopFollow(statLbl, killBtn)
+    following=false; knifeTarget=nil
+    if followConn then followConn:Disconnect(); followConn=nil end
+    if statLbl then statLbl.Text="⬤ Ready"; statLbl.TextColor3=Color3.fromRGB(180,120,40) end
+    if killBtn then killBtn.Text="🔪  Kill Random" end
+end
+
+local function GetRandomEnemy()
+    local enemies={}
+    for _,p in pairs(Players:GetPlayers()) do
+        if p==LocalPlayer then continue end
+        if not p.Character then continue end
+        if p.Team==LocalPlayer.Team then continue end
+        local hum=p.Character:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health<=0 then continue end
+        if not p.Character:FindFirstChild("HumanoidRootPart") then continue end
+        table.insert(enemies,p)
+    end
+    if #enemies==0 then return nil end
+    return enemies[math.random(1,#enemies)]
+end
+
+local function StartFollow(targetPlayer, statLbl, killBtn)
+    following=false
+    if followConn then followConn:Disconnect(); followConn=nil end
+    following=true; knifeTarget=targetPlayer
+    followConn=RunService.Heartbeat:Connect(function()
+        if not following then return end
+        if not knifeTarget or not knifeTarget.Character then
+            StopFollow(statLbl,killBtn)
+            if statLbl then statLbl.Text="⏹ Target lost"; statLbl.TextColor3=Color3.fromRGB(200,80,80) end
+            return
+        end
+        local char=LocalPlayer.Character
+        if not char then return end
+        local myRoot=char:FindFirstChild("HumanoidRootPart")
+        local tRoot=knifeTarget.Character:FindFirstChild("HumanoidRootPart")
+        if not myRoot or not tRoot then return end
+        local hum=knifeTarget.Character:FindFirstChildOfClass("Humanoid")
+        -- auto stop when target dies
+        if not hum or hum.Health<=0 then
+            StopFollow(statLbl,killBtn)
+            if statLbl then statLbl.Text="💀 Target eliminated!"; statLbl.TextColor3=Color3.fromRGB(255,200,0) end
+            return
+        end
+        myRoot.CFrame=tRoot.CFrame*CFrame.new(0,0,2)
+        if statLbl then
+            statLbl.Text="🔪 "..knifeTarget.Name.." | HP: "..math.floor(hum.Health)
+            statLbl.TextColor3=Color3.fromRGB(255,180,40)
+        end
+    end)
+end
+
+local function KillRandom(statLbl, killBtn)
+    local enemy=GetRandomEnemy()
+    if not enemy then
+        statLbl.Text="⚠️ No enemies found!"; statLbl.TextColor3=Color3.fromRGB(255,80,80)
+        if killBtn then killBtn.Text="🔪  Kill Random" end
+        task.delay(2,function()
+            if not following then
+                statLbl.Text="⬤ Ready"; statLbl.TextColor3=Color3.fromRGB(180,120,40)
+            end
+        end)
+        return
+    end
+    statLbl.Text="🔪 Following: "..enemy.Name; statLbl.TextColor3=Color3.fromRGB(255,180,40)
+    if killBtn then killBtn.Text="⏹  Stop" end
+    StartFollow(enemy,statLbl,killBtn)
+end
+
+-- ─────────────────────────────────────────
+--   TOGGLE HELPER
+-- ─────────────────────────────────────────
+
+local function ToggleSwitch(on,pill,knob,sk,KW)
+    if on then
+        TweenService:Create(pill,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(200,0,0)}):Play()
+        TweenService:Create(knob,TweenInfo.new(0.2,Enum.EasingStyle.Back),{
+            Position=UDim2.new(1,-(KW+3),0.5,-KW/2),
+            BackgroundColor3=Color3.fromRGB(255,255,255)
+        }):Play()
+        TweenService:Create(sk,TweenInfo.new(0.2),{Color=Color3.fromRGB(255,80,80)}):Play()
+    else
+        TweenService:Create(pill,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(50,15,15)}):Play()
+        TweenService:Create(knob,TweenInfo.new(0.2,Enum.EasingStyle.Back),{
+            Position=UDim2.new(0,3,0.5,-KW/2),
+            BackgroundColor3=Color3.fromRGB(120,40,40)
+        }):Play()
+        TweenService:Create(sk,TweenInfo.new(0.2),{Color=Color3.fromRGB(80,15,15)}):Play()
+    end
+end
+
+-- ─────────────────────────────────────────
+--   GUI 1 — AIMBOT
+-- ─────────────────────────────────────────
+
+local function BuildAimbotGUI()
+    local W,H=290,490
+    local Main=Instance.new("Frame")
+    Main.Size=UDim2.new(0,W,0,H); Main.Position=UDim2.new(0.05,0,0.08,0)
+    Main.BackgroundColor3=Color3.fromRGB(18,5,5); Main.BorderSizePixel=0
+    Main.Active=true; Main.ClipsDescendants=true; Main.ZIndex=2
+    Main.Visible=false; Main.Parent=SG
+    Instance.new("UICorner",Main).CornerRadius=UDim.new(0,14)
+
+    local MBS=Instance.new("UIStroke"); MBS.Thickness=2.5; MBS.Parent=Main
+    local MBG=Instance.new("UIGradient")
+    MBG.Color=ColorSequence.new({
+        ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)),
+        ColorSequenceKeypoint.new(0.33,Color3.fromRGB(200,0,0)),
+        ColorSequenceKeypoint.new(0.66,Color3.fromRGB(255,80,80)),
+        ColorSequenceKeypoint.new(1,Color3.fromRGB(255,0,0)),
+    })
+    MBG.Parent=MBS
+    RunService.RenderStepped:Connect(function(dt) MBG.Rotation=(MBG.Rotation+80*dt)%360 end)
+
+    local TopAcc=Instance.new("Frame"); TopAcc.Size=UDim2.new(1,0,0,4)
+    TopAcc.BackgroundColor3=Color3.fromRGB(255,0,0); TopAcc.BorderSizePixel=0
+    TopAcc.ZIndex=3; TopAcc.Parent=Main
+    Instance.new("UICorner",TopAcc).CornerRadius=UDim.new(0,14)
+
+    local TBar=Instance.new("Frame"); TBar.Size=UDim2.new(1,0,0,46)
+    TBar.BackgroundColor3=Color3.fromRGB(25,6,6); TBar.BorderSizePixel=0
+    TBar.ZIndex=3; TBar.Parent=Main
+    Instance.new("UICorner",TBar).CornerRadius=UDim.new(0,14)
+    local TFix=Instance.new("Frame"); TFix.Size=UDim2.new(1,0,0.5,0)
+    TFix.Position=UDim2.new(0,0,0.5,0); TFix.BackgroundColor3=Color3.fromRGB(25,6,6)
+    TFix.BorderSizePixel=0; TFix.ZIndex=3; TFix.Parent=TBar
+
+    local TIcon=Instance.new("TextLabel"); TIcon.Size=UDim2.new(0,34,1,0)
+    TIcon.Position=UDim2.new(0,8,0,0); TIcon.BackgroundTransparency=1
+    TIcon.Text="👑"; TIcon.TextSize=22; TIcon.Font=Enum.Font.GothamBlack
+    TIcon.ZIndex=4; TIcon.Parent=TBar
+
+    local TLbl=Instance.new("TextLabel"); TLbl.Size=UDim2.new(1,-44,1,0)
+    TLbl.Position=UDim2.new(0,42,0,0); TLbl.BackgroundTransparency=1
+    TLbl.Text="[👑] Arsenal Aimbot"; TLbl.TextColor3=Color3.fromRGB(255,80,80)
+    TLbl.TextSize=14; TLbl.Font=Enum.Font.GothamBlack
+    TLbl.TextXAlignment=Enum.TextXAlignment.Left; TLbl.ZIndex=4; TLbl.Parent=TBar
+
+    local drag,ds,dp=false,nil,nil
+    TBar.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            drag=true; ds=i.Position; dp=Main.Position end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+            local d=i.Position-ds
+            Main.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y) end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end
+    end)
+
+    local MDivTop=Instance.new("Frame"); MDivTop.Size=UDim2.new(1,-16,0,1)
+    MDivTop.Position=UDim2.new(0,8,0,50); MDivTop.BackgroundColor3=Color3.fromRGB(80,15,15)
+    MDivTop.BorderSizePixel=0; MDivTop.ZIndex=3; MDivTop.Parent=Main
+
+    local Scroll=Instance.new("ScrollingFrame")
+    Scroll.Size=UDim2.new(1,-8,1,-58); Scroll.Position=UDim2.new(0,4,0,54)
+    Scroll.BackgroundTransparency=1; Scroll.BorderSizePixel=0
+    Scroll.ScrollBarThickness=3; Scroll.ScrollBarImageColor3=Color3.fromRGB(200,30,30)
+    Scroll.CanvasSize=UDim2.new(0,0,0,0); Scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y
+    Scroll.ZIndex=3; Scroll.Parent=Main
+
+    local SLayout=Instance.new("UIListLayout",Scroll); SLayout.Padding=UDim.new(0,6)
+    local SPad=Instance.new("UIPadding",Scroll)
+    SPad.PaddingTop=UDim.new(0,6); SPad.PaddingBottom=UDim.new(0,6)
+    SPad.PaddingLeft=UDim.new(0,4); SPad.PaddingRight=UDim.new(0,4)
+
+    local function MkSec(txt)
+        local l=Instance.new("TextLabel"); l.Size=UDim2.new(1,-8,0,18)
+        l.BackgroundTransparency=1; l.Text=txt; l.TextColor3=Color3.fromRGB(180,40,40)
+        l.TextSize=10; l.Font=Enum.Font.GothamBold
+        l.TextXAlignment=Enum.TextXAlignment.Left; l.ZIndex=4; l.Parent=Scroll
+    end
+
+    local function MkSw(labelTxt)
+        local row=Instance.new("Frame"); row.Size=UDim2.new(1,-8,0,44)
+        row.BackgroundColor3=Color3.fromRGB(28,7,7); row.BorderSizePixel=0
+        row.ZIndex=3; row.Parent=Scroll
+        Instance.new("UICorner",row).CornerRadius=UDim.new(0,10)
+        local sk=Instance.new("UIStroke"); sk.Color=Color3.fromRGB(80,15,15)
+        sk.Thickness=1.3; sk.Parent=row
+        local lbl=Instance.new("TextLabel"); lbl.Size=UDim2.new(1,-90,1,0)
+        lbl.Position=UDim2.new(0,12,0,0); lbl.BackgroundTransparency=1
+        lbl.Text=labelTxt; lbl.TextColor3=Color3.fromRGB(220,170,170)
+        lbl.TextSize=12; lbl.Font=Enum.Font.GothamBold
+        lbl.TextXAlignment=Enum.TextXAlignment.Left
+        lbl.TextTruncate=Enum.TextTruncate.AtEnd; lbl.ZIndex=4; lbl.Parent=row
+        local PW,PH=46,24
+        local pill=Instance.new("Frame"); pill.Size=UDim2.new(0,PW,0,PH)
+        pill.Position=UDim2.new(1,-(PW+10),0.5,-PH/2)
+        pill.BackgroundColor3=Color3.fromRGB(50,15,15); pill.BorderSizePixel=0
+        pill.ZIndex=4; pill.Parent=row
+        Instance.new("UICorner",pill).CornerRadius=UDim.new(1,0)
+        local KW=18
+        local knob=Instance.new("Frame"); knob.Size=UDim2.new(0,KW,0,KW)
+        knob.Position=UDim2.new(0,3,0.5,-KW/2)
+        knob.BackgroundColor3=Color3.fromRGB(120,40,40); knob.BorderSizePixel=0
+        knob.ZIndex=5; knob.Parent=pill
+        Instance.new("UICorner",knob).CornerRadius=UDim.new(1,0)
+        local clk=Instance.new("TextButton"); clk.Size=UDim2.new(1,0,1,0)
+        clk.BackgroundTransparency=1; clk.Text=""; clk.ZIndex=6; clk.Parent=row
+        return row,lbl,pill,knob,clk,sk,KW
+    end
+
+    local function MkInp(labelTxt,defaultVal,placeholder)
+        local row=Instance.new("Frame"); row.Size=UDim2.new(1,-8,0,44)
+        row.BackgroundColor3=Color3.fromRGB(28,7,7); row.BorderSizePixel=0
+        row.ZIndex=3; row.Parent=Scroll
+        Instance.new("UICorner",row).CornerRadius=UDim.new(0,10)
+        Instance.new("UIStroke",row).Color=Color3.fromRGB(80,15,15)
+        local lbl=Instance.new("TextLabel"); lbl.Size=UDim2.new(0.5,0,1,0)
+        lbl.Position=UDim2.new(0,12,0,0); lbl.BackgroundTransparency=1
+        lbl.Text=labelTxt; lbl.TextColor3=Color3.fromRGB(180,120,120)
+        lbl.TextSize=11; lbl.Font=Enum.Font.GothamBold
+        lbl.TextXAlignment=Enum.TextXAlignment.Left
+        lbl.TextTruncate=Enum.TextTruncate.AtEnd; lbl.ZIndex=4; lbl.Parent=row
+        local box=Instance.new("TextBox"); box.Size=UDim2.new(0,90,0,26)
+        box.Position=UDim2.new(1,-100,0.5,-13)
+        box.BackgroundColor3=Color3.fromRGB(35,8,8); box.BorderSizePixel=0
+        box.Text=tostring(defaultVal); box.PlaceholderText=placeholder or ""
+        box.TextColor3=Color3.fromRGB(255,100,100); box.TextSize=12
+        box.Font=Enum.Font.GothamBold; box.ClearTextOnFocus=true
+        box.ZIndex=5; box.Parent=row
+        Instance.new("UICorner",box).CornerRadius=UDim.new(0,7)
+        local bsk=Instance.new("UIStroke"); bsk.Color=Color3.fromRGB(180,30,30)
+        bsk.Thickness=1.5; bsk.Parent=box
+        return row,lbl,box
+    end
+
+    local function MkDiv()
+        local d=Instance.new("Frame"); d.Size=UDim2.new(1,-8,0,1)
+        d.BackgroundColor3=Color3.fromRGB(60,12,12); d.BorderSizePixel=0
+        d.ZIndex=3; d.Parent=Scroll
+    end
+
+    MkSec("  AIMBOT")
+    local _,AimbotLbl,AimbotPill,AimbotKnob,AimbotClk,AimbotSK,AimbotKW=MkSw("🎯  Aimbot")
+    MkDiv()
+    MkSec("  FOV")
+    local _,FOVLbl,FOVPill,FOVKnob,FOVClk,FOVSK,FOVKW=MkSw("🔴  FOV Circle")
+    local _,_,FOVBox=MkInp("FOV Size",150,"e.g. 150")
+    MkDiv()
+    MkSec("  AIM SPEED")
+    local _,SpdLbl,SpdPill,SpdKnob,SpdClk,SpdSK,SpdKW=MkSw("⚡  Aim Speed")
+    local _,_,SpdBox=MkInp("Smooth (0.01-1)",0.2,"e.g. 0.2")
+    MkDiv()
+    MkSec("  WALK SPEED")
+    local _,WSLbl,WSPill,WSKnob,WSClk,WSSK,WSKW=MkSw("🏃  Walk Speed")
+    local _,_,WSBox=MkInp("Speed Value",50,"e.g. 50")
+    MkDiv()
+    MkSec("  ESP")
+    local _,ESPLbl,ESPPill,ESPKnob,ESPClk,ESPSK,ESPKW=MkSw("👁️  Player ESP")
+    MkDiv()
+    MkSec("  SETTINGS")
+    local _,TCLbl,TCPill,TCKnob,TCClk,TCSK,TCKW=MkSw("🛡️  Team Check")
+
+    FOVBox.FocusLost:Connect(function()
+        local n=tonumber(FOVBox.Text)
+        if n then fovSize=math.clamp(n,20,600); FOVBox.Text=tostring(fovSize)
+            pcall(function() if fovCircle then fovCircle.Radius=fovSize end end)
+        else FOVBox.Text=tostring(fovSize) end
+    end)
+    SpdBox.FocusLost:Connect(function()
+        local n=tonumber(SpdBox.Text)
+        if n then aimbotSpd=math.clamp(n,0.01,1); SpdBox.Text=tostring(aimbotSpd)
+        else SpdBox.Text=tostring(aimbotSpd) end
+    end)
+    WSBox.FocusLost:Connect(function()
+        local n=tonumber(WSBox.Text)
+        if n then walkSpeed=math.clamp(n,1,500); WSBox.Text=tostring(walkSpeed)
+        else WSBox.Text=tostring(walkSpeed) end
+    end)
+
+    AimbotClk.MouseButton1Click:Connect(function()
+        aimbotOn=not aimbotOn
+        ToggleSwitch(aimbotOn,AimbotPill,AimbotKnob,AimbotSK,AimbotKW)
+        AimbotLbl.Text=aimbotOn and "🎯  Aimbot  ✅" or "🎯  Aimbot"
+        AimbotLbl.TextColor3=aimbotOn and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+        if aimbotOn then StartAimbot() else StopAimbot() end
+    end)
+    FOVClk.MouseButton1Click:Connect(function()
+        fovVisible=not fovVisible
+        ToggleSwitch(fovVisible,FOVPill,FOVKnob,FOVSK,FOVKW)
+        FOVLbl.Text=fovVisible and "🔴  FOV Circle  ✅" or "🔴  FOV Circle"
+        FOVLbl.TextColor3=fovVisible and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+        pcall(function() if fovCircle then fovCircle.Visible=fovVisible and aimbotOn end end)
+    end)
+    SpdClk.MouseButton1Click:Connect(function()
+        speedOn=not speedOn
+        ToggleSwitch(speedOn,SpdPill,SpdKnob,SpdSK,SpdKW)
+        SpdLbl.Text=speedOn and "⚡  Aim Speed  ✅" or "⚡  Aim Speed"
+        SpdLbl.TextColor3=speedOn and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+        aimbotSpd=speedOn and math.clamp(tonumber(SpdBox.Text) or 0.2,0.01,1) or 0.07
+    end)
+    WSClk.MouseButton1Click:Connect(function()
+        wsOn=not wsOn
+        ToggleSwitch(wsOn,WSPill,WSKnob,WSSK,WSKW)
+        WSLbl.Text=wsOn and "🏃  Walk Speed  ✅" or "🏃  Walk Speed"
+        WSLbl.TextColor3=wsOn and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+        if wsOn then walkSpeed=math.clamp(tonumber(WSBox.Text) or 50,1,500); StartWalkSpeed()
+        else StopWalkSpeed() end
+    end)
+    ESPClk.MouseButton1Click:Connect(function()
+        espOn=not espOn
+        ToggleSwitch(espOn,ESPPill,ESPKnob,ESPSK,ESPKW)
+        ESPLbl.Text=espOn and "👁️  Player ESP  ✅" or "👁️  Player ESP"
+        ESPLbl.TextColor3=espOn and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+        if espOn then StartESP() else StopESP() end
+    end)
+    TCClk.MouseButton1Click:Connect(function()
+        teamCheck=not teamCheck
+        ToggleSwitch(teamCheck,TCPill,TCKnob,TCSK,TCKW)
+        TCLbl.Text=teamCheck and "🛡️  Team Check  ✅" or "🛡️  Team Check"
+        TCLbl.TextColor3=teamCheck and Color3.fromRGB(255,100,100) or Color3.fromRGB(220,170,170)
+    end)
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        aimbotOn=false; StopAimbot()
+        ToggleSwitch(false,AimbotPill,AimbotKnob,AimbotSK,AimbotKW)
+        AimbotLbl.Text="🎯  Aimbot"; AimbotLbl.TextColor3=Color3.fromRGB(220,170,170)
+        if wsOn then task.wait(0.3); StartWalkSpeed() end
+        if espOn then task.wait(0.3); StartESP() end
+    end)
+
+    return Main
+end
+
+-- ─────────────────────────────────────────
+--   GUI 2 — KNIFE
+-- ─────────────────────────────────────────
+
+local function BuildKnifeGUI()
+    local W,H=260,160
+    local Main=Instance.new("Frame")
+    Main.Size=UDim2.new(0,W,0,H); Main.Position=UDim2.new(0.65,0,0.08,0)
+    Main.BackgroundColor3=Color3.fromRGB(10,8,2); Main.BorderSizePixel=0
+    Main.Active=true; Main.ClipsDescendants=true; Main.ZIndex=2
+    Main.Visible=false; Main.Parent=SG
+    Instance.new("UICorner",Main).CornerRadius=UDim.new(0,14)
+
+    local BS=Instance.new("UIStroke"); BS.Thickness=2.5; BS.Parent=Main
+    local BG=Instance.new("UIGradient")
+    BG.Color=ColorSequence.new({
+        ColorSequenceKeypoint.new(0,   Color3.fromRGB(255,200,0)),
+        ColorSequenceKeypoint.new(0.33,Color3.fromRGB(200,140,0)),
+        ColorSequenceKeypoint.new(0.66,Color3.fromRGB(255,220,80)),
+        ColorSequenceKeypoint.new(1,   Color3.fromRGB(255,200,0)),
+    })
+    BG.Parent=BS
+    RunService.RenderStepped:Connect(function(dt) BG.Rotation=(BG.Rotation+80*dt)%360 end)
+
+    local TopAcc=Instance.new("Frame"); TopAcc.Size=UDim2.new(1,0,0,4)
+    TopAcc.BackgroundColor3=Color3.fromRGB(255,200,0); TopAcc.BorderSizePixel=0
+    TopAcc.ZIndex=3; TopAcc.Parent=Main
+    Instance.new("UICorner",TopAcc).CornerRadius=UDim.new(0,14)
+
+    local glitchT=0
+    RunService.RenderStepped:Connect(function(dt)
+        glitchT+=dt
+        if Main and Main.Parent and Main.Visible and following then
+            Main.BackgroundColor3=math.sin(glitchT*25)>0.6 and
+                Color3.fromRGB(18,14,3) or Color3.fromRGB(10,8,2)
+        end
+    end)
+
+    local TBar=Instance.new("Frame"); TBar.Size=UDim2.new(1,0,0,44)
+    TBar.BackgroundColor3=Color3.fromRGB(18,14,2); TBar.BorderSizePixel=0
+    TBar.ZIndex=3; TBar.Parent=Main
+    Instance.new("UICorner",TBar).CornerRadius=UDim.new(0,14)
+    local TFix=Instance.new("Frame"); TFix.Size=UDim2.new(1,0,0.5,0)
+    TFix.Position=UDim2.new(0,0,0.5,0); TFix.BackgroundColor3=Color3.fromRGB(18,14,2)
+    TFix.BorderSizePixel=0; TFix.ZIndex=3; TFix.Parent=TBar
+
+    local TLbl=Instance.new("TextLabel"); TLbl.Size=UDim2.new(1,0,1,0)
+    TLbl.BackgroundTransparency=1; TLbl.Text="🔪 Golden Knife Finish Off"
+    TLbl.TextColor3=Color3.fromRGB(255,200,0); TLbl.TextSize=13
+    TLbl.Font=Enum.Font.GothamBlack; TLbl.ZIndex=4; TLbl.Parent=TBar
+
+    local drag,ds,dp=false,nil,nil
+    TBar.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            drag=true; ds=i.Position; dp=Main.Position end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+            local d=i.Position-ds
+            Main.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y) end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end
+    end)
+
+    local Div=Instance.new("Frame"); Div.Size=UDim2.new(1,-16,0,1)
+    Div.Position=UDim2.new(0,8,0,48); Div.BackgroundColor3=Color3.fromRGB(80,60,0)
+    Div.BorderSizePixel=0; Div.ZIndex=3; Div.Parent=Main
+
+    local StatLbl=Instance.new("TextLabel"); StatLbl.Size=UDim2.new(1,-16,0,14)
+    StatLbl.Position=UDim2.new(0,8,0,54); StatLbl.BackgroundTransparency=1
+    StatLbl.Text="⬤ Ready"; StatLbl.TextColor3=Color3.fromRGB(180,120,40)
+    StatLbl.TextSize=10; StatLbl.Font=Enum.Font.GothamBold
+    StatLbl.TextXAlignment=Enum.TextXAlignment.Left; StatLbl.ZIndex=3; StatLbl.Parent=Main
+
+    -- Kill Random button
+    local BtnFrame=Instance.new("Frame"); BtnFrame.Size=UDim2.new(1,-16,0,46)
+    BtnFrame.Position=UDim2.new(0,8,0,72); BtnFrame.BackgroundColor3=Color3.fromRGB(18,14,2)
+    BtnFrame.BorderSizePixel=0; BtnFrame.ZIndex=3; BtnFrame.Parent=Main
+    Instance.new("UICorner",BtnFrame).CornerRadius=UDim.new(0,12)
+    local BtnSK=Instance.new("UIStroke"); BtnSK.Color=Color3.fromRGB(200,150,0)
+    BtnSK.Thickness=2; BtnSK.Parent=BtnFrame
+
+    local KillBtn=Instance.new("TextButton"); KillBtn.Size=UDim2.new(1,0,1,0)
+    KillBtn.BackgroundTransparency=1; KillBtn.Text="🔪  Kill Random"
+    KillBtn.TextColor3=Color3.fromRGB(255,200,0); KillBtn.TextSize=14
+    KillBtn.Font=Enum.Font.GothamBlack; KillBtn.ZIndex=4; KillBtn.Parent=BtnFrame
+
+    -- Keybind row
+    local KBRow=Instance.new("Frame"); KBRow.Size=UDim2.new(1,-16,0,26)
+    KBRow.Position=UDim2.new(0,8,0,124); KBRow.BackgroundColor3=Color3.fromRGB(16,12,2)
+    KBRow.BorderSizePixel=0; KBRow.ZIndex=3; KBRow.Parent=Main
+    Instance.new("UICorner",KBRow).CornerRadius=UDim.new(0,8)
+    Instance.new("UIStroke",KBRow).Color=Color3.fromRGB(80,60,0)
+
+    local KBLbl=Instance.new("TextLabel"); KBLbl.Size=UDim2.new(0.55,0,1,0)
+    KBLbl.Position=UDim2.new(0,10,0,0); KBLbl.BackgroundTransparency=1
+    KBLbl.Text="⌨️ Keybind:"; KBLbl.TextColor3=Color3.fromRGB(180,140,40)
+    KBLbl.TextSize=10; KBLbl.Font=Enum.Font.GothamBold
+    KBLbl.TextXAlignment=Enum.TextXAlignment.Left; KBLbl.ZIndex=4; KBLbl.Parent=KBRow
+
+    local KBBox=Instance.new("TextBox"); KBBox.Size=UDim2.new(0,70,0,18)
+    KBBox.Position=UDim2.new(1,-78,0.5,-9)
+    KBBox.BackgroundColor3=Color3.fromRGB(22,16,3); KBBox.BorderSizePixel=0
+    KBBox.Text="E"; KBBox.TextColor3=Color3.fromRGB(255,200,0)
+    KBBox.TextSize=11; KBBox.Font=Enum.Font.GothamBold
+    KBBox.ClearTextOnFocus=true; KBBox.ZIndex=5; KBBox.Parent=KBRow
+    Instance.new("UICorner",KBBox).CornerRadius=UDim.new(0,6)
+    Instance.new("UIStroke",KBBox).Color=Color3.fromRGB(180,140,0)
+
+    -- ── TOGGLE LOGIC ──
+    local function doToggle()
+        TweenService:Create(BtnFrame,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(35,28,4)}):Play()
+        task.delay(0.15,function()
+            TweenService:Create(BtnFrame,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(18,14,2)}):Play()
+        end)
+        if following then
+            -- press again = stop
+            StopFollow(StatLbl, KillBtn)
+        else
+            -- not following = start
+            KillRandom(StatLbl, KillBtn)
+        end
+    end
+
+    KillBtn.MouseButton1Click:Connect(doToggle)
+
+    KBBox.FocusLost:Connect(function()
+        local txt=KBBox.Text:upper()
+        if txt=="" then KBBox.Text="E"; return end
+        local ok,kc=pcall(function() return Enum.KeyCode[txt] end)
+        if ok and kc then currentKeybind=kc; KBBox.Text=txt
+            KBBox.TextColor3=Color3.fromRGB(255,200,0)
+        else KBBox.Text="E"; currentKeybind=Enum.KeyCode.E end
+    end)
+
+    UserInputService.InputBegan:Connect(function(i,gp)
+        if gp then return end
+        if i.UserInputType==Enum.UserInputType.Keyboard and i.KeyCode==currentKeybind then
+            doToggle()
+        end
+    end)
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        StopFollow(StatLbl, KillBtn)
+    end)
+
+    return Main
+end
+
+-- ─────────────────────────────────────────
+--   RUN LOADING
+-- ─────────────────────────────────────────
+
+local AimbotMain = BuildAimbotGUI()
+local KnifeMain  = BuildKnifeGUI()
+
+task.spawn(function()
+    for i,step in ipairs(steps) do
+        LoadSub.Text=step.t; StepLbl.Text="Step "..i.." / "..#steps
+        TweenService:Create(PFill,TweenInfo.new(timePerStep-0.05,Enum.EasingStyle.Linear),{
+            Size=UDim2.new(step.p,0,1,0)
+        }):Play()
+        local elapsed=0
+        while elapsed<timePerStep do elapsed+=task.wait(0.05) end
+    end
+    LoadSub.Text="✅ Done!"; task.wait(0.3)
+    logoConn:Disconnect()
+
+    TweenService:Create(LoadBox,TweenInfo.new(0.5),{BackgroundTransparency=1}):Play()
+    TweenService:Create(Overlay,TweenInfo.new(0.5),{BackgroundTransparency=1}):Play()
+    TweenService:Create(LBS,TweenInfo.new(0.4),{Thickness=0}):Play()
+    for _,c in pairs(LoadBox:GetDescendants()) do
+        pcall(function()
+            if c:IsA("TextLabel") then TweenService:Create(c,TweenInfo.new(0.5),{TextTransparency=1}):Play()
+            elseif c:IsA("Frame") then TweenService:Create(c,TweenInfo.new(0.5),{BackgroundTransparency=1}):Play() end
+        end)
+    end
+    task.wait(0.6)
+    LoadBox:Destroy(); Overlay:Destroy()
+
+    for _,gui in pairs({AimbotMain,KnifeMain}) do
+        gui.Visible=true; gui.BackgroundTransparency=1
+        for _,c in pairs(gui:GetDescendants()) do
+            pcall(function()
+                if c:IsA("TextLabel") then c.TextTransparency=1 end
+                if c:IsA("Frame") then c.BackgroundTransparency=1 end
+            end)
+        end
+        TweenService:Create(gui,TweenInfo.new(0.5),{BackgroundTransparency=0}):Play()
+        for _,c in pairs(gui:GetDescendants()) do
+            pcall(function()
+                if c:IsA("TextLabel") then TweenService:Create(c,TweenInfo.new(0.5),{TextTransparency=0}):Play()
+                elseif c:IsA("Frame") then TweenService:Create(c,TweenInfo.new(0.5),{BackgroundTransparency=0}):Play() end
+            end)
+        end
+    end
+end)
+
+print("[👑] Arsenal Suite v2.0 Loaded!")
+
+
