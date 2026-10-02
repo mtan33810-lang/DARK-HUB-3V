@@ -521,10 +521,10 @@ local function TeleportToMyPlot()
     task.wait(0.1)
 
     Window:Notify({
-    title = "Auto-saved",
-    content = "Your configuration was saved.",
-    duration = 5,
-    icon = "save",
+    title = "My Plot",
+    content = "Teleported to your plot.",
+    duration = 2,
+    icon = 7733960981
 })
 
     --==============================================
