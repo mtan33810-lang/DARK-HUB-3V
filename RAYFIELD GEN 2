@@ -2052,31 +2052,54 @@ TeleportsTab:CreateToggle({
                     or tostring(Egg.Name) == "Bloom Egg"
                 then
 
-                        local TargetCFrame = CFrame.new(
-        -4993.55,
-        41272.32,
-        -3607.13
+                        if tostring(Egg.Name) == "Volcanic Egg"
+    or tostring(Egg.Name) == "Forest Egg"
+    or tostring(Egg.Name) == "Desert Egg"
+then
+
+    local Location1 = CFrame.new(
+        -5042.11,
+        41271.99,
+        -3520.53
     )
 
-    -- Fly toward the special position
-    local Speed = 150
+    local Location2 = CFrame.new(
+        -4865.88,
+        41284.00,
+        -3520.53
+    )
 
-    while (HRP.Position - TargetCFrame.Position).Magnitude > 5 do
+    local Speed = 250
+
+    -- Fly to Location 1
+    while (HRP.Position - Location1.Position).Magnitude > 5 do
 
         local Direction =
-            (TargetCFrame.Position - HRP.Position).Unit
+            (Location1.Position - HRP.Position).Unit
 
-        HRP.CFrame =
-            CFrame.new(
-                HRP.Position + Direction * Speed * task.wait(),
-                TargetCFrame.Position
-            )
-
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * task.wait(),
+            Location1.Position
+        )
     end
 
-    HRP.CFrame = TargetCFrame
+    HRP.CFrame = Location1
+    task.wait(3)
 
-    task.wait(0.2)
+    -- Fly to Location 2
+    while (HRP.Position - Location2.Position).Magnitude > 5 do
+
+        local Direction =
+            (Location2.Position - HRP.Position).Unit
+
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * task.wait(),
+            Location2.Position
+        )
+    end
+
+    HRP.CFrame = Location2
+    task.wait(3)
 end
 
                 --==================================================
