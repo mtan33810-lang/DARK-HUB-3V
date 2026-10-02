@@ -1135,6 +1135,7 @@ left:CreateToggle({
             title = "Saved Position",
             content = "Saved position flow enabled.",
             duration = 2,
+            icon = 4483362458
         })
 
         else
@@ -1143,6 +1144,7 @@ left:CreateToggle({
              title = "Saved Position",
              content = "Saved position flow disabled.",
              duration = 2,
+             icon = 4483362458
         })
 
 
@@ -1172,6 +1174,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow enabled.",
             duration = 2,
+            icon = 4483362458
         })
 
         else
@@ -1180,6 +1183,7 @@ right:CreateToggle({
             title = "Volcano",
             content = "Volcano Dip flow disabled.",
             duration = 2,
+            icon = 4483362458
          })
 
 
