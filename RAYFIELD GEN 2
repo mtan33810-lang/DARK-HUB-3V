@@ -2116,7 +2116,7 @@ end
 
 HRP.CFrame = Location3
 task.wait(3)
-
+end
 
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
