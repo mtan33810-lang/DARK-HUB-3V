@@ -909,6 +909,45 @@ local function IsEggInsidePlot(Egg)
 end
 
 --==================================================
+-- EGG ESP SELECTION
+--==================================================
+
+local SelectedESPEggs = {}
+
+local ESPEggOptions = {
+    "White Egg",
+    "Brown Egg",
+    "Cracked Egg",
+    "Easter Egg",
+    "Stone Egg",
+    "Leaf Egg",
+    "Mushroom Egg",
+    "Flower Egg",
+    "Slime Egg",
+    "Ice Egg",
+    "Glass Egg",
+    "Golden Egg",
+    "Diamond Egg",
+    "Crystal Egg",
+    "Skull Egg",
+    "Asteroid Egg",
+    "Dominus Egg",
+    "Flaming Egg",
+    "Sinister Egg",
+    "Soul Egg",
+    "Tidal Egg",
+    "Aurora Egg",
+    "Galaxy Egg",
+    "Bloom Egg",
+    "Blackhole Egg",
+    "Solaris Egg",
+    "Cherub Egg",
+    "Volcanic Egg"
+}
+
+local EggESPSelectionDropdown
+
+--==================================================
 -- CREATE EGG ESP
 --==================================================
 
@@ -917,6 +956,13 @@ local function CreateEggESP(Egg)
     if not EggESPEnabled then
         return
     end
+
+-- Only ESP selected egg types
+local EggName = FormatEggName(Egg.Name)
+
+if not SelectedESPEggs[EggName] then
+    return
+end
 
     -- 🚫 Do not ESP ANY egg inside a plot
     if IsEggInsidePlot(Egg) then
@@ -1172,6 +1218,34 @@ local sprint = TeleportsTab:CreateToggle({
             ClearEggESP()
         end
 
+    end
+})
+
+--==================================================
+-- EGG ESP SELECTION
+--==================================================
+
+EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
+    name = "🥚 SELECT AN EGG YOU WANT TO ESP",
+    flag = "EggESPSelection",
+    options = ESPEggOptions,
+    multiple = true,
+    value = {},
+
+    callback = function(Values)
+
+        SelectedESPEggs = {}
+
+        if type(Values) == "table" then
+            for _, EggName in ipairs(Values) do
+                SelectedESPEggs[FormatEggName(EggName)] = true
+            end
+        end
+
+        -- Refresh ESP immediately
+        if EggESPEnabled then
+            ScanEggESP()
+        end
     end
 })
 
@@ -2266,7 +2340,7 @@ end)
 
 local SettingTab = Window:CreateTab({ name = "Setting", icon = 104919049969988 })
 
-SettingTab:CreateSection({ name = "Setting", icon = 93364949241311 })
+SettingTab:CreateSection({ name = "⚙️ Setting", icon = nil })
 
 --==================================================
 -- ANTI-AFK
@@ -2391,7 +2465,7 @@ SettingTab:CreateButton({
 --==================================================
 
 SettingTab:CreateSection({
-    name = "Theme"
+    name = "🎨 Theme"
 })
 
 SettingTab:CreateDropdown({
