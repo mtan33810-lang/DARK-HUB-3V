@@ -1,5 +1,3 @@
-local PlaceId = game.PlaceId
-local GameId = game.GameId
 
 if PlaceId == 124216119978534 then
 
