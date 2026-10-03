@@ -948,6 +948,26 @@ local ESPEggOptions = {
 local EggESPSelectionDropdown
 
 --==================================================
+-- NORMALIZE EGG NAME
+--==================================================
+
+local function NormalizeEggName(Name)
+
+    if not Name then
+        return ""
+    end
+
+    Name = tostring(Name)
+
+    -- Remove common extra spaces
+    Name = Name:gsub("^%s+", "")
+    Name = Name:gsub("%s+$", "")
+
+    return string.lower(Name)
+
+end
+
+--==================================================
 -- CREATE EGG ESP
 --==================================================
 
@@ -957,21 +977,37 @@ local function CreateEggESP(Egg)
         return
     end
 
--- Only ESP selected egg types
-local EggName = FormatEggName(Egg.Name)
+    --==================================================
+    -- CHECK SELECTED EGG
+    --==================================================
 
-if not SelectedESPEggs[EggName] then
-    return
-end
+    local EggName = NormalizeEggName(Egg.Name)
 
-    -- 🚫 Do not ESP ANY egg inside a plot
+    if not SelectedESPEggs[EggName] then
+        return
+    end
+
+    --==================================================
+    -- DO NOT ESP EGGS INSIDE PLOTS
+    --==================================================
+
     if IsEggInsidePlot(Egg) then
         return
     end
 
-    if not Egg:IsA("Model") and not Egg:IsA("BasePart") then
+    --==================================================
+    -- VALID EGG OBJECT
+    --==================================================
+
+    if not Egg:IsA("Model")
+        and not Egg:IsA("BasePart")
+    then
         return
     end
+
+    --==================================================
+    -- FIND ADORNEE
+    --==================================================
 
     local Adornee
 
@@ -991,11 +1027,19 @@ end
         return
     end
 
+    --==================================================
+    -- UNIQUE ESP ID
+    --==================================================
+
     local ESPName = Egg:GetDebugId()
 
     if EggESPFolder:FindFirstChild(ESPName) then
         return
     end
+
+    --==================================================
+    -- BILLBOARD
+    --==================================================
 
     local Billboard = Instance.new("BillboardGui")
 
@@ -1006,15 +1050,17 @@ end
     Billboard.AlwaysOnTop = true
     Billboard.Parent = EggESPFolder
 
+    --==================================================
+    -- TEXT
+    --==================================================
+
     local Text = Instance.new("TextLabel")
 
     Text.Size = UDim2.fromScale(1, 1)
     Text.BackgroundTransparency = 1
 
-    -- Egg name only
     Text.Text = "🥚 " .. Egg.Name
 
-    -- Different color for each egg name
     Text.TextColor3 = GetEggESPColor(Egg.Name)
 
     Text.TextStrokeTransparency = 0
@@ -1022,6 +1068,7 @@ end
     Text.TextSize = 14
     Text.Font = Enum.Font.GothamBold
     Text.Parent = Billboard
+
 end
 
 --==================================================
@@ -1200,12 +1247,12 @@ right:CreateToggle({
 })
 
 --==================================================
--- 🥚 EGG ESP TOGGLE
+-- EGG ESP TOGGLE
 --==================================================
 
 local sprint = TeleportsTab:CreateToggle({
     name = "Egg ESP",
-    flag = "EaggESP",
+    flag = "EggESP",
     value = false,
 
     callback = function(Value)
@@ -1222,32 +1269,66 @@ local sprint = TeleportsTab:CreateToggle({
 })
 
 --==================================================
--- EGG ESP SELECTION
+-- EGG ESP MULTI-SELECTION
 --==================================================
 
 EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
     name = "🥚 SELECT AN EGG YOU WANT TO ESP",
     flag = "EggESPSelection",
     options = ESPEggOptions,
+
+    -- IMPORTANT
     multiple = true,
+
     value = {},
 
     callback = function(Values)
 
+        -- Clear previous selections
         SelectedESPEggs = {}
 
+        --==================================================
+        -- MULTIPLE SELECTION
+        --==================================================
+
         if type(Values) == "table" then
+
             for _, EggName in ipairs(Values) do
-                SelectedESPEggs[FormatEggName(EggName)] = true
+
+                if type(EggName) == "string" then
+
+                    SelectedESPEggs[
+                        NormalizeEggName(EggName)
+                    ] = true
+
+                end
+
             end
+
+        --==================================================
+        -- SINGLE VALUE FALLBACK
+        --==================================================
+
+        elseif type(Values) == "string" then
+
+            SelectedESPEggs[
+                NormalizeEggName(Values)
+            ] = true
+
         end
 
-        -- Refresh ESP immediately
+        --==================================================
+        -- REFRESH ESP
+        --==================================================
+
         if EggESPEnabled then
             ScanEggESP()
         end
+
     end
 })
+
+
 
 --==================================================
 -- MY PLOT SECTION
