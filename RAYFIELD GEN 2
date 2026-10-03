@@ -2603,25 +2603,33 @@ local function getTeamIdentifier(player)
     return nil
 end
 
+--============================================================
+-- TEAM CHECK
+--============================================================
+
 local function isSameTeam(player)
     if not player or player == LocalPlayer then
         return false
     end
 
+    --========================================================
+    -- TEAM CHECK #1: Roblox Team
+    --========================================================
+
+    if LocalPlayer.Team ~= nil and player.Team ~= nil then
+        if LocalPlayer.Team == player.Team then
+            return true
+        end
+    end
+
+    --========================================================
+    -- TEAM CHECK #2: TeammateLabel
+    --========================================================
+
     local character = player.Character
-    if not character then
-        return false
-    end
+    local root = character and character:FindFirstChild("HumanoidRootPart")
 
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if not root then
-        return false
-    end
-
-    -- TeammateLabel identifies teammates
-    local teammateLabel = root:FindFirstChild("TeammateLabel")
-
-    if teammateLabel then
+    if root and root:FindFirstChild("TeammateLabel") then
         return true
     end
 
