@@ -3289,7 +3289,7 @@ leftAim:CreateToggle({
 
 rightAim:CreateSlider({
     name = "Smoothness",
-    range = {0.01, 1},
+    range = {0.01, 2},
     increment = 0.05,
     suffix = "",
     value = 0.20,
@@ -3541,9 +3541,13 @@ end
 
     -- Smooth CFrame Interpolation aligned to Camera step
     local targetCFrame = CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
-    local lerpFactor = math.clamp(Settings.Smoothness * (deltaTime * 60), 0.01, 1)
-    
-    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, lerpFactor)
+    local lerpFactor = 1 - math.exp(
+    -Settings.Smoothness * 10 * deltaTime
+    )
+
+     lerpFactor = math.clamp(lerpFactor, 0, 1)
+
+     Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, lerpFactor)
 end)
 
 --============================================================
