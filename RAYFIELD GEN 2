@@ -1278,7 +1278,7 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
     options = ESPEggOptions,
 
     -- IMPORTANT
-    multiple = true,
+    multiSelect = true,
 
     value = {},
 
