@@ -2623,11 +2623,25 @@ local function isSameTeam(player)
     end
 
     --========================================================
+    -- TEAM CHECK #1B: Team Attribute
+    --========================================================
+
+    local myTeam = LocalPlayer:GetAttribute("Team")
+    local targetTeam = player:GetAttribute("Team")
+
+    if myTeam ~= nil and targetTeam ~= nil then
+        if myTeam == targetTeam then
+            return true
+        end
+    end
+
+    --========================================================
     -- TEAM CHECK #2: TeammateLabel
     --========================================================
 
     local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
 
     if root and root:FindFirstChild("TeammateLabel") then
         return true
