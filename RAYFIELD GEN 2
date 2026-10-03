@@ -2463,6 +2463,7 @@ SettingTab:CreateButton({
 --==================================================
 
 elseif PlaceId == 123974602339071
+    or PlaceId == 100040622766961
     or GameId == 6035872082 then
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
