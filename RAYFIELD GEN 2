@@ -3522,7 +3522,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
---============================================================
+---============================================================
 -- STABLE AIM LOOP - NO CAMERA SHAKE
 --============================================================
 
@@ -3638,10 +3638,10 @@ RunService:BindToRenderStep(
         end
 
         local targetPart =
-        target.Character:FindFirstChild(Settings.TargetPart)
-        or target.Character:FindFirstChild("HumanoidRootPart")
+            target.Character:FindFirstChild(Settings.TargetPart)
+            or target.Character:FindFirstChild("HumanoidRootPart")
 
-        if not targetPart or not targetPart:IsA("BasePart") then
+        if not targetPart then
             Settings.AimTarget = nil
             return
         end
@@ -3661,62 +3661,57 @@ RunService:BindToRenderStep(
         end
 
         --====================================================
--- STABLE AIM ROTATION - FIXED TARGET CENTER
---====================================================
+        -- STABLE AIM ROTATION
+        --====================================================
 
-local cameraPosition = Camera.CFrame.Position
+        local cameraPosition = Camera.CFrame.Position
+        local currentLook = Camera.CFrame.LookVector
 
--- Get the exact world position of the selected target part
-local aimPosition = targetPart.Position
+        local direction =
+            (targetPart.Position - cameraPosition).Unit
 
--- Direction from camera to target
-local direction = aimPosition - cameraPosition
+        -- Calculate angle between current camera direction
+        -- and target direction.
+        local dot =
+            math.clamp(currentLook:Dot(direction), -1, 1)
 
-if direction.Magnitude <= 0.001 then
-    return
-end
+        local angle = math.acos(dot)
 
-direction = direction.Unit
+        -- Already aimed closely enough.
+        -- Don't modify the camera, preventing micro-jitter.
+        if angle <= AIM_DEADZONE then
+            return
+        end
 
--- Current camera direction
-local currentLook = Camera.CFrame.LookVector
+        --====================================================
+        -- FRAME-RATE INDEPENDENT SMOOTHING
+        --====================================================
 
--- Prevent tiny corrections from causing vibration
-local dot = math.clamp(currentLook:Dot(direction), -1, 1)
-local angle = math.acos(dot)
+        local smoothSpeed = math.max(Settings.Smoothness, 0.01)
 
-if angle <= AIM_DEADZONE then
-    return
-end
+        local alpha = 1 - math.exp(
+            -smoothSpeed * 8 * deltaTime
+        )
 
---====================================================
--- FRAME-RATE INDEPENDENT SMOOTHING
---====================================================
+        alpha = math.clamp(alpha, 0, 1)
 
-local smoothSpeed = math.max(Settings.Smoothness, 0.01)
+        -- Only interpolate rotation.
+        -- Preserve the camera's current position.
+        local targetRotation = CFrame.lookAt(
+            cameraPosition,
+            targetPart.Position,
+            Vector3.yAxis
+        )
 
-local alpha = 1 - math.exp(
-    -smoothSpeed * 8 * deltaTime
-)
+        local newCFrame = Camera.CFrame:Lerp(
+            targetRotation,
+            alpha
+        )
 
-alpha = math.clamp(alpha, 0, 1)
-
--- Build a rotation that looks DIRECTLY at the target
-local targetCFrame = CFrame.lookAt(
-    cameraPosition,
-    aimPosition
-)
-
--- Smooth toward the target
-local newCFrame = Camera.CFrame:Lerp(
-    targetCFrame,
-    alpha
-)
-
--- Preserve camera position exactly
-Camera.CFrame = CFrame.new(
-    cameraPosition,
-    cameraPosition + newCFrame.LookVector
+        Camera.CFrame = CFrame.new(
+            cameraPosition
+        ) * (newCFrame - newCFrame.Position)
+    end
 )
 
 --============================================================
