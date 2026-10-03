@@ -2945,6 +2945,13 @@ local function createESP(player)
     nameTag.Outline = true
     nameTag.Color = Color3.fromRGB(255, 255, 255)
 
+    local distanceTag = Drawing.new("Text")
+    distanceTag.Visible = false
+    distanceTag.Size = 12
+    distanceTag.Center = true
+    distanceTag.Outline = true
+    distanceTag.Color = Color3.fromRGB(0, 170, 255)
+
     local healthOutline = Drawing.new("Square")
     healthOutline.Visible = false
     healthOutline.Filled = true
@@ -2963,6 +2970,7 @@ local function createESP(player)
         Lines = lines,
         Tracer = tracer,
         NameTag = nameTag,
+        DistanceTag = distanceTag,
         HealthOutline = healthOutline,
         HealthBar = healthBar,
         HealthText = healthText
@@ -2975,6 +2983,7 @@ local function hideESP(drawings)
     end
     drawings.Tracer.Visible = false
     drawings.NameTag.Visible = false
+    drawings.DistanceTag.Visible = false
     drawings.HealthOutline.Visible = false
     drawings.HealthBar.Visible = false
     drawings.HealthText.Visible = false
@@ -2989,6 +2998,7 @@ local function removeESP(player)
     end
     drawings.Tracer:Remove()
     drawings.NameTag:Remove()
+    drawings.DistanceTag:Remove()
     drawings.HealthOutline:Remove()
     drawings.HealthBar:Remove()
     drawings.HealthText:Remove()
@@ -3472,13 +3482,29 @@ RunService.RenderStepped:Connect(function()
         end
 
         local distance = (localRoot.Position - root.Position).Magnitude
-        local text = Settings.ESPDistance and string.format("%s [%d studs]", player.Name, math.floor(distance)) or player.Name
 
-        drawings.NameTag.Text = text
-        drawings.NameTag.Position = Vector2.new(screenPosition.X, screenPosition.Y - 20)
+            -- NAME
+            drawings.NameTag.Text = player.Name
+            drawings.NameTag.Position = Vector2.new(
+                screenPosition.X,
+                screenPosition.Y - 20
+            )
+            drawings.NameTag.Color = Color3.fromRGB(255, 255, 255)
+            drawings.NameTag.Visible = Settings.ESPNames
 
-        -- Name only appears when Show Names or Show Distance is enabled
-        drawings.NameTag.Visible = Settings.ESPNames or Settings.ESPDistance
+            -- DISTANCE
+            drawings.DistanceTag.Text = string.format(
+                "[%d studs]",
+                math.floor(distance)
+            )
+
+            drawings.DistanceTag.Position = Vector2.new(
+                screenPosition.X,
+                screenPosition.Y - 5
+            )
+
+            drawings.DistanceTag.Color = Color3.fromRGB(0, 170, 255)
+            drawings.DistanceTag.Visible = Settings.ESPDistance
 
         if Settings.ESPHealth then
             local maxHealth = math.max(humanoid.MaxHealth, 1)
