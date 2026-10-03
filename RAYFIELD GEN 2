@@ -3522,13 +3522,15 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
----============================================================
--- STABLE AIM LOOP - NO CAMERA SHAKE
+--============================================================
+-- STABLE AIM LOOP - RIVALS FIX
 --============================================================
 
 pcall(function()
     RunService:UnbindFromRenderStep("DarkHub_Aimbot")
 end)
+
+local AIM_DEADZONE = math.rad(0.02)
 
 local function isTargetOnScreen(targetPart)
     if not targetPart or not targetPart.Parent then
@@ -3538,28 +3540,31 @@ local function isTargetOnScreen(targetPart)
     local screenPosition, onScreen =
         Camera:WorldToViewportPoint(targetPart.Position)
 
-    if screenPosition.Z <= 0 then
+    if not onScreen or screenPosition.Z <= 0 then
         return false
     end
 
     local viewport = Camera.ViewportSize
 
-    if screenPosition.X < 0
-        or screenPosition.X > viewport.X
-        or screenPosition.Y < 0
-        or screenPosition.Y > viewport.Y then
-        return false
-    end
-
-    return onScreen
+    return
+        screenPosition.X >= 0
+        and screenPosition.X <= viewport.X
+        and screenPosition.Y >= 0
+        and screenPosition.Y <= viewport.Y
 end
 
--- Prevent tiny camera corrections from causing visible vibration
-local AIM_DEADZONE = math.rad(0.05)
+local function getTargetPart(player)
+    if not player or not player.Character then
+        return nil
+    end
+
+    return player.Character:FindFirstChild(Settings.TargetPart)
+        or player.Character:FindFirstChild("HumanoidRootPart")
+end
 
 RunService:BindToRenderStep(
     "DarkHub_Aimbot",
-    Enum.RenderPriority.Camera.Value + 1,
+    Enum.RenderPriority.Camera.Value + 10,
     function(deltaTime)
 
         --====================================================
@@ -3589,59 +3594,55 @@ RunService:BindToRenderStep(
             return
         end
 
-        local target = Settings.AimTarget
+        --====================================================
+        -- TARGET SELECTION
+        --====================================================
 
-        --====================================================
-        -- TARGET LOCK
-        --====================================================
+        local target = Settings.AimTarget
 
         if Settings.TargetLock then
 
-            -- Keep current target while valid
             if target and isValidPlayerTarget(target) then
-
-                local targetPart =
-                    target.Character:FindFirstChild(Settings.TargetPart)
-                    or target.Character:FindFirstChild("HumanoidRootPart")
+                local targetPart = getTargetPart(target)
 
                 if not targetPart
                     or not isTargetOnScreen(targetPart)
                     or not isVisible(targetPart) then
 
-                    Settings.AimTarget = nil
                     target = nil
+                    Settings.AimTarget = nil
                 end
-
             else
-                Settings.AimTarget = nil
                 target = nil
+                Settings.AimTarget = nil
             end
 
-            -- Only acquire another target after releasing old one
             if not target then
                 target = getAimTarget()
                 Settings.AimTarget = target
             end
 
         else
-            -- Normal aimbot
             target = getAimTarget()
             Settings.AimTarget = target
         end
 
-        --====================================================
-        -- FINAL VALIDATION
-        --====================================================
-
-        if not target or not target.Character then
+        if not target then
             return
         end
 
-        local targetPart =
-            target.Character:FindFirstChild(Settings.TargetPart)
-            or target.Character:FindFirstChild("HumanoidRootPart")
+        --====================================================
+        -- GET CURRENT TARGET PART
+        --====================================================
+
+        local targetPart = getTargetPart(target)
 
         if not targetPart then
+            Settings.AimTarget = nil
+            return
+        end
+
+        if not isValidPlayerTarget(target) then
             Settings.AimTarget = nil
             return
         end
@@ -3661,59 +3662,72 @@ RunService:BindToRenderStep(
         end
 
         --====================================================
-        -- STABLE AIM ROTATION
+        -- DIRECT CAMERA AIM
         --====================================================
 
         local cameraPosition = Camera.CFrame.Position
+        local targetPosition = targetPart.Position
+
+        local direction = targetPosition - cameraPosition
+
+        if direction.Magnitude <= 0.001 then
+            return
+        end
+
+        direction = direction.Unit
+
         local currentLook = Camera.CFrame.LookVector
 
-        local direction =
-            (targetPart.Position - cameraPosition).Unit
-
-        -- Calculate angle between current camera direction
-        -- and target direction.
-        local dot =
-            math.clamp(currentLook:Dot(direction), -1, 1)
+        local dot = math.clamp(
+            currentLook:Dot(direction),
+            -1,
+            1
+        )
 
         local angle = math.acos(dot)
 
-        -- Already aimed closely enough.
-        -- Don't modify the camera, preventing micro-jitter.
         if angle <= AIM_DEADZONE then
             return
         end
 
         --====================================================
-        -- FRAME-RATE INDEPENDENT SMOOTHING
+        -- SMOOTHING
         --====================================================
 
-        local smoothSpeed = math.max(Settings.Smoothness, 0.01)
+        local smoothSpeed = math.max(
+            tonumber(Settings.Smoothness) or 0.20,
+            0.01
+        )
 
+        -- Higher response so the camera follows moving
+        -- targets instead of remaining visibly behind them.
         local alpha = 1 - math.exp(
-            -smoothSpeed * 8 * deltaTime
+            -smoothSpeed * 14 * deltaTime
         )
 
         alpha = math.clamp(alpha, 0, 1)
 
-        -- Only interpolate rotation.
-        -- Preserve the camera's current position.
-        local targetRotation = CFrame.lookAt(
+        --====================================================
+        -- BUILD ROTATION FROM THE CURRENT CAMERA POSITION
+        --====================================================
+
+        local targetCFrame = CFrame.lookAt(
             cameraPosition,
-            targetPart.Position,
-            Vector3.yAxis
+            targetPosition
         )
 
-        local newCFrame = Camera.CFrame:Lerp(
-            targetRotation,
+        local resultCFrame = Camera.CFrame:Lerp(
+            targetCFrame,
             alpha
         )
 
-        Camera.CFrame = CFrame.new(
-            cameraPosition
-        ) * (newCFrame - newCFrame.Position)
+        -- Preserve camera position exactly.
+        Camera.CFrame =
+            CFrame.new(cameraPosition)
+            * (resultCFrame - resultCFrame.Position)
     end
 )
-
+    
 --============================================================
 -- CHARACTER RESET & INITIALIZATION
 --============================================================
