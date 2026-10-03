@@ -3523,7 +3523,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --============================================================
--- STABLE AIM LOOP (CAMERA PRIORITY)
+-- STABLE AIM LOOP - NO CAMERA SHAKE
 --============================================================
 
 pcall(function()
@@ -3535,16 +3535,13 @@ local function isTargetOnScreen(targetPart)
         return false
     end
 
-    local screenPosition, onScreen = Camera:WorldToViewportPoint(
-        targetPart.Position
-    )
+    local screenPosition, onScreen =
+        Camera:WorldToViewportPoint(targetPart.Position)
 
-    -- Must be in front of the camera
     if screenPosition.Z <= 0 then
         return false
     end
 
-    -- Must actually be inside the viewport
     local viewport = Camera.ViewportSize
 
     if screenPosition.X < 0
@@ -3556,6 +3553,9 @@ local function isTargetOnScreen(targetPart)
 
     return onScreen
 end
+
+-- Prevent tiny camera corrections from causing visible vibration
+local AIM_DEADZONE = math.rad(0.05)
 
 RunService:BindToRenderStep(
     "DarkHub_Aimbot",
@@ -3581,7 +3581,7 @@ RunService:BindToRenderStep(
         end
 
         --====================================================
-        -- AIMBOT
+        -- AIMBOT OFF
         --====================================================
 
         if not Settings.Aimbot then
@@ -3597,14 +3597,13 @@ RunService:BindToRenderStep(
 
         if Settings.TargetLock then
 
-            -- Check existing locked target
+            -- Keep current target while valid
             if target and isValidPlayerTarget(target) then
 
                 local targetPart =
                     target.Character:FindFirstChild(Settings.TargetPart)
                     or target.Character:FindFirstChild("HumanoidRootPart")
 
-                -- STOP LOCK IF TARGET LEAVES VIEW
                 if not targetPart
                     or not isTargetOnScreen(targetPart)
                     or not isVisible(targetPart) then
@@ -3618,21 +3617,20 @@ RunService:BindToRenderStep(
                 target = nil
             end
 
-            -- Acquire a new target only after the old target
-            -- has been released.
+            -- Only acquire another target after releasing old one
             if not target then
                 target = getAimTarget()
                 Settings.AimTarget = target
             end
 
         else
-            -- Normal aimbot: continuously select closest target
+            -- Normal aimbot
             target = getAimTarget()
             Settings.AimTarget = target
         end
 
         --====================================================
-        -- FINAL TARGET VALIDATION
+        -- FINAL VALIDATION
         --====================================================
 
         if not target or not target.Character then
@@ -3648,41 +3646,71 @@ RunService:BindToRenderStep(
             return
         end
 
-        -- Extra safety check:
-        -- Never aim at a target that has left the screen.
         if not isTargetOnScreen(targetPart) then
-            Settings.AimTarget = nil
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
             return
         end
 
         if not isVisible(targetPart) then
-            Settings.AimTarget = nil
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
             return
         end
 
         --====================================================
-        -- SMOOTH AIM
+        -- STABLE AIM ROTATION
         --====================================================
 
-        local targetCFrame = CFrame.lookAt(
-            Camera.CFrame.Position,
-            targetPart.Position
+        local cameraPosition = Camera.CFrame.Position
+        local currentLook = Camera.CFrame.LookVector
+
+        local direction =
+            (targetPart.Position - cameraPosition).Unit
+
+        -- Calculate angle between current camera direction
+        -- and target direction.
+        local dot =
+            math.clamp(currentLook:Dot(direction), -1, 1)
+
+        local angle = math.acos(dot)
+
+        -- Already aimed closely enough.
+        -- Don't modify the camera, preventing micro-jitter.
+        if angle <= AIM_DEADZONE then
+            return
+        end
+
+        --====================================================
+        -- FRAME-RATE INDEPENDENT SMOOTHING
+        --====================================================
+
+        local smoothSpeed = math.max(Settings.Smoothness, 0.01)
+
+        local alpha = 1 - math.exp(
+            -smoothSpeed * 8 * deltaTime
         )
 
-        local lerpFactor = 1 - math.exp(
-            -Settings.Smoothness * 10 * deltaTime
+        alpha = math.clamp(alpha, 0, 1)
+
+        -- Only interpolate rotation.
+        -- Preserve the camera's current position.
+        local targetRotation = CFrame.lookAt(
+            cameraPosition,
+            targetPart.Position,
+            Vector3.yAxis
         )
 
-        lerpFactor = math.clamp(
-            lerpFactor,
-            0,
-            1
+        local newCFrame = Camera.CFrame:Lerp(
+            targetRotation,
+            alpha
         )
 
-        Camera.CFrame = Camera.CFrame:Lerp(
-            targetCFrame,
-            lerpFactor
-        )
+        Camera.CFrame = CFrame.new(
+            cameraPosition
+        ) * (newCFrame - newCFrame.Position)
     end
 )
 
