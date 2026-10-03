@@ -3299,7 +3299,7 @@ leftAim:CreateToggle({
 
 rightAim:CreateSlider({
     name = "Smoothness",
-    range = {0.01, 2},
+    range = {0.01, 1},
     increment = 0.05,
     suffix = "",
     value = 0.20,
@@ -3523,199 +3523,166 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --============================================================
--- STABLE AIM LOOP - CAMERA OVERRIDE FIX
+-- STABLE AIM LOOP (CAMERA PRIORITY)
 --============================================================
 
+-- Unbind previous render if script is re-executed
 pcall(function()
     RunService:UnbindFromRenderStep("DarkHub_Aimbot")
 end)
 
-local AIM_DEADZONE = math.rad(0.01)
-
-local function getAimPart(player)
+local function getCurrentAimPart(player)
     if not player or not player.Character then
         return nil
     end
 
-    local character = player.Character
-
-    return character:FindFirstChild(Settings.TargetPart)
-        or character:FindFirstChild("Head")
-        or character:FindFirstChild("HumanoidRootPart")
+    return player.Character:FindFirstChild(Settings.TargetPart)
+        or player.Character:FindFirstChild("HumanoidRootPart")
 end
 
-local function targetIsUsable(player)
-    if not isValidPlayerTarget(player) then
-        return false
-    end
+RunService:BindToRenderStep(
+    "DarkHub_Aimbot",
+    Enum.RenderPriority.Camera.Value + 1,
+    function(deltaTime)
 
-    local part = getAimPart(player)
+        --====================================================
+        -- FOV
+        --====================================================
 
-    if not part then
-        return false
-    end
+        if Settings.ShowFOV then
+            local viewport = Camera.ViewportSize
 
-    if not isVisible(part) then
-        return false
-    end
+            FOVCircle.Position = Vector2.new(
+                viewport.X * 0.5,
+                viewport.Y * 0.5
+            )
 
-    return true
-end
+            FOVCircle.Radius = Settings.FOV
+            FOVCircle.Visible = true
+        else
+            FOVCircle.Visible = false
+        end
 
---============================================================
--- FOV DISPLAY
---============================================================
+        --====================================================
+        -- AIMBOT OFF
+        --====================================================
 
-RunService.RenderStepped:Connect(function()
-
-    if not Settings.ShowFOV then
-        FOVCircle.Visible = false
-        return
-    end
-
-    local viewport = Camera.ViewportSize
-
-    FOVCircle.Position = Vector2.new(
-        viewport.X * 0.5,
-        viewport.Y * 0.5
-    )
-
-    FOVCircle.Radius = Settings.FOV
-    FOVCircle.Visible = true
-end)
-
---============================================================
--- AIM UPDATE
---============================================================
-
-RunService.RenderStepped:Connect(function(deltaTime)
-
-    if not Settings.Aimbot then
-        Settings.AimTarget = nil
-        return
-    end
-
-    --========================================================
-    -- GET TARGET
-    --========================================================
-
-    local target = Settings.AimTarget
-
-    if Settings.TargetLock then
-
-        if not targetIsUsable(target) then
-            target = nil
+        if not Settings.Aimbot then
             Settings.AimTarget = nil
+            return
+        end
+
+        --====================================================
+        -- TARGET
+        --====================================================
+
+        local target = Settings.AimTarget
+
+        -- Target Lock:
+        -- keep the current target while it remains valid.
+        if Settings.TargetLock then
+
+            if not isValidPlayerTarget(target) then
+                target = getAimTarget()
+                Settings.AimTarget = target
+            end
+
+        else
+
+            -- Normal aimbot:
+            -- find the closest valid target every frame.
+            target = getAimTarget()
+            Settings.AimTarget = target
+
         end
 
         if not target then
-            target = getAimTarget()
+            return
+        end
 
-            if target and targetIsUsable(target) then
-                Settings.AimTarget = target
-            else
-                target = nil
+        --====================================================
+        -- TARGET PART
+        --====================================================
+
+        local targetPart = getCurrentAimPart(target)
+
+        if not targetPart then
+            Settings.AimTarget = nil
+            return
+        end
+
+        --====================================================
+        -- TARGET SCREEN CHECK
+        --====================================================
+
+        local screenPosition, onScreen =
+            Camera:WorldToViewportPoint(targetPart.Position)
+
+        if not onScreen or screenPosition.Z <= 0 then
+            if Settings.TargetLock then
                 Settings.AimTarget = nil
             end
+            return
         end
 
-    else
+        local viewport = Camera.ViewportSize
 
-        target = getAimTarget()
+        if screenPosition.X < 0
+            or screenPosition.X > viewport.X
+            or screenPosition.Y < 0
+            or screenPosition.Y > viewport.Y then
 
-        if target then
-            Settings.AimTarget = target
-        else
-            Settings.AimTarget = nil
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
+
+            return
         end
 
-    end
+        --====================================================
+        -- WALL CHECK
+        --====================================================
 
-    if not target then
-        return
-    end
-
-    --========================================================
-    -- TARGET PART
-    --========================================================
-
-    local targetPart = getAimPart(target)
-
-    if not targetPart then
-        Settings.AimTarget = nil
-        return
-    end
-
-    if not targetIsUsable(target) then
-        if Settings.TargetLock then
-            Settings.AimTarget = nil
+        if not isVisible(targetPart) then
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
+            return
         end
-        return
+
+        --====================================================
+        -- CAMERA AIM
+        --====================================================
+
+        local cameraPosition = Camera.CFrame.Position
+
+        local targetCFrame = CFrame.lookAt(
+            cameraPosition,
+            targetPart.Position
+        )
+
+        -- Your requested smoothing method.
+        --
+        -- 0.20 = smooth
+        -- 0.50 = faster
+        -- 1.00 = immediate
+        local smoothness =
+            tonumber(Settings.Smoothness) or 0.20
+
+        local lerpFactor = math.clamp(
+            smoothness * (deltaTime * 60),
+            0.01,
+            1
+        )
+
+        -- Preserve camera position while rotating toward
+        -- the target.
+        Camera.CFrame = Camera.CFrame:Lerp(
+            targetCFrame,
+            lerpFactor
+        )
     end
-
-    --========================================================
-    -- CAMERA AIM
-    --========================================================
-
-    local cameraPosition = Camera.CFrame.Position
-    local targetPosition = targetPart.Position
-
-    local direction = targetPosition - cameraPosition
-
-    if direction.Magnitude < 0.001 then
-        return
-    end
-
-    direction = direction.Unit
-
-    local currentLook = Camera.CFrame.LookVector
-
-    local dot = math.clamp(
-        currentLook:Dot(direction),
-        -1,
-        1
-    )
-
-    local angle = math.acos(dot)
-
-    if angle <= AIM_DEADZONE then
-        return
-    end
-
-    --========================================================
-    -- SMOOTHNESS
-    --========================================================
-
-    local smoothness =
-        tonumber(Settings.Smoothness) or 0.20
-
-    smoothness = math.max(smoothness, 0.01)
-
-    local alpha = 1 - math.exp(
-        -smoothness * 18 * deltaTime
-    )
-
-    alpha = math.clamp(alpha, 0, 1)
-
-    --========================================================
-    -- AIM DIRECTLY AT TARGET
-    --========================================================
-
-    local desiredCFrame = CFrame.lookAt(
-        cameraPosition,
-        targetPosition
-    )
-
-    local newCFrame = Camera.CFrame:Lerp(
-        desiredCFrame,
-        alpha
-    )
-
-    Camera.CFrame = CFrame.new(
-        cameraPosition
-    ) * (newCFrame - newCFrame.Position)
-
-end)
+)
     
 --============================================================
 -- CHARACTER RESET & INITIALIZATION
