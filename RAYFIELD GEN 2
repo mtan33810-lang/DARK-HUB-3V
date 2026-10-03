@@ -1273,7 +1273,7 @@ local sprint = TeleportsTab:CreateToggle({
 --==================================================
 
 EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
-    name = "🥚 SELECT AN EGG YOU WANT TO ESP",
+    name = "🥚 Egg ESP Selection",
     flag = "EggESPSelection",
     options = ESPEggOptions,
 
