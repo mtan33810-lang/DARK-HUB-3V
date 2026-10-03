@@ -3487,7 +3487,7 @@ RunService.RenderStepped:Connect(function()
             drawings.NameTag.Text = player.Name
             drawings.NameTag.Position = Vector2.new(
                 screenPosition.X,
-                screenPosition.Y - 20
+                screenPosition.Y - 35
             )
             drawings.NameTag.Color = Color3.fromRGB(255, 255, 255)
             drawings.NameTag.Visible = Settings.ESPNames
@@ -3500,7 +3500,7 @@ RunService.RenderStepped:Connect(function()
 
             drawings.DistanceTag.Position = Vector2.new(
                 screenPosition.X,
-                screenPosition.Y - 5
+                screenPosition.Y - 20
             )
 
             drawings.DistanceTag.Color = Color3.fromRGB(0, 170, 255)
