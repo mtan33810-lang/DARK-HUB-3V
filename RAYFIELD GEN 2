@@ -3638,15 +3638,10 @@ RunService:BindToRenderStep(
         end
 
         local targetPart =
-    target.Character:FindFirstChild(Settings.TargetPart)
-    or target.Character:FindFirstChild("HumanoidRootPart")
+        target.Character:FindFirstChild(Settings.TargetPart)
+        or target.Character:FindFirstChild("HumanoidRootPart")
 
-if not targetPart or not targetPart:IsA("BasePart") then
-    Settings.AimTarget = nil
-    return
-end
-
-        if not targetPart then
+        if not targetPart or not targetPart:IsA("BasePart") then
             Settings.AimTarget = nil
             return
         end
