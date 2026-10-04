@@ -3243,8 +3243,8 @@ rightEsp:CreateSlider({
 --============================================================
 
 local AimTab = Window:CreateTab({
-    name = "🏹 Aimbot",
-    icon = nil,
+    name = "Aimbot",
+    icon = 4483362458,
 })
 
 AimTab:CreateSection({
