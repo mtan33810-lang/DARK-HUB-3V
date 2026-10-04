@@ -3029,9 +3029,9 @@ FOVCircle.Filled = false
 -- MAIN TAB
 --============================================================
 
-local MainTab = Window:CreateTab({ name = "Home", icon = 7733960981 })
+local MainTab = Window:CreateTab({ name = "🏠 Home", icon = nil })
 
-MainTab:CreateSection({ name = "Movements", icon = 93364949241311 })
+MainTab:CreateSection({ name = "Movements", icon = nil })
 
 local infiniteJump = false
 
@@ -3123,8 +3123,8 @@ end)
 --============================================================
 
 local EspTab = Window:CreateTab({
-    name = "Esp",
-    icon = 4483362458
+    name = "🪷 Esp",
+    icon = nil
 })
 
 EspTab:CreateSection({
@@ -3243,8 +3243,8 @@ rightEsp:CreateSlider({
 --============================================================
 
 local AimTab = Window:CreateTab({
-    name = "Aimbot",
-    icon = 4483362458
+    name = "🏹 Aimbot",
+    icon = nil
 })
 
 AimTab:CreateSection({
@@ -3335,8 +3335,8 @@ rightAim:CreateDropdown({
 --==================================================
 
 local SettingTab = Window:CreateTab({
-    name = "Setting",
-    icon = 104919049969988,
+    name = "⚙️ Setting",
+    icon = nil,
 })
 
 SettingTab:CreateSlider({
@@ -3377,7 +3377,7 @@ SettingTab:CreateButton({
 --==================================================
 
 SettingTab:CreateSection({
-    name = "Theme"
+    name = "🎨 Theme"
 })
 
 SettingTab:CreateDropdown({
