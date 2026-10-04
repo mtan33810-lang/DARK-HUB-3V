@@ -1,0 +1,2218 @@
+--==================================================
+-- ARSENAL / RIVALS TEST ENVIRONMENT
+--==================================================
+
+--============================================================
+-- RAYFIELD
+--============================================================
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
+
+local Window = Rayfield:CreateWindow({
+    name = "🎯 DARK HUB | Rivals",
+    subtitle = "by Max",
+    sidebarLayout = true,
+    theme = "ember",
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
+})
+
+--============================================================
+-- SERVICES
+--============================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+--============================================================
+-- SETTINGS
+--============================================================
+
+local Settings = {
+
+    ESPEnabled = false,
+    ESPBoxes = false,
+    ESPNames = false,
+    ESPDistance = false,
+    ESPHealth = false,
+    ESPTracers = false,
+    TeamCheck = false,
+
+    BoxColor = Color3.fromRGB(255, 50, 50),
+    BoxThickness = 1.5,
+
+    TracerColor = Color3.fromRGB(255, 255, 255),
+    TracerThickness = 1.5,
+    TracerOrigin = "Top",
+
+    Aimbot = false,
+    TargetLock = false,
+    WallCheck = false,
+    ShowFOV = false,
+
+    TargetBots = false,
+
+    TargetPart = "Head",
+    FOV = 150,
+    Smoothness = 0.20,
+
+    AimTarget = nil
+}
+
+--============================================================
+-- RAYCAST PARAMETERS
+--============================================================
+
+local wallCheckParams = RaycastParams.new()
+wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
+wallCheckParams.IgnoreWater = true
+
+--============================================================
+-- BOX CONNECTIONS
+--============================================================
+
+local boxConnections = {
+    {1,2}, {2,3}, {3,4}, {4,1},
+    {5,6}, {6,7}, {7,8}, {8,5},
+    {1,5}, {2,6}, {3,7}, {4,8}
+}
+
+--============================================================
+-- UTILITY
+--============================================================
+
+local function getCharacter()
+    return LocalPlayer.Character
+end
+
+local function getRoot(character)
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getHumanoid(character)
+    return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+--============================================================
+-- BOT SYSTEM
+--============================================================
+
+local BotCache = {}
+
+local function getBotRoot(bot)
+
+    if not bot then
+        return nil
+    end
+
+    return bot:FindFirstChild("HumanoidRootPart")
+        or bot:FindFirstChild("UpperTorso")
+        or bot:FindFirstChild("Torso")
+        or bot.PrimaryPart
+end
+
+local function getBotTargetPart(bot)
+
+    if not bot then
+        return nil
+    end
+
+    return bot:FindFirstChild(Settings.TargetPart, true)
+        or bot:FindFirstChild("Head", true)
+        or getBotRoot(bot)
+end
+
+--============================================================
+-- IDENTIFY BOT
+--============================================================
+
+local function isBotModel(model)
+
+    if not model or not model:IsA("Model") then
+        return false
+    end
+
+    -- Never treat a real player character as a bot
+    if Players:GetPlayerFromCharacter(model) then
+        return false
+    end
+
+    local humanoid =
+        model:FindFirstChildOfClass("Humanoid")
+
+    local root =
+        getBotRoot(model)
+
+    if not humanoid or not root then
+        return false
+    end
+
+    return true
+end
+
+--============================================================
+-- BOT ALIVE CHECK
+--============================================================
+
+local function isBotAlive(bot)
+
+    if not isBotModel(bot) then
+        return false
+    end
+
+    local humanoid =
+        bot:FindFirstChildOfClass("Humanoid")
+
+    return humanoid
+        and humanoid.Health > 0
+end
+
+--============================================================
+-- REGISTER BOT
+--============================================================
+
+local function registerBot(bot)
+
+    if not isBotModel(bot) then
+        return
+    end
+
+    BotCache[bot] = true
+end
+
+--============================================================
+-- INITIAL BOT SCAN
+--============================================================
+
+for _, object in ipairs(
+    Workspace:GetDescendants()
+) do
+
+    if object:IsA("Model")
+        and isBotModel(object) then
+
+        registerBot(object)
+    end
+end
+
+--============================================================
+-- NEW BOT / RESPAWN
+--============================================================
+
+Workspace.DescendantAdded:Connect(function(object)
+
+    if not object:IsA("Model") then
+        return
+    end
+
+    task.delay(0.1, function()
+
+        if object.Parent
+            and isBotModel(object) then
+
+            registerBot(object)
+        end
+
+    end)
+end)
+
+--============================================================
+-- BOT REMOVAL
+--============================================================
+
+Workspace.DescendantRemoving:Connect(function(object)
+
+    if object:IsA("Model") then
+
+        BotCache[object] = nil
+
+        if Settings.AimTarget == object then
+            Settings.AimTarget = nil
+        end
+    end
+end)
+
+--============================================================
+-- BOT MONITOR
+--============================================================
+
+task.spawn(function()
+
+    while task.wait(0.5) do
+
+        -- Find newly created/recreated bots
+        for _, object in ipairs(
+            Workspace:GetDescendants()
+        ) do
+
+            if object:IsA("Model")
+                and isBotModel(object) then
+
+                if not BotCache[object] then
+                    BotCache[object] = true
+                end
+            end
+        end
+
+        -- Remove models that no longer exist
+        for bot in pairs(BotCache) do
+
+            if not bot.Parent
+                or not isBotModel(bot) then
+
+                BotCache[bot] = nil
+
+                if Settings.AimTarget == bot then
+                    Settings.AimTarget = nil
+                end
+            end
+        end
+    end
+end)
+
+--============================================================
+-- TEAM CHECK
+--============================================================
+
+local function getTeamIdentifier(player)
+
+    if not player then
+        return nil
+    end
+
+    local character = player.Character
+
+    if player.Team ~= nil then
+        return "TEAM:" .. player.Team.Name
+    end
+
+    local team = player:GetAttribute("Team")
+
+    if team ~= nil then
+        return "PLAYER_TEAM:" .. tostring(team)
+    end
+
+    local teamColor = player:GetAttribute("TeamColor")
+
+    if teamColor ~= nil then
+        return "PLAYER_COLOR:" .. tostring(teamColor)
+    end
+
+    if character then
+
+        local charTeam =
+            character:GetAttribute("Team")
+
+        if charTeam ~= nil then
+            return "CHAR_TEAM:" .. tostring(charTeam)
+        end
+
+        local charTeamColor =
+            character:GetAttribute("TeamColor")
+
+        if charTeamColor ~= nil then
+            return "CHAR_COLOR:" .. tostring(charTeamColor)
+        end
+
+        local squad =
+            character:GetAttribute("Squad")
+
+        if squad ~= nil then
+            return "CHAR_SQUAD:" .. tostring(squad)
+        end
+    end
+
+    return nil
+end
+
+local function isSameTeam(player)
+
+    if not player or player == LocalPlayer then
+        return false
+    end
+
+    if LocalPlayer.Team ~= nil
+        and player.Team ~= nil then
+
+        if LocalPlayer.Team == player.Team then
+            return true
+        end
+    end
+
+    local myTeam =
+        LocalPlayer:GetAttribute("Team")
+
+    local targetTeam =
+        player:GetAttribute("Team")
+
+    if myTeam ~= nil
+        and targetTeam ~= nil then
+
+        if myTeam == targetTeam then
+            return true
+        end
+    end
+
+    local character = player.Character
+
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
+
+    if root
+        and root:FindFirstChild("TeammateLabel") then
+
+        return true
+    end
+
+    return false
+end
+
+--============================================================
+-- PLAYER TARGET VALIDATION
+--============================================================
+
+local function isValidPlayerTarget(player)
+
+    if not player or player == LocalPlayer then
+        return false
+    end
+
+    local localChar = LocalPlayer.Character
+    local targetChar = player.Character
+
+    if not localChar or not targetChar then
+        return false
+    end
+
+    local humanoid =
+        targetChar:FindFirstChildOfClass("Humanoid")
+
+    local targetPart =
+        targetChar:FindFirstChild(Settings.TargetPart)
+        or targetChar:FindFirstChild("HumanoidRootPart")
+
+    if not humanoid or not targetPart then
+        return false
+    end
+
+    if humanoid.Health <= 0 then
+        return false
+    end
+
+    if Settings.TeamCheck
+        and isSameTeam(player) then
+
+        return false
+    end
+
+    return true
+end
+
+--============================================================
+-- BOT TARGET VALIDATION
+--============================================================
+
+local function isValidBotTarget(bot)
+
+    if not Settings.TargetBots then
+        return false
+    end
+
+    if not isBotModel(bot) then
+        return false
+    end
+
+    if not isBotAlive(bot) then
+        return false
+    end
+
+    return getBotTargetPart(bot) ~= nil
+end
+
+--============================================================
+-- UNIVERSAL TARGET PART
+--============================================================
+
+local function getCurrentAimPart(entity)
+
+    if not entity then
+        return nil
+    end
+
+    if entity:IsA("Player") then
+
+        if not entity.Character then
+            return nil
+        end
+
+        return entity.Character:FindFirstChild(
+            Settings.TargetPart
+        )
+        or entity.Character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+    end
+
+    if entity:IsA("Model") then
+        return getBotTargetPart(entity)
+    end
+
+    return nil
+end
+
+--============================================================
+-- UNIVERSAL CHARACTER
+--============================================================
+
+local function getTargetCharacter(entity)
+
+    if not entity then
+        return nil
+    end
+
+    if entity:IsA("Player") then
+        return entity.Character
+    end
+
+    if entity:IsA("Model") then
+        return entity
+    end
+
+    return nil
+end
+
+--============================================================
+-- WALL CHECK
+--============================================================
+
+local function isVisible(targetPart)
+
+    if not Settings.WallCheck then
+        return true
+    end
+
+    if not targetPart then
+        return false
+    end
+
+    local character =
+        targetPart:FindFirstAncestorOfClass("Model")
+
+    if not character then
+        return false
+    end
+
+    local origin =
+        Camera.CFrame.Position
+
+    local direction =
+        targetPart.Position - origin
+
+    wallCheckParams.FilterDescendantsInstances = {
+        LocalPlayer.Character,
+        character
+    }
+
+    local result = Workspace:Raycast(
+        origin,
+        direction,
+        wallCheckParams
+    )
+
+    if not result then
+        return true
+    end
+
+    return result.Instance:IsDescendantOf(character)
+end
+
+--============================================================
+-- GET AIM TARGET
+--============================================================
+
+local function getAimTarget()
+
+    local viewport =
+        Camera.ViewportSize
+
+    local center = Vector2.new(
+        viewport.X * 0.5,
+        viewport.Y * 0.5
+    )
+
+    local closest = nil
+    local closestDistance = Settings.FOV
+
+    --========================================================
+    -- PLAYERS
+    --========================================================
+
+    for _, player in ipairs(
+        Players:GetPlayers()
+    ) do
+
+        if isValidPlayerTarget(player) then
+
+            local targetPart =
+                getCurrentAimPart(player)
+
+            if targetPart
+                and isVisible(targetPart) then
+
+                local position, visible =
+                    Camera:WorldToViewportPoint(
+                        targetPart.Position
+                    )
+
+                if visible and position.Z > 0 then
+
+                    local distance =
+                        (
+                            Vector2.new(
+                                position.X,
+                                position.Y
+                            ) - center
+                        ).Magnitude
+
+                    if distance < closestDistance then
+
+                        closestDistance = distance
+                        closest = player
+                    end
+                end
+            end
+        end
+    end
+
+    --========================================================
+    -- BOTS
+    --========================================================
+
+    if Settings.TargetBots then
+
+        for bot in pairs(BotCache) do
+
+            if isValidBotTarget(bot) then
+
+                local targetPart =
+                    getCurrentAimPart(bot)
+
+                if targetPart
+                    and isVisible(targetPart) then
+
+                    local position, visible =
+                        Camera:WorldToViewportPoint(
+                            targetPart.Position
+                        )
+
+                    if visible and position.Z > 0 then
+
+                        local distance =
+                            (
+                                Vector2.new(
+                                    position.X,
+                                    position.Y
+                                ) - center
+                            ).Magnitude
+
+                        if distance < closestDistance then
+
+                            closestDistance = distance
+                            closest = bot
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+--============================================================
+-- ESP CACHE
+--============================================================
+
+local ESPCache = {}
+
+--============================================================
+-- CREATE ESP
+--============================================================
+
+local function createESP(entity)
+
+    if not entity then
+        return
+    end
+
+    if entity:IsA("Player") then
+
+        if entity == LocalPlayer then
+            return
+        end
+
+    elseif entity:IsA("Model") then
+
+        -- FIXED: use isBotModel
+        if not isBotModel(entity) then
+            return
+        end
+
+    else
+        return
+    end
+
+    if ESPCache[entity] then
+        return
+    end
+
+    local lines = table.create(12)
+
+    for i = 1, 12 do
+
+        local line = Drawing.new("Line")
+
+        line.Visible = false
+        line.Thickness = Settings.BoxThickness
+        line.Color = Settings.BoxColor
+
+        lines[i] = line
+    end
+
+    local tracer = Drawing.new("Line")
+
+    tracer.Visible = false
+    tracer.Thickness = Settings.TracerThickness
+    tracer.Color = Settings.TracerColor
+
+    local nameTag = Drawing.new("Text")
+
+    nameTag.Visible = false
+    nameTag.Size = 14
+    nameTag.Center = true
+    nameTag.Outline = true
+    nameTag.Color =
+        Color3.fromRGB(255, 255, 255)
+
+    local distanceTag = Drawing.new("Text")
+
+    distanceTag.Visible = false
+    distanceTag.Size = 12
+    distanceTag.Center = true
+    distanceTag.Outline = true
+    distanceTag.Color =
+        Color3.fromRGB(0, 170, 255)
+
+    local healthOutline = Drawing.new("Square")
+
+    healthOutline.Visible = false
+    healthOutline.Filled = true
+    healthOutline.Color =
+        Color3.fromRGB(0, 0, 0)
+
+    local healthBar = Drawing.new("Square")
+
+    healthBar.Visible = false
+    healthBar.Filled = true
+
+    local healthText = Drawing.new("Text")
+
+    healthText.Visible = false
+    healthText.Size = 12
+    healthText.Outline = true
+
+    ESPCache[entity] = {
+
+        Lines = lines,
+
+        Tracer = tracer,
+
+        NameTag = nameTag,
+
+        DistanceTag = distanceTag,
+
+        HealthOutline = healthOutline,
+
+        HealthBar = healthBar,
+
+        HealthText = healthText
+    }
+end
+
+--============================================================
+-- HIDE ESP
+--============================================================
+
+local function hideESP(drawings)
+
+    if not drawings then
+        return
+    end
+
+    for i = 1, 12 do
+        drawings.Lines[i].Visible = false
+    end
+
+    drawings.Tracer.Visible = false
+    drawings.NameTag.Visible = false
+    drawings.DistanceTag.Visible = false
+    drawings.HealthOutline.Visible = false
+    drawings.HealthBar.Visible = false
+    drawings.HealthText.Visible = false
+end
+
+--============================================================
+-- REMOVE ESP
+--============================================================
+
+local function removeESP(entity)
+
+    local drawings = ESPCache[entity]
+
+    if not drawings then
+        return
+    end
+
+    for i = 1, 12 do
+        drawings.Lines[i]:Remove()
+    end
+
+    drawings.Tracer:Remove()
+    drawings.NameTag:Remove()
+    drawings.DistanceTag:Remove()
+    drawings.HealthOutline:Remove()
+    drawings.HealthBar:Remove()
+    drawings.HealthText:Remove()
+
+    ESPCache[entity] = nil
+end
+
+--============================================================
+-- INITIAL PLAYER ESP
+--============================================================
+
+for _, player in ipairs(
+    Players:GetPlayers()
+) do
+
+    task.spawn(createESP, player)
+end
+
+Players.PlayerAdded:Connect(function(player)
+
+    createESP(player)
+
+    player.CharacterAdded:Connect(function()
+
+        task.wait(0.2)
+
+        if not ESPCache[player] then
+            createESP(player)
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(removeESP)
+
+--============================================================
+-- BOT ESP
+--============================================================
+
+for bot in pairs(BotCache) do
+
+    if isBotModel(bot) then
+        createESP(bot)
+    end
+end
+
+--============================================================
+-- BOT ESP RESPAWN MONITOR
+--============================================================
+
+task.spawn(function()
+
+    while task.wait(0.5) do
+
+        if not Settings.ESPEnabled then
+            continue
+        end
+
+        if not Settings.TargetBots then
+            continue
+        end
+
+        for bot in pairs(BotCache) do
+
+            if not bot.Parent then
+
+                removeESP(bot)
+
+            elseif not isBotModel(bot) then
+
+                removeESP(bot)
+
+            elseif not ESPCache[bot] then
+
+                -- Recreate ESP after bot respawn/rebuild
+                createESP(bot)
+            end
+        end
+    end
+end)
+
+--============================================================
+-- FOV CIRCLE
+--============================================================
+
+local FOVCircle = Drawing.new("Circle")
+
+FOVCircle.Visible = false
+FOVCircle.Thickness = 1.5
+FOVCircle.Color = Color3.fromRGB(255, 0, 0)
+FOVCircle.Transparency = 0.7
+FOVCircle.NumSides = 64
+FOVCircle.Filled = false
+
+--============================================================
+-- HOME TAB
+--============================================================
+
+local MainTab = Window:CreateTab({
+    name = "Home",
+    icon = 7733960981
+})
+
+MainTab:CreateSection({
+    name = "Movements",
+    icon = nil
+})
+
+--============================================================
+-- INFINITE JUMP
+--============================================================
+
+local infiniteJump = false
+
+MainTab:CreateToggle({
+
+    name = "Infinite Jump",
+
+    flag = "InfiniteJump",
+
+    value = false,
+
+    callback = function(Value)
+        infiniteJump = Value
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+
+    if not infiniteJump then
+        return
+    end
+
+    local humanoid =
+        getHumanoid(getCharacter())
+
+    if humanoid then
+        humanoid:ChangeState(
+            Enum.HumanoidStateType.Jumping
+        )
+    end
+end)
+
+--============================================================
+-- WALK SPEED
+--============================================================
+
+MainTab:CreateSlider({
+
+    name = "Walk Speed",
+
+    range = {
+        0,
+        300
+    },
+
+    increment = 1,
+
+    value = 16,
+
+    suffix = "Speed",
+
+    callback = function(Value)
+
+        local humanoid =
+            getHumanoid(getCharacter())
+
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+--============================================================
+-- JUMP HEIGHT
+--============================================================
+
+local currentJumpHeight = 7
+
+local function applyJumpHeight(character)
+
+    if not character then
+        return
+    end
+
+    task.spawn(function()
+
+        local humanoid =
+            character:WaitForChild(
+                "Humanoid",
+                3
+            )
+
+        if humanoid then
+
+            humanoid.UseJumpPower = false
+            humanoid.JumpHeight =
+                currentJumpHeight
+
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(
+    applyJumpHeight
+)
+
+MainTab:CreateSlider({
+
+    name = "Jump Height",
+
+    range = {
+        0,
+        300
+    },
+
+    increment = 1,
+
+    value = currentJumpHeight,
+
+    suffix = "Height",
+
+    callback = function(Value)
+
+        currentJumpHeight = Value
+
+        applyJumpHeight(
+            LocalPlayer.Character
+        )
+    end
+})
+
+--============================================================
+-- TP WALK
+--============================================================
+
+local tpWalkEnabled = false
+local tpWalkSpeed = 1
+
+MainTab:CreateToggle({
+
+    name = "TP Walk",
+
+    flag = "TPWalk",
+
+    value = false,
+
+    callback = function(Value)
+
+        tpWalkEnabled = Value
+
+    end
+})
+
+MainTab:CreateSlider({
+
+    name = "TP Walk Speed",
+
+    range = {
+        1,
+        10
+    },
+
+    increment = 1,
+
+    value = 1,
+
+    suffix = "Multiplier",
+
+    callback = function(Value)
+
+        tpWalkSpeed = Value
+
+    end
+})
+
+RunService.RenderStepped:Connect(function(deltaTime)
+
+    if not tpWalkEnabled then
+        return
+    end
+
+    local character = getCharacter()
+    local humanoid = getHumanoid(character)
+    local hrp = getRoot(character)
+
+    if humanoid
+        and hrp
+        and humanoid.MoveDirection.Magnitude > 0 then
+
+        hrp.CFrame +=
+            humanoid.MoveDirection
+            * (tpWalkSpeed * 10)
+            * deltaTime
+    end
+end)
+
+--============================================================
+-- ESP TAB
+--============================================================
+
+local EspTab = Window:CreateTab({
+
+    name = "🪷 Esp",
+
+    icon = nil
+})
+
+EspTab:CreateSection({
+
+    name = "ESP Settings"
+})
+
+local gridEsp = EspTab:CreateGroup()
+
+local leftEsp = gridEsp:CreateGroup({
+    direction = "column"
+})
+
+local rightEsp = gridEsp:CreateGroup({
+    direction = "column"
+})
+
+--============================================================
+-- ESP TOGGLES
+--============================================================
+
+leftEsp:CreateToggle({
+
+    name = "Enable ESP",
+
+    value = Settings.ESPEnabled,
+
+    callback = function(V)
+
+        Settings.ESPEnabled = V
+
+    end
+})
+
+leftEsp:CreateToggle({
+
+    name = "Show 3D Boxes",
+
+    value = Settings.ESPBoxes,
+
+    callback = function(V)
+
+        Settings.ESPBoxes = V
+
+    end
+})
+
+leftEsp:CreateToggle({
+
+    name = "Show Names",
+
+    value = Settings.ESPNames,
+
+    callback = function(V)
+
+        Settings.ESPNames = V
+
+        if not V then
+
+            for _, drawings in pairs(ESPCache) do
+                drawings.NameTag.Visible = false
+            end
+
+        end
+    end
+})
+
+leftEsp:CreateToggle({
+
+    name = "Show Distance",
+
+    value = Settings.ESPDistance,
+
+    callback = function(V)
+
+        Settings.ESPDistance = V
+
+    end
+})
+
+leftEsp:CreateSlider({
+
+    name = "Box Thickness",
+
+    range = {
+        1,
+        5
+    },
+
+    increment = 0.5,
+
+    suffix = " px",
+
+    value = Settings.BoxThickness,
+
+    flag = "BoxThickness",
+
+    callback = function(V)
+
+        Settings.BoxThickness = V
+
+    end
+})
+
+--============================================================
+-- ESP RIGHT
+--============================================================
+
+rightEsp:CreateToggle({
+
+    name = "Show Health",
+
+    value = Settings.ESPHealth,
+
+    callback = function(V)
+
+        Settings.ESPHealth = V
+
+    end
+})
+
+rightEsp:CreateToggle({
+
+    name = "Team Check",
+
+    value = Settings.TeamCheck,
+
+    callback = function(V)
+
+        Settings.TeamCheck = V
+
+    end
+})
+
+rightEsp:CreateToggle({
+
+    name = "Show Tracers",
+
+    value = Settings.ESPTracers,
+
+    callback = function(V)
+
+        Settings.ESPTracers = V
+
+    end
+})
+
+rightEsp:CreateDropdown({
+
+    name = "Tracer Origin",
+
+    options = {
+        "Bottom",
+        "Center",
+        "Top"
+    },
+
+    value = Settings.TracerOrigin,
+
+    callback = function(V)
+
+        Settings.TracerOrigin =
+            typeof(V) == "table"
+            and V[1]
+            or V
+
+    end
+})
+
+rightEsp:CreateSlider({
+
+    name = "Tracer Thickness",
+
+    range = {
+        1,
+        5
+    },
+
+    increment = 0.5,
+
+    suffix = " px",
+
+    value = Settings.TracerThickness,
+
+    flag = "TracerThickness",
+
+    callback = function(V)
+
+        Settings.TracerThickness = V
+
+    end
+})
+
+--============================================================
+-- AIM TAB
+--============================================================
+
+local AimTab = Window:CreateTab({
+
+    name = "Aimbot",
+
+    icon = 4483362458
+})
+
+AimTab:CreateSection({
+
+    name = "Aimbot Settings"
+})
+
+local gridAim = AimTab:CreateGroup()
+
+local leftAim = gridAim:CreateGroup({
+    direction = "column"
+})
+
+local rightAim = gridAim:CreateGroup({
+    direction = "column"
+})
+
+--============================================================
+-- AIMBOT
+--============================================================
+
+leftAim:CreateToggle({
+
+    name = "Aimbot",
+
+    value = false,
+
+    callback = function(V)
+
+        Settings.Aimbot = V
+
+        if not V then
+            Settings.AimTarget = nil
+        end
+
+    end
+})
+
+--============================================================
+-- TARGET LOCK
+--============================================================
+
+leftAim:CreateToggle({
+
+    name = "Target Lock",
+
+    value = false,
+
+    callback = function(V)
+
+        Settings.TargetLock = V
+
+        if not V then
+            Settings.AimTarget = nil
+        end
+
+    end
+})
+
+--============================================================
+-- TARGET BOTS
+--============================================================
+
+leftAim:CreateToggle({
+
+    name = "Target Bots",
+
+    value = false,
+
+    callback = function(V)
+
+        Settings.TargetBots = V
+
+        -- If bot targeting is disabled while a bot
+        -- is currently locked, release it.
+        if not V
+            and Settings.AimTarget
+            and Settings.AimTarget:IsA("Model") then
+
+            Settings.AimTarget = nil
+        end
+    end
+})
+
+--============================================================
+-- WALL CHECK
+--============================================================
+
+leftAim:CreateToggle({
+
+    name = "Wall Check",
+
+    value = false,
+
+    callback = function(V)
+
+        Settings.WallCheck = V
+
+    end
+})
+
+--============================================================
+-- FOV
+--============================================================
+
+leftAim:CreateToggle({
+
+    name = "Show FOV",
+
+    value = false,
+
+    callback = function(V)
+
+        Settings.ShowFOV = V
+
+    end
+})
+
+--============================================================
+-- AIM RIGHT
+--============================================================
+
+rightAim:CreateSlider({
+
+    name = "Smoothness",
+
+    range = {
+        0.01,
+        1
+    },
+
+    increment = 0.05,
+
+    suffix = "",
+
+    value = 0.20,
+
+    callback = function(V)
+
+        Settings.Smoothness = V
+
+    end
+})
+
+rightAim:CreateSlider({
+
+    name = "FOV",
+
+    range = {
+        50,
+        500
+    },
+
+    increment = 10,
+
+    suffix = " px",
+
+    value = 150,
+
+    callback = function(V)
+
+        Settings.FOV = V
+
+    end
+})
+
+rightAim:CreateDropdown({
+
+    name = "Target Part",
+
+    options = {
+        "Head",
+        "HumanoidRootPart"
+    },
+
+    value = "Head",
+
+    callback = function(V)
+
+        Settings.TargetPart =
+            typeof(V) == "table"
+            and V[1]
+            or V
+
+    end
+})
+
+--============================================================
+-- SETTING TAB
+--============================================================
+
+local SettingTab = Window:CreateTab({
+
+    name = "Setting",
+
+    icon = 104919049969988
+})
+
+SettingTab:CreateSlider({
+
+    name = "Field of View",
+
+    range = {
+        50,
+        120
+    },
+
+    increment = 1,
+
+    suffix = "°",
+
+    flag = "FieldOfView",
+
+    value = 70,
+
+    callback = function(Value)
+
+        Settings.FieldOfView = Value
+
+        local currentCamera =
+            workspace.CurrentCamera
+
+        if currentCamera then
+            currentCamera.FieldOfView = Value
+        end
+
+    end
+})
+
+SettingTab:CreateButton({
+
+    name = "Reset Field of View",
+
+    callback = function()
+
+        Settings.FieldOfView = 70
+
+        local currentCamera =
+            workspace.CurrentCamera
+
+        if currentCamera then
+            currentCamera.FieldOfView = 70
+        end
+
+        Window:Set(
+            "FieldOfView",
+            70
+        )
+    end
+})
+
+--============================================================
+-- THEME
+--============================================================
+
+SettingTab:CreateSection({
+
+    name = "🎨 Theme"
+})
+
+SettingTab:CreateDropdown({
+
+    name = "Select Theme",
+
+    options = {
+        "default",
+        "cobalt",
+        "ember",
+        "amethyst",
+        "frost",
+        "rose"
+    },
+
+    currentOption = "ember",
+
+    callback = function(Theme)
+
+        Theme =
+            typeof(Theme) == "table"
+            and Theme[1]
+            or Theme
+
+        Window:ChangeTheme(Theme)
+
+    end
+})
+
+--============================================================
+-- ESP LOOP
+--============================================================
+
+RunService.RenderStepped:Connect(function()
+
+    if not Settings.ESPEnabled then
+
+        for _, drawings in pairs(ESPCache) do
+            hideESP(drawings)
+        end
+
+        return
+    end
+
+    local character = getCharacter()
+
+    local localRoot =
+        getRoot(character)
+
+    if not localRoot then
+        return
+    end
+
+    local viewportSize =
+        Camera.ViewportSize
+
+    local originX =
+        viewportSize.X * 0.5
+
+    local originY =
+        viewportSize.Y
+
+    if Settings.TracerOrigin == "Center" then
+
+        originY =
+            viewportSize.Y * 0.5
+
+    elseif Settings.TracerOrigin == "Top" then
+
+        originY = 0
+
+    end
+
+    local tracerOrigin =
+        Vector2.new(
+            originX,
+            originY
+        )
+
+    --========================================================
+    -- ENTITY LOOP
+    --========================================================
+
+    for entity, drawings in pairs(ESPCache) do
+
+        local valid = false
+
+        -- PLAYER
+        if entity:IsA("Player") then
+
+            valid =
+                isValidPlayerTarget(entity)
+
+        -- BOT
+        elseif entity:IsA("Model") then
+
+            valid =
+                Settings.TargetBots
+                and isValidBotTarget(entity)
+
+        end
+
+        if not valid then
+
+            hideESP(drawings)
+
+            continue
+        end
+
+        local targetCharacter =
+            getTargetCharacter(entity)
+
+        if not targetCharacter then
+
+            hideESP(drawings)
+
+            continue
+        end
+
+        local root =
+            getRoot(targetCharacter)
+            or targetCharacter.PrimaryPart
+            or targetCharacter:FindFirstChild(
+                "UpperTorso"
+            )
+            or targetCharacter:FindFirstChild(
+                "Torso"
+            )
+
+        local humanoid =
+            getHumanoid(targetCharacter)
+
+        if not root or not humanoid then
+
+            hideESP(drawings)
+
+            continue
+        end
+
+        local screenPosition, visible =
+            Camera:WorldToViewportPoint(
+                root.Position
+            )
+
+        if not visible
+            or screenPosition.Z <= 0 then
+
+            hideESP(drawings)
+
+            continue
+        end
+
+        --====================================================
+        -- BOX
+        --====================================================
+
+        if Settings.ESPBoxes then
+
+            local cf = root.CFrame
+
+            local sizeX = 2
+            local sizeY = 3
+            local sizeZ = 2
+
+            local screenCorners =
+                table.create(8)
+
+            local allVisible = true
+
+            for i = 1, 8 do
+
+                local offsetX =
+                    (
+                        i == 1
+                        or i == 4
+                        or i == 5
+                        or i == 8
+                    )
+                    and -sizeX
+                    or sizeX
+
+                local offsetY =
+                    i <= 4
+                    and sizeY
+                    or -sizeY
+
+                local offsetZ =
+                    (
+                        i == 1
+                        or i == 2
+                        or i == 5
+                        or i == 6
+                    )
+                    and -sizeZ
+                    or sizeZ
+
+                local pos, vis =
+                    Camera:WorldToViewportPoint(
+                        (
+                            cf
+                            * CFrame.new(
+                                offsetX,
+                                offsetY,
+                                offsetZ
+                            )
+                        ).Position
+                    )
+
+                if not vis then
+
+                    allVisible = false
+
+                    break
+                end
+
+                screenCorners[i] =
+                    Vector2.new(
+                        pos.X,
+                        pos.Y
+                    )
+            end
+
+            if allVisible then
+
+                for i = 1, 12 do
+
+                    local line =
+                        drawings.Lines[i]
+
+                    local conn =
+                        boxConnections[i]
+
+                    line.From =
+                        screenCorners[
+                            conn[1]
+                        ]
+
+                    line.To =
+                        screenCorners[
+                            conn[2]
+                        ]
+
+                    line.Color =
+                        Settings.BoxColor
+
+                    line.Thickness =
+                        Settings.BoxThickness
+
+                    line.Visible = true
+                end
+
+            else
+
+                for i = 1, 12 do
+                    drawings.Lines[i].Visible =
+                        false
+                end
+
+            end
+
+        else
+
+            for i = 1, 12 do
+                drawings.Lines[i].Visible =
+                    false
+            end
+
+        end
+
+        --====================================================
+        -- TRACER
+        --====================================================
+
+        if Settings.ESPTracers then
+
+            drawings.Tracer.From =
+                tracerOrigin
+
+            drawings.Tracer.To =
+                Vector2.new(
+                    screenPosition.X,
+                    screenPosition.Y
+                )
+
+            drawings.Tracer.Color =
+                Settings.TracerColor
+
+            drawings.Tracer.Thickness =
+                Settings.TracerThickness
+
+            drawings.Tracer.Visible =
+                true
+
+        else
+
+            drawings.Tracer.Visible =
+                false
+
+        end
+
+        --====================================================
+        -- DISTANCE
+        --====================================================
+
+        local distance =
+            (
+                localRoot.Position
+                - root.Position
+            ).Magnitude
+
+        --====================================================
+        -- NAME
+        --====================================================
+
+        drawings.NameTag.Text =
+            entity.Name
+
+        drawings.NameTag.Position =
+            Vector2.new(
+                screenPosition.X,
+                screenPosition.Y - 35
+            )
+
+        drawings.NameTag.Color =
+            Color3.fromRGB(
+                255,
+                255,
+                255
+            )
+
+        drawings.NameTag.Visible =
+            Settings.ESPNames
+
+        --====================================================
+        -- DISTANCE
+        --====================================================
+
+        drawings.DistanceTag.Text =
+            string.format(
+                "[%d studs]",
+                math.floor(distance)
+            )
+
+        drawings.DistanceTag.Position =
+            Vector2.new(
+                screenPosition.X,
+                screenPosition.Y - 20
+            )
+
+        drawings.DistanceTag.Color =
+            Color3.fromRGB(
+                0,
+                170,
+                255
+            )
+
+        drawings.DistanceTag.Visible =
+            Settings.ESPDistance
+
+        --====================================================
+        -- HEALTH
+        --====================================================
+
+        if Settings.ESPHealth then
+
+            local maxHealth =
+                math.max(
+                    humanoid.MaxHealth,
+                    1
+                )
+
+            local healthPercent =
+                math.clamp(
+                    humanoid.Health
+                    / maxHealth,
+                    0,
+                    1
+                )
+
+            drawings.HealthText.Text =
+                string.format(
+                    "%d/%d HP",
+                    math.floor(
+                        humanoid.Health
+                    ),
+                    math.floor(
+                        maxHealth
+                    )
+                )
+
+            drawings.HealthText.Color =
+                Color3.fromRGB(
+                    255 * (1 - healthPercent),
+                    255 * healthPercent,
+                    0
+                )
+
+            drawings.HealthText.Position =
+                Vector2.new(
+                    screenPosition.X - 30,
+                    screenPosition.Y + 10
+                )
+
+            drawings.HealthText.Visible =
+                true
+
+        else
+
+            drawings.HealthOutline.Visible =
+                false
+
+            drawings.HealthBar.Visible =
+                false
+
+            drawings.HealthText.Visible =
+                false
+        end
+    end
+end)
+
+--============================================================
+-- AIMBOT RENDER STEP
+--============================================================
+
+pcall(function()
+
+    RunService:UnbindFromRenderStep(
+        "DarkHub_Aimbot"
+    )
+
+end)
+
+RunService:BindToRenderStep(
+
+    "DarkHub_Aimbot",
+
+    Enum.RenderPriority.Camera.Value + 1,
+
+    function(deltaTime)
+
+        --====================================================
+        -- FOV
+        --====================================================
+
+        if Settings.ShowFOV then
+
+            local viewport =
+                Camera.ViewportSize
+
+            FOVCircle.Position =
+                Vector2.new(
+                    viewport.X * 0.5,
+                    viewport.Y * 0.5
+                )
+
+            FOVCircle.Radius =
+                Settings.FOV
+
+            FOVCircle.Visible =
+                true
+
+        else
+
+            FOVCircle.Visible =
+                false
+
+        end
+
+        --====================================================
+        -- AIMBOT OFF
+        --====================================================
+
+        if not Settings.Aimbot then
+
+            Settings.AimTarget = nil
+
+            return
+        end
+
+        --====================================================
+        -- CURRENT TARGET
+        --====================================================
+
+        local target =
+            Settings.AimTarget
+
+        --====================================================
+        -- TARGET LOCK
+        --====================================================
+
+        if Settings.TargetLock then
+
+            if not target then
+
+                target =
+                    getAimTarget()
+
+                Settings.AimTarget =
+                    target
+
+            elseif target:IsA("Player") then
+
+                if not isValidPlayerTarget(target) then
+
+                    target =
+                        getAimTarget()
+
+                    Settings.AimTarget =
+                        target
+                end
+
+            elseif target:IsA("Model") then
+
+                if not isValidBotTarget(target) then
+
+                    target =
+                        getAimTarget()
+
+                    Settings.AimTarget =
+                        target
+                end
+
+            else
+
+                target =
+                    getAimTarget()
+
+                Settings.AimTarget =
+                    target
+            end
+
+        else
+
+            target =
+                getAimTarget()
+
+            Settings.AimTarget =
+                target
+
+        end
+
+        if not target then
+            return
+        end
+
+        --====================================================
+        -- TARGET PART
+        --====================================================
+
+        local targetPart =
+            getCurrentAimPart(target)
+
+        if not targetPart then
+
+            Settings.AimTarget = nil
+
+            return
+        end
+
+        --====================================================
+        -- SCREEN CHECK
+        --====================================================
+
+        local screenPosition, onScreen =
+            Camera:WorldToViewportPoint(
+                targetPart.Position
+            )
+
+        if not onScreen
+            or screenPosition.Z <= 0 then
+
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
+
+            return
+        end
+
+        local viewport =
+            Camera.ViewportSize
+
+        if screenPosition.X < 0
+            or screenPosition.X > viewport.X
+            or screenPosition.Y < 0
+            or screenPosition.Y > viewport.Y then
+
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
+
+            return
+        end
+
+        --====================================================
+        -- WALL CHECK
+        --====================================================
+
+        if not isVisible(targetPart) then
+
+            if Settings.TargetLock then
+                Settings.AimTarget = nil
+            end
+
+            return
+        end
+
+        --====================================================
+        -- CAMERA AIM
+        --====================================================
+
+        local cameraPosition =
+            Camera.CFrame.Position
+
+        local targetCFrame =
+            CFrame.lookAt(
+                cameraPosition,
+                targetPart.Position
+            )
+
+        local smoothness =
+            tonumber(
+                Settings.Smoothness
+            )
+            or 0.20
+
+        local lerpFactor =
+            math.clamp(
+                smoothness
+                * (deltaTime * 60),
+                0.01,
+                1
+            )
+
+        Camera.CFrame =
+            Camera.CFrame:Lerp(
+                targetCFrame,
+                lerpFactor
+            )
+    end
+)
+
+--============================================================
+-- CHARACTER RESET
+--============================================================
+
+LocalPlayer.CharacterAdded:Connect(function()
+
+    Settings.AimTarget = nil
+
+end)
+
+--============================================================
+-- LOAD CONFIGURATION
+--============================================================
+
+pcall(function()
+
+    Rayfield:LoadConfiguration()
+
+end)
+
