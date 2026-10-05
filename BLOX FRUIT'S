@@ -6,7 +6,19 @@ local Rayfield = loadstring(game:HttpGet(
 --// WINDOW
 --//========================================================
 
+local Window = Rayfield:CreateWindow({
+    name = "🍑 DARK HUB | BLOX FRUITS",
+    subtitle = "by MaX",
+    sidebarLayout = true,
+    theme = "ember",
 
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
+})
 
 --//========================================================
 --// SERVICES
