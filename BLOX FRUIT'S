@@ -8,7 +8,7 @@ local Rayfield = loadstring(game:HttpGet(
 
 local Window = Rayfield:CreateWindow({
     name = "🍑 DARK HUB | BLOX FRUITS",
-    subtitle = "Rayfield Gen2",
+    subtitle = "by MaX",
     sidebarLayout = true,
     theme = "ember",
 
