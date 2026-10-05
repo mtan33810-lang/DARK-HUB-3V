@@ -11,6 +11,13 @@ local Window = Rayfield:CreateWindow({
     subtitle = "Rayfield Gen2",
     sidebarLayout = true,
     theme = "ember",
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
 })
 
 --//========================================================
@@ -1451,7 +1458,7 @@ local FarmTab = Window:CreateTab({
 -- GENERAL
 --========================================================
 
-FarmTab:CreateSection("GENERAL FARMING")
+FarmTab:CreateSection({ name = "GENERAL FARMING", icon = nil })
 
 FarmTab:CreateToggle({
     name = "Auto Level Farm",
@@ -1484,7 +1491,7 @@ FarmTab:CreateToggle({
 -- QUEST
 --========================================================
 
-FarmTab:CreateSection("QUEST")
+FarmTab:CreateSection({ name = "QUEST", icon = nil })
 
 local questLabels = {
     "Auto (by level)"
@@ -1542,7 +1549,7 @@ FarmTab:CreateDropdown({
 -- MOVEMENT
 --========================================================
 
-FarmTab:CreateSection("MOVEMENT")
+FarmTab:CreateSection({ name = "MOVEMENT", icon = nil })
 
 FarmTab:CreateSlider({
     name = "Height Offset",
@@ -1584,7 +1591,7 @@ FarmTab:CreateToggle({
 -- COMBAT
 --========================================================
 
-FarmTab:CreateSection("COMBAT")
+FarmTab:CreateSection({ name = "COMBAT", icon = nil })
 
 FarmTab:CreateToggle({
     name = "Auto Attack Mobs",
@@ -1623,7 +1630,7 @@ FarmTab:CreateSlider({
 -- EQUIPMENT
 --========================================================
 
-FarmTab:CreateSection("EQUIPMENT")
+FarmTab:CreateSection({ name = "EQUIPMENT", icon = nil })
 
 FarmTab:CreateDropdown({
     name = "Auto Equip Type",
@@ -1655,7 +1662,7 @@ FarmTab:CreateToggle({
 -- BOSS
 --========================================================
 
-FarmTab:CreateSection("BOSS FARM")
+FarmTab:CreateSection({ name = "BOSS FARM", icon = nil })
 
 local allBosses = {}
 
@@ -1741,7 +1748,7 @@ FarmTab:CreateToggle({
 -- MATERIALS
 --========================================================
 
-FarmTab:CreateSection("MATERIALS")
+FarmTab:CreateSection({ name = "MATERIALS", icon = nil })
 
 local allMaterials = {}
 
@@ -1803,7 +1810,7 @@ FarmTab:CreateToggle({
 -- STATS
 --========================================================
 
-FarmTab:CreateSection("STATS")
+FarmTab:CreateSection({ name = "STATS", icon = nil })
 
 FarmTab:CreateDropdown({
     name = "Stat",
@@ -2944,7 +2951,7 @@ local CombatTab = Window:CreateTab({
 
 --// PLAYER COMBAT
 
-CombatTab:CreateSection("PLAYER COMBAT")
+CombatTab:CreateSection({ name = "PLAYER COMBAT", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Auto Attack Players",
@@ -2994,7 +3001,7 @@ CombatTab:CreateToggle({
 
 --// MOB COMBAT
 
-CombatTab:CreateSection("MOB COMBAT")
+CombatTab:CreateSection({ name = "MOB COMBAT", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Auto Attack Mobs",
@@ -3024,7 +3031,7 @@ CombatTab:CreateSlider({
 
 --// KILL AURA
 
-CombatTab:CreateSection("KILL AURA")
+CombatTab:CreateSection({ name = "KILL AURA", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Kill Aura",
@@ -3064,7 +3071,7 @@ CombatTab:CreateToggle({
 
 --// AIMBOT
 
-CombatTab:CreateSection("AIMBOT")
+CombatTab:CreateSection({ name = "AIMBOT", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Aimbot",
@@ -3091,7 +3098,7 @@ CombatTab:CreateSlider({
 
 --// AUTO SKILLS
 
-CombatTab:CreateSection("AUTO SKILLS")
+CombatTab:CreateSection({ name = "AUTO SKILLS", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Auto Skills",
@@ -3142,7 +3149,7 @@ CombatTab:CreateSlider({
 
 --// PLAYER TRACKING
 
-CombatTab:CreateSection("PLAYER TRACKING")
+CombatTab:CreateSection({ name = "PLAYER TRACKING", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Follow Nearest",
@@ -3193,7 +3200,7 @@ CombatTab:CreateToggle({
 
 --// AUTO BOUNTY
 
-CombatTab:CreateSection("AUTO BOUNTY V4")
+CombatTab:CreateSection({ name = "AUTO BOUNTY V4", icon = nil })
 
 CombatTab:CreateToggle({
     name = "Auto Bounty V4",
@@ -3357,7 +3364,7 @@ CombatTab:CreateSlider({
 --// UTILITY TAB
 --//========================================================
 
-CombatTab:CreateSection("CHARACTER")
+CombatTab:CreateSection({ name = "CHARACTER", icon = nil })
 
 CombatTab:CreateButton({
     name = "Equip Weapon",
