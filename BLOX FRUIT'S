@@ -7,7 +7,7 @@ local Rayfield = loadstring(game:HttpGet(
 --//========================================================
 
 local Window = Rayfield:CreateWindow({
-    name = "Example Hub",
+    name = "🍑 DARK HUB | BLOX FRUITS",
     subtitle = "Rayfield Gen2",
     sidebarLayout = true,
     theme = "ember",
@@ -3357,28 +3357,23 @@ CombatTab:CreateSlider({
 --// UTILITY TAB
 --//========================================================
 
-local UtilityTab = Window:CreateTab({
-    name = "Utility",
-    icon = nil,
-})
+CombatTab:CreateSection("CHARACTER")
 
-UtilityTab:CreateSection("CHARACTER")
-
-UtilityTab:CreateButton({
+CombatTab:CreateButton({
     name = "Equip Weapon",
     callback = function()
         equipWeapon()
     end,
 })
 
-UtilityTab:CreateButton({
+CombatTab:CreateButton({
     name = "Unequip Fishing Rod",
     callback = function()
         unequipBadTool()
     end,
 })
 
-UtilityTab:CreateButton({
+CombatTab:CreateButton({
     name = "Stop All Features",
     callback = function()
         State.autoPlayer = false
