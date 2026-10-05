@@ -1491,7 +1491,7 @@ FarmTab:CreateToggle({
 -- QUEST
 --========================================================
 
-FarmTab:CreateSection({ name = "QUEST", icon = nil })
+FarmTab:CreateSection({ name = "QUEST ", icon = nil })
 
 local questLabels = {
     "Auto (by level)"
@@ -1549,7 +1549,7 @@ FarmTab:CreateDropdown({
 -- MOVEMENT
 --========================================================
 
-FarmTab:CreateSection({ name = "MOVEMENT", icon = nil })
+FarmTab:CreateSection({ name = "MOVEMENT ", icon = nil })
 
 FarmTab:CreateSlider({
     name = "Height Offset",
@@ -1630,7 +1630,7 @@ FarmTab:CreateSlider({
 -- EQUIPMENT
 --========================================================
 
-FarmTab:CreateSection({ name = "EQUIPMENT", icon = nil })
+FarmTab:CreateSection({ name = "EQUIPMENT ", icon = nil })
 
 FarmTab:CreateDropdown({
     name = "Auto Equip Type",
@@ -3364,7 +3364,7 @@ CombatTab:CreateSlider({
 --// UTILITY TAB
 --//========================================================
 
-CombatTab:CreateSection({ name = "CHARACTER", icon = nil })
+CombatTab:CreateSection({ name = "CHARACTER ", icon = nil })
 
 CombatTab:CreateButton({
     name = "Equip Weapon",
