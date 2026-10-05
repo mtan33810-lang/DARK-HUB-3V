@@ -1,6 +1,4 @@
-local Rayfield = loadstring(game:HttpGet(
-    "https://sirius.menu/gen2-preview"
-))()
+
 
 --//========================================================
 --// WINDOW
