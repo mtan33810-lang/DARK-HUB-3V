@@ -103,7 +103,7 @@ local LastSheriff = nil
 
 local function GetSheriff()
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and GetPlayerRole(player) == "Sheriff" then
+        if player ~= lp and GetPlayerRole(player) == "Sheriff" then
             return player
         end
     end
@@ -146,7 +146,7 @@ local function TeleportToSheriff()
         return
     end
 
-    local myCharacter = LocalPlayer.Character
+    local myCharacter = lp.Character
     local myRoot =
         myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
 
@@ -182,7 +182,7 @@ end
 
 local function WatchSheriff(player)
 
-    if player == LocalPlayer then
+    if player == lp then
         return
     end
 
