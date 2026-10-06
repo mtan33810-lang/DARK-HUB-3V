@@ -2737,23 +2737,6 @@ end
 
                     task.wait(0.8)
 
-
-                    --==================================================
-                    -- POST PICKUP FLOW
-                    --==================================================
-
-                    RunAfterEggPickup(Egg)
-
-                    while PostPickupRunning
-                        and AutoEggPickup
-                    do
-                        task.wait(0.1)
-                    end
-
-                    if not AutoEggPickup then
-                        break
-                    end
-
 --==================================================
 -- VOLCANIC / BLOOM EGG REVERSE TELEPORT
 -- 4 → 3 → 2 → 1
@@ -2883,7 +2866,24 @@ then
     end
 
 end
-    
+
+                   --==================================================
+                    -- POST PICKUP FLOW
+                    --==================================================
+
+                    RunAfterEggPickup(Egg)
+
+                    while PostPickupRunning
+                        and AutoEggPickup
+                    do
+                        task.wait(0.1)
+                    end
+
+                    if not AutoEggPickup then
+                        break
+                    end
+
+
                     --==================================================
                     -- RESCAN AFTER DROP
                     --==================================================
