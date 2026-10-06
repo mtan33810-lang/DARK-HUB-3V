@@ -28,4 +28,11 @@ elseif GameId ==
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT'S"))()
 
-
+else
+    warn(
+        "DARK HUB: Unsupported game\n" ..
+        "PlaceId: " .. tostring(PlaceId) .. "\n" ..
+        "GameId: " .. tostring(GameId)
+    )
+    return
+end
