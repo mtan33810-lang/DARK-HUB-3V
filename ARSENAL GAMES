@@ -379,9 +379,29 @@ local function isSameTeam(player)
         return true
     end
 
+    --========================================================
+    -- TEAM CHECK #3: GREEN HIGHLIGHT
+    --========================================================
+
+    if character then
+        for _, object in ipairs(character:GetDescendants()) do
+
+            if object:IsA("Highlight") then
+
+                local color = object.FillColor
+
+                -- Detect green teammate highlight
+                if color.G > color.R * 1.2
+                    and color.G > color.B * 1.2 then
+
+                    return true
+                end
+            end
+        end
+    end
+
     return false
 end
-
 
 --============================================================
 -- PLAYER TARGET VALIDATION
