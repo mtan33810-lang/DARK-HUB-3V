@@ -164,7 +164,7 @@ local function TeleportToSheriff()
         gunPart.CFrame + Vector3.new(0, 3, 0)
 
     -- Let the teleport register
-    task.wait(1.5)
+    task.wait(0.1)
 
     -- Snap back
     if myRoot and myRoot.Parent then
