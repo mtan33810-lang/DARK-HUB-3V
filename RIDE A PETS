@@ -695,6 +695,65 @@ local function DropEgg()
 end
 
 --==================================================
+-- PICK UP DROPPED EGG AGAIN
+--==================================================
+
+local function PickUpDroppedEgg(Egg)
+    if not Egg then
+        return false
+    end
+
+    for Attempt = 1, 30 do
+
+        if not Egg.Parent then
+            return false
+        end
+
+        if IsEggEquipped(Egg) then
+            return true
+        end
+
+        local FoundPrompt = nil
+
+        for _, Object in ipairs(Egg:GetDescendants()) do
+
+            if Object:IsA("ProximityPrompt") then
+
+                local ActionText =
+                    string.lower(
+                        tostring(Object.ActionText or "")
+                    )
+
+                if ActionText == "pick up"
+                    or ActionText:find("pick", 1, true)
+                then
+                    FoundPrompt = Object
+                    break
+                end
+
+            end
+        end
+
+        if FoundPrompt
+            and typeof(fireproximityprompt) == "function"
+        then
+
+            fireproximityprompt(FoundPrompt)
+
+            task.wait(0.8)
+
+            if IsEggEquipped(Egg) then
+                return true
+            end
+        end
+
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+--==================================================
 -- POST EGG PICKUP FLOW
 --==================================================
 
