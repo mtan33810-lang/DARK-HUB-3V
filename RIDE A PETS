@@ -1745,7 +1745,7 @@ TeleportsTab:CreateButton({
 })
 
 --==================================================
--- 🌋 FLOATING VOLCANO TELEPORT BUTTON
+-- 🌋 FLOATING VOLCANO BUTTON
 --==================================================
 
 local VolcanoGui = Instance.new("ScreenGui")
@@ -1757,26 +1757,18 @@ local VolcanoButton = Instance.new("TextButton")
 VolcanoButton.Name = "VolcanoButton"
 VolcanoButton.Size = UDim2.new(0, 160, 0, 50)
 VolcanoButton.Position = UDim2.new(0.5, -80, 0.7, 0)
-
 VolcanoButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 VolcanoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 VolcanoButton.Text = "🌋 Volcano"
 VolcanoButton.TextSize = 18
-
 VolcanoButton.Parent = VolcanoGui
 
--- Rounded corners
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 10)
 Corner.Parent = VolcanoButton
 
--- Make button draggable
 local DragDetector = Instance.new("UIDragDetector")
 DragDetector.Parent = VolcanoButton
-
---==================================================
--- TELEPORT
---==================================================
 
 VolcanoButton.Activated:Connect(function()
 
@@ -1790,11 +1782,23 @@ VolcanoButton.Activated:Connect(function()
         return
     end
 
+    -- Temporarily stop your Fly system
+    local WasFlying = Flying
+
+    if WasFlying then
+        StopFly()
+    end
+
+    -- Use the CURRENT Volcano position from your script
     RootPart.CFrame = CFrame.new(
-        -5313.54,
-        40912.41,
-        -3563.97
-    )
+    -5313.54,
+    40912.41,
+    -3563.97
+)
+
+    -- Stop physics from immediately moving the character
+    RootPart.AssemblyLinearVelocity = Vector3.zero
+    RootPart.AssemblyAngularVelocity = Vector3.zero
 
 end)
 
