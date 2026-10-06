@@ -1,8 +1,4 @@
-local ok, result = pcall(function()
-    return loadstring(game:HttpGet("https://sirius.menu/gen2"))()
-end)
-
-print("Rayfield load:", ok, result)
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
 local Window = Rayfield:CreateWindow({
     name = "DARK HUB | RIDE A PET",
@@ -763,6 +759,8 @@ end
 
 local VolcanoPostDelay = 10
 local EggDropPostDelay = 5
+
+local MarkEggAsDropped
 
 local function PickUpDroppedEgg(Egg)
 
@@ -1634,7 +1632,7 @@ local CurrentEggIndex = 0
 
 local IgnoredDroppedEggs = {}
 
-local function MarkEggAsDropped(EggObject)
+MarkEggAsDropped = function(EggObject)
     if EggObject then
         IgnoredDroppedEggs[EggObject] = true
     end
