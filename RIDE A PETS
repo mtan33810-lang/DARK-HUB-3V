@@ -2232,46 +2232,46 @@ then
     )
 end
 
-                   --==================================================
--- GET SELECTED EGGS
---==================================================
+    --==================================================
+    -- GET SELECTED EGGS
+    --==================================================
 
-local function GetSelectedEggsList()
+    local function GetSelectedEggsList()
 
-    local CombinedList = {}
+        local CombinedList = {}
 
-    for Rarity, Selected in pairs(SelectedRarities) do
+        for Rarity, Selected in pairs(SelectedRarities) do
 
-        if Selected
-            and EggsByRarity[Rarity]
-        then
+            if Selected
+                and EggsByRarity[Rarity]
+            then
 
-            for _, Data in ipairs(
-                EggsByRarity[Rarity]
-            ) do
+                for _, Data in ipairs(
+                    EggsByRarity[Rarity]
+                ) do
 
-                if Data
-                    and Data.Object
-                    and Data.Object.Parent
-                    and not IsIgnoredDroppedEgg(
-                        Data.Object
-                    )
-                    and not IsEggEquipped(
-                        Data.Object
-                    )
-                then
+                    if Data
+                        and Data.Object
+                        and Data.Object.Parent
+                        and not IsIgnoredDroppedEgg(
+                            Data.Object
+                        )
+                        and not IsEggEquipped(
+                            Data.Object
+                        )
+                    then
 
-                    table.insert(
-                        CombinedList,
-                        Data
-                    )
+                        table.insert(
+                            CombinedList,
+                            Data
+                        )
+                    end
                 end
             end
         end
-    end
 
-    return CombinedList
-end
+        return CombinedList
+    end
 
 --==================================================
 -- RARITY DROPDOWN
@@ -2553,7 +2553,6 @@ TeleportsTab:CreateToggle({
 --==================================================
 
 if tostring(Egg.Name) == "Volcanic Egg"
-    or tostring(Egg.Name) == "Bloom Egg"
 then
 
     local Location1 = CFrame.new(
@@ -3112,50 +3111,3 @@ SettingTab:CreateDropdown({
         Window:ChangeTheme(Theme)
     end
 })
-
---==================================================
--- QUICK THEME BUTTONS
---==================================================
-
-SettingTab:CreateButton({
-    name = "Default",
-    callback = function()
-        Window:ChangeTheme("default")
-    end
-})
-
-SettingTab:CreateButton({
-    name = "Cobalt",
-    callback = function()
-        Window:ChangeTheme("cobalt")
-    end
-})
-
-SettingTab:CreateButton({
-    name = "Ember",
-    callback = function()
-        Window:ChangeTheme("ember")
-    end
-})
-
-SettingTab:CreateButton({
-    name = "Amethyst",
-    callback = function()
-        Window:ChangeTheme("amethyst")
-    end
-})
-
-SettingTab:CreateButton({
-    name = "Frost",
-    callback = function()
-        Window:ChangeTheme("frost")
-    end
-})
-
-SettingTab:CreateButton({
-    name = "Rose",
-    callback = function()
-        Window:ChangeTheme("rose")
-    end
-})
-                   
