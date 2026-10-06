@@ -1744,63 +1744,22 @@ TeleportsTab:CreateButton({
     end
 })
 
---==================================================
--- 🌋 FLOATING VOLCANO BUTTON
---==================================================
+TeleportsTab:CreateButton({
+    name = "🌋 Teleport to Volcano Now",
+    callback = function()
+        local Character = Player.Character
+        if not Character then return end
 
-local VolcanoGui = Instance.new("ScreenGui")
-VolcanoGui.Name = "VolcanoTeleportGUI"
-VolcanoGui.ResetOnSpawn = false
-VolcanoGui.Parent = Player:WaitForChild("PlayerGui")
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        if not RootPart then return end
 
-local VolcanoButton = Instance.new("TextButton")
-VolcanoButton.Name = "VolcanoButton"
-VolcanoButton.Size = UDim2.new(0, 160, 0, 50)
-VolcanoButton.Position = UDim2.new(0.5, -80, 0.7, 0)
-VolcanoButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-VolcanoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-VolcanoButton.Text = "🌋 Volcano"
-VolcanoButton.TextSize = 18
-VolcanoButton.Parent = VolcanoGui
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 10)
-Corner.Parent = VolcanoButton
-
-local DragDetector = Instance.new("UIDragDetector")
-DragDetector.Parent = VolcanoButton
-
-VolcanoButton.Activated:Connect(function()
-
-    local Character = Player.Character
-    if not Character then
-        return
-    end
-
-    local RootPart = Character:FindFirstChild("HumanoidRootPart")
-    if not RootPart then
-        return
-    end
-
-    -- Temporarily stop your Fly system
-    local WasFlying = Flying
-
-    if WasFlying then
-        StopFly()
-    end
-
-    -- Use the CURRENT Volcano position from your script
-    RootPart.CFrame = CFrame.new(
-    -5313.54,
-    40912.41,
-    -3563.97
-)
-
-    -- Stop physics from immediately moving the character
-    RootPart.AssemblyLinearVelocity = Vector3.zero
-    RootPart.AssemblyAngularVelocity = Vector3.zero
-
-end)
+        RootPart.CFrame = CFrame.new(
+            -4984.83,
+            41288.56,
+            -3625.90
+        )
+    end,
+})
 
 --==================================================
 -- EGG RARITY SCANNER
@@ -2590,77 +2549,115 @@ TeleportsTab:CreateToggle({
                 end
 
                 --==================================================
-                -- VOLCANIC EGG SPECIAL TELEPORT
-                --==================================================
+-- VOLCANIC EGG SPECIAL TELEPORT
+--==================================================
 
-                if tostring(Egg.Name) == "Volcanic Egg"
-                    or tostring(Egg.Name) == "Bloom Egg"
-                then
+if tostring(Egg.Name) == "Volcanic Egg"
+    or tostring(Egg.Name) == "Bloom Egg"
+then
 
     local Location1 = CFrame.new(
-    -4732.12,
-    41678.94,
-    -3945.08
-)
-
-local Location2 = CFrame.new(
-    -4904.99, 
-    41296.87, 
-    -3726.62
-)
-
-local Location3 = CFrame.new(
-    -5042.11,
-    41271.99,
-    -3520.53
-)
-
-local Speed = 250
-
--- Fly to Location 1
-while (HRP.Position - Location1.Position).Magnitude > 5 do
-
-    local Direction =
-        (Location1.Position - HRP.Position).Unit
-
-    HRP.CFrame = CFrame.new(
-        HRP.Position + Direction * Speed * task.wait(),
-        Location1.Position
+        -4732.12,
+        41678.94,
+        -3945.08
     )
-end
 
-HRP.CFrame = Location1
-task.wait(3)
-
--- Fly to Location 2
-while (HRP.Position - Location2.Position).Magnitude > 5 do
-
-    local Direction =
-        (Location2.Position - HRP.Position).Unit
-
-    HRP.CFrame = CFrame.new(
-        HRP.Position + Direction * Speed * task.wait(),
-        Location2.Position
+    local Location2 = CFrame.new(
+        -4904.99,
+        41296.87,
+        -3726.62
     )
-end
 
-HRP.CFrame = Location2
-task.wait(3)
-
--- Fly to Location 3
-while (HRP.Position - Location3.Position).Magnitude > 5 do
-
-    local Direction =
-        (Location3.Position - HRP.Position).Unit
-
-    HRP.CFrame = CFrame.new(
-        HRP.Position + Direction * Speed * task.wait(),
-        Location3.Position
+    local Location3 = CFrame.new(
+        -4984.83,
+        41288.56,
+        -3625.90
     )
-end
 
-HRP.CFrame = Location3
-task.wait(3)
+    local Location4 = CFrame.new(
+        -5042.11,
+        41271.99,
+        -3520.53
+    )
+
+    local Speed = 250
+
+    --==============================================
+    -- Fly to Location 1
+    --==============================================
+    while (HRP.Position - Location1.Position).Magnitude > 5 do
+
+        local Direction =
+            (Location1.Position - HRP.Position).Unit
+
+        local dt = task.wait()
+
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * dt,
+            Location1.Position
+        )
+    end
+
+    HRP.CFrame = Location1
+    task.wait(3)
+
+    --==============================================
+    -- Fly to Location 2
+    --==============================================
+    while (HRP.Position - Location2.Position).Magnitude > 5 do
+
+        local Direction =
+            (Location2.Position - HRP.Position).Unit
+
+        local dt = task.wait()
+
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * dt,
+            Location2.Position
+        )
+    end
+
+    HRP.CFrame = Location2
+    task.wait(3)
+
+    --==============================================
+    -- Fly to Location 3
+    --==============================================
+    while (HRP.Position - Location3.Position).Magnitude > 5 do
+
+        local Direction =
+            (Location3.Position - HRP.Position).Unit
+
+        local dt = task.wait()
+
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * dt,
+            Location3.Position
+        )
+    end
+
+    HRP.CFrame = Location3
+    task.wait(3)
+
+    --==============================================
+    -- Fly to Location 4
+    --==============================================
+    while (HRP.Position - Location4.Position).Magnitude > 5 do
+
+        local Direction =
+            (Location4.Position - HRP.Position).Unit
+
+        local dt = task.wait()
+
+        HRP.CFrame = CFrame.new(
+            HRP.Position + Direction * Speed * dt,
+            Location4.Position
+        )
+    end
+
+    HRP.CFrame = Location4
+    task.wait(3)
+
 end
 
                 --==================================================
