@@ -340,106 +340,48 @@ end
 --============================================================
 
 local function isSameTeam(player)
-
     if not player or player == LocalPlayer then
         return false
     end
 
     --========================================================
-    -- ARSENAL GAMEMODE TEAM
+    -- TEAM CHECK #1: Roblox Team
     --========================================================
 
-    local myTeam =
-        LocalPlayer:GetAttribute("GamemodeTeam")
-
-    local targetTeam =
-        player:GetAttribute("GamemodeTeam")
-
-    if myTeam ~= nil
-        and targetTeam ~= nil
-        and tostring(myTeam) == tostring(targetTeam) then
-
-        return true
-    end
-
-    --========================================================
-    -- CHARACTER GAMEMODE TEAM
-    --========================================================
-
-    local myCharacter =
-        LocalPlayer.Character
-
-    local targetCharacter =
-        player.Character
-
-    if myCharacter and targetCharacter then
-
-        local myCharacterTeam =
-            myCharacter:GetAttribute("GamemodeTeam")
-
-        local targetCharacterTeam =
-            targetCharacter:GetAttribute("GamemodeTeam")
-
-        if myCharacterTeam ~= nil
-            and targetCharacterTeam ~= nil
-            and tostring(myCharacterTeam)
-                == tostring(targetCharacterTeam) then
-
+    if LocalPlayer.Team ~= nil and player.Team ~= nil then
+        if LocalPlayer.Team == player.Team then
             return true
         end
     end
 
     --========================================================
-    -- NORMAL ROBLOX TEAM
+    -- TEAM CHECK #1B: Team Attribute
     --========================================================
 
-    if LocalPlayer.Team ~= nil
-        and player.Team ~= nil
-        and LocalPlayer.Team == player.Team then
+    local myTeam = LocalPlayer:GetAttribute("Team")
+    local targetTeam = player:GetAttribute("Team")
 
-        return true
-    end
-
-    --========================================================
-    -- OLD TEAM ATTRIBUTE
-    --========================================================
-
-    local myOldTeam =
-        LocalPlayer:GetAttribute("Team")
-
-    local targetOldTeam =
-        player:GetAttribute("Team")
-
-    if myOldTeam ~= nil
-        and targetOldTeam ~= nil
-        and tostring(myOldTeam)
-            == tostring(targetOldTeam) then
-
-        return true
-    end
-
-    --========================================================
-    -- TEAMMATE LABEL
-    --========================================================
-
-    if targetCharacter then
-
-        local root =
-            targetCharacter:FindFirstChild(
-                "HumanoidRootPart"
-            )
-
-        if root
-            and root:FindFirstChild(
-                "TeammateLabel"
-            ) then
-
+    if myTeam ~= nil and targetTeam ~= nil then
+        if myTeam == targetTeam then
             return true
         end
+    end
+
+    --========================================================
+    -- TEAM CHECK #2: TeammateLabel
+    --========================================================
+
+    local character = player.Character
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
+
+    if root and root:FindFirstChild("TeammateLabel") then
+        return true
     end
 
     return false
 end
+
 
 --============================================================
 -- PLAYER TARGET VALIDATION
