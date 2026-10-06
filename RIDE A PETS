@@ -2548,8 +2548,9 @@ TeleportsTab:CreateToggle({
                     continue
                 end
 
-                --==================================================
--- VOLCANIC EGG SPECIAL TELEPORT
+             --==================================================
+-- VOLCANIC / BLOOM EGG FORWARD TELEPORT
+-- 1 → 2 → 3 → 4
 --==================================================
 
 if tostring(Egg.Name) == "Volcanic Egg"
@@ -2582,81 +2583,67 @@ then
 
     local Speed = 250
 
-    --==============================================
-    -- Fly to Location 1
-    --==============================================
-    while (HRP.Position - Location1.Position).Magnitude > 5 do
+    local function TweenToLocation(TargetCFrame)
 
-        local Direction =
-            (Location1.Position - HRP.Position).Unit
+        while AutoEggPickup
+            and HRP
+            and (
+                HRP.Position
+                - TargetCFrame.Position
+            ).Magnitude > 5
+        do
 
-        local dt = task.wait()
+            local Direction =
+                (
+                    TargetCFrame.Position
+                    - HRP.Position
+                ).Unit
 
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * dt,
-            Location1.Position
-        )
+            local dt = task.wait()
+
+            HRP.CFrame = CFrame.new(
+                HRP.Position
+                    + Direction * Speed * dt,
+                TargetCFrame.Position
+            )
+        end
+
+        if AutoEggPickup
+            and HRP
+        then
+            HRP.CFrame = TargetCFrame
+            task.wait(3)
+        end
     end
 
-    HRP.CFrame = Location1
-    task.wait(3)
-
     --==============================================
-    -- Fly to Location 2
+    -- FORWARD PATH
+    -- 1 → 2 → 3 → 4
     --==============================================
-    while (HRP.Position - Location2.Position).Magnitude > 5 do
 
-        local Direction =
-            (Location2.Position - HRP.Position).Unit
+    TweenToLocation(Location1)
 
-        local dt = task.wait()
-
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * dt,
-            Location2.Position
-        )
+    if not AutoEggPickup then
+        continue
     end
 
-    HRP.CFrame = Location2
-    task.wait(3)
+    TweenToLocation(Location2)
 
-    --==============================================
-    -- Fly to Location 3
-    --==============================================
-    while (HRP.Position - Location3.Position).Magnitude > 5 do
-
-        local Direction =
-            (Location3.Position - HRP.Position).Unit
-
-        local dt = task.wait()
-
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * dt,
-            Location3.Position
-        )
+    if not AutoEggPickup then
+        continue
     end
 
-    HRP.CFrame = Location3
-    task.wait(3)
+    TweenToLocation(Location3)
 
-    --==============================================
-    -- Fly to Location 4
-    --==============================================
-    while (HRP.Position - Location4.Position).Magnitude > 5 do
-
-        local Direction =
-            (Location4.Position - HRP.Position).Unit
-
-        local dt = task.wait()
-
-        HRP.CFrame = CFrame.new(
-            HRP.Position + Direction * Speed * dt,
-            Location4.Position
-        )
+    if not AutoEggPickup then
+        continue
     end
 
-    HRP.CFrame = Location4
-    task.wait(3)
+    TweenToLocation(Location4)
+
+    if not AutoEggPickup then
+        continue
+    end
 
 end
 
@@ -2766,6 +2753,105 @@ end
                     if not AutoEggPickup then
                         break
                     end
+
+                   --==================================================
+-- VOLCANIC / BLOOM EGG REVERSE TELEPORT
+-- 4 → 3 → 2 → 1
+--==================================================
+
+if tostring(Egg.Name) == "Volcanic Egg"
+    or tostring(Egg.Name) == "Bloom Egg"
+then
+
+    local Location1 = CFrame.new(
+        -4732.12,
+        41678.94,
+        -3945.08
+    )
+
+    local Location2 = CFrame.new(
+        -4904.99,
+        41296.87,
+        -3726.62
+    )
+
+    local Location3 = CFrame.new(
+        -4984.83,
+        41288.56,
+        -3625.90
+    )
+
+    local Location4 = CFrame.new(
+        -5042.11,
+        41271.99,
+        -3520.53
+    )
+
+    local Speed = 250
+
+    local function TweenBack(TargetCFrame)
+
+        while AutoEggPickup
+            and HRP
+            and (
+                HRP.Position
+                - TargetCFrame.Position
+            ).Magnitude > 5
+        do
+
+            local Direction =
+                (
+                    TargetCFrame.Position
+                    - HRP.Position
+                ).Unit
+
+            local dt = task.wait()
+
+            HRP.CFrame = CFrame.new(
+                HRP.Position
+                    + Direction * Speed * dt,
+                TargetCFrame.Position
+            )
+        end
+
+        if AutoEggPickup
+            and HRP
+        then
+            HRP.CFrame = TargetCFrame
+            task.wait(3)
+        end
+    end
+
+    --==============================================
+    -- REVERSE PATH
+    -- 4 → 3 → 2 → 1
+    --==============================================
+
+    TweenBack(Location4)
+
+    if not AutoEggPickup then
+        break
+    end
+
+    TweenBack(Location3)
+
+    if not AutoEggPickup then
+        break
+    end
+
+    TweenBack(Location2)
+
+    if not AutoEggPickup then
+        break
+    end
+
+    TweenBack(Location1)
+
+    if not AutoEggPickup then
+        break
+    end
+
+end
 
                     --==================================================
                     -- RESCAN AFTER DROP
