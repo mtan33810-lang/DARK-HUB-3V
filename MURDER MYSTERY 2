@@ -535,6 +535,211 @@ local function GetAimTarget()
 end
 
 --========================================================
+-- SETTINGS
+--========================================================
+
+getgenv().HBE = false
+
+local HITBOX_SIZE = Vector3.new(15, 15, 15)
+local HITBOX_COLOUR = Color3.fromRGB(255, 0, 0)
+
+--========================================================
+-- GET CHARACTER PARENT
+--========================================================
+
+local function GetCharParent()
+    repeat task.wait() until lp.Character
+
+    for _, char in ipairs(workspace:GetDescendants()) do
+        if string.find(char.Name, lp.Name)
+            and char:FindFirstChild("Humanoid") then
+
+            return char.Parent
+        end
+    end
+
+    return workspace
+end
+
+local CHAR_PARENT = GetCharParent()
+
+--========================================================
+-- HUMANOID ROOT PART SIZE PROTECTION
+--========================================================
+
+pcall(function()
+    local mt = getrawmetatable(game)
+
+    setreadonly(mt, false)
+
+    local oldIndex = mt.__index
+
+    mt.__index = function(Self, Key)
+        if tostring(Self) == "HumanoidRootPart"
+            and tostring(Key) == "Size" then
+
+            return Vector3.new(2, 2, 1)
+        end
+
+        return oldIndex(Self, Key)
+    end
+
+    setreadonly(mt, true)
+end)
+
+--========================================================
+-- RESTORE HITBOX
+--========================================================
+
+local function RestoreHitbox(char)
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    root.Size = Vector3.new(2, 2, 1)
+    root.Transparency = 1
+    root.CanCollide = false
+end
+
+--========================================================
+-- APPLY HITBOX
+--========================================================
+
+local function ApplyHitbox(char)
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    root.Size = HITBOX_SIZE
+    root.Color = HITBOX_COLOUR
+    root.CanCollide = false
+    root.Transparency = 0.5
+end
+
+--========================================================
+-- HITBOX LOOP
+--========================================================
+
+local HitboxConnection
+
+local function StartHitboxes()
+    if HitboxConnection then
+        HitboxConnection:Disconnect()
+        HitboxConnection = nil
+    end
+
+    HitboxConnection = RunService.RenderStepped:Connect(function()
+        if not getgenv().HBE then
+            return
+        end
+
+        if not CHAR_PARENT or not CHAR_PARENT.Parent then
+            CHAR_PARENT = GetCharParent()
+        end
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+
+                local char = CHAR_PARENT:FindFirstChild(player.Name)
+
+                if char then
+                    ApplyHitbox(char)
+                end
+            end
+        end
+    end)
+end
+
+--========================================================
+-- STOP HITBOXES
+--========================================================
+
+local function StopHitboxes()
+    getgenv().HBE = false
+
+    if HitboxConnection then
+        HitboxConnection:Disconnect()
+        HitboxConnection = nil
+    end
+
+    if CHAR_PARENT then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+
+                local char = CHAR_PARENT:FindFirstChild(player.Name)
+
+                if char then
+                    RestoreHitbox(char)
+                end
+            end
+        end
+    end
+end
+
+--========================================================
+-- PLAYER ADDED
+--========================================================
+
+Players.PlayerAdded:Connect(function(player)
+    if getgenv().HBE then
+
+        player.CharacterAdded:Connect(function(char)
+            if getgenv().HBE then
+                task.wait(0.5)
+                ApplyHitbox(char)
+            end
+        end)
+
+    end
+end)
+
+--========================================================
+-- HBE TOGGLE
+--========================================================
+
+AimTab:CreateToggle({
+    name = "Hitbox Expander",
+    description = "Expand other players' HumanoidRootPart hitboxes",
+    currentValue = false,
+
+    callback = function(Value)
+
+        getgenv().HBE = Value
+
+        if Value then
+            StartHitboxes()
+        else
+            StopHitboxes()
+        end
+
+    end,
+})
+
+--========================================================
+-- HITBOX SIZE SLIDER
+--========================================================
+
+AimTab:CreateSlider({
+    name = "Hitbox Size",
+    range = {2, 50},
+    increment = 1,
+    suffix = " studs",
+    currentValue = 15,
+
+    callback = function(Value)
+
+        HITBOX_SIZE = Vector3.new(
+            Value,
+            Value,
+            Value
+        )
+
+    end,
+})
+
+--========================================================
 -- AIMBOT TOGGLE
 --========================================================
 
