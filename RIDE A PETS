@@ -760,6 +760,55 @@ end
 local VolcanoPostDelay = 10
 local EggDropPostDelay = 5
 
+local function PickUpDroppedEgg(Egg)
+
+    if not Egg then
+        return false
+    end
+
+    for Attempt = 1, 30 do
+
+        if not Egg.Parent then
+            return false
+        end
+
+        local PickUpPrompt = nil
+
+        for _, Object in ipairs(Egg:GetDescendants()) do
+
+            if Object:IsA("ProximityPrompt") then
+
+                local ActionText =
+                    string.lower(
+                        tostring(Object.ActionText or "")
+                    )
+
+                if ActionText == "pick up"
+                    or ActionText:find("pick", 1, true)
+                then
+                    PickUpPrompt = Object
+                    break
+                end
+            end
+        end
+
+        if PickUpPrompt
+            and typeof(fireproximityprompt) == "function"
+        then
+            fireproximityprompt(PickUpPrompt)
+
+            task.wait(1)
+
+            return true
+        end
+
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+
 local function RunAfterEggPickup(Egg)
 
     if PostPickupRunning then
@@ -775,18 +824,13 @@ local function RunAfterEggPickup(Egg)
 
                 --==================================================
                 -- BLACKLISTED EGG
-                -- SKIP VOLCANO COMPLETELY
                 --==================================================
 
                 if IsBlacklistedEgg(Egg) then
 
-                    --==============================================
-                    -- BLACKLIST + SAVED POSITION
-                    -- Pick Up → Saved → Drop
-                    --==============================================
-
                     if SavedPositionTween then
 
+                        -- Saved
                         local SavedSuccess =
                             TweenToSavedPosition()
 
@@ -796,6 +840,7 @@ local function RunAfterEggPickup(Egg)
 
                         task.wait(0.5)
 
+                        -- Drop
                         local DropSuccess =
                             DropEgg()
 
@@ -804,13 +849,9 @@ local function RunAfterEggPickup(Egg)
                             task.wait(EggDropPostDelay)
                         end
 
-                    --==============================================
-                    -- BLACKLIST + NO SAVED POSITION
-                    -- Pick Up → My Plot
-                    --==============================================
-
                     else
 
+                        -- No Saved Position
                         TeleportToMyPlot()
 
                     end
@@ -818,11 +859,20 @@ local function RunAfterEggPickup(Egg)
                     return
                 end
 
+
                 --==================================================
-                -- NORMAL EGG
+                -- VOLCANO ON + SAVED ON
+                --
+                -- Pick Up
+                -- → Volcano
+                -- → Saved
+                -- → Drop
+                -- → END
                 --==================================================
 
-                if VolcanoDipTween and SavedPositionTween then
+                if VolcanoDipTween
+                    and SavedPositionTween
+                then
 
                     -- 1. Volcano
                     local VolcanoSuccess =
@@ -832,10 +882,10 @@ local function RunAfterEggPickup(Egg)
                         return
                     end
 
-                    -- 2. Wait at volcano
+                    -- 2. Wait
                     task.wait(VolcanoPostDelay)
 
-                    -- 3. Saved position
+                    -- 3. Saved Position
                     local SavedSuccess =
                         TweenToSavedPosition()
 
@@ -854,8 +904,24 @@ local function RunAfterEggPickup(Egg)
                         task.wait(EggDropPostDelay)
                     end
 
+                    -- END
+                    return
+
+
+                --==================================================
+                -- VOLCANO ON + SAVED OFF
+                --
+                -- Pick Up
+                -- → Volcano
+                -- → Saved
+                -- → Drop
+                -- → Pick Up
+                -- → My Plot
+                --==================================================
+
                 elseif VolcanoDipTween
-                    and not SavedPositionTween then
+                    and not SavedPositionTween
+                then
 
                     -- 1. Volcano
                     local VolcanoSuccess =
@@ -865,16 +931,58 @@ local function RunAfterEggPickup(Egg)
                         return
                     end
 
-                    -- 2. Wait at volcano
+                    -- 2. Wait
                     task.wait(VolcanoPostDelay)
 
-                    -- 3. My plot
-                    TeleportToMyPlot()
+                    -- 3. Saved Position
+                    local SavedSuccess =
+                        TweenToSavedPosition()
+
+                    if not SavedSuccess then
+                        return
+                    end
+
+                    task.wait(0.5)
+
+                    -- 4. Drop
+                    local DropSuccess =
+                        DropEgg()
+
+                    if DropSuccess then
+
+                        MarkEggAsDropped(Egg)
+
+                        task.wait(EggDropPostDelay)
+
+                        -- 5. Pick Up
+                        local PickUpSuccess =
+                            PickUpDroppedEgg(Egg)
+
+                        if PickUpSuccess then
+
+                            task.wait(0.5)
+
+                            -- 6. My Plot
+                            TeleportToMyPlot()
+
+                        end
+                    end
+
+
+                --==================================================
+                -- VOLCANO OFF + SAVED ON
+                --
+                -- Pick Up
+                -- → Saved
+                -- → Drop
+                -- → END
+                --==================================================
 
                 elseif not VolcanoDipTween
-                    and SavedPositionTween then
+                    and SavedPositionTween
+                then
 
-                    -- 1. Saved
+                    -- 1. Saved Position
                     local SavedSuccess =
                         TweenToSavedPosition()
 
@@ -893,14 +1001,71 @@ local function RunAfterEggPickup(Egg)
                         task.wait(EggDropPostDelay)
                     end
 
+                    -- END
+                    return
+
+
+                --==================================================
+                -- VOLCANO OFF + SAVED OFF
+                --
+                -- Pick Up
+                -- → Saved
+                -- → Drop
+                -- → Pick Up
+                -- → My Plot
+                --==================================================
+
                 else
 
-                    -- My Plot
-                    TeleportToMyPlot()
+                    -- 1. Saved Position
+                    local SavedSuccess =
+                        TweenToSavedPosition()
+
+                    if not SavedSuccess then
+                        return
+                    end
+
+                    task.wait(0.5)
+
+                    -- 2. Drop
+                    local DropSuccess =
+                        DropEgg()
+
+                    if DropSuccess then
+
+                        MarkEggAsDropped(Egg)
+
+                        task.wait(EggDropPostDelay)
+
+                        -- 3. Pick Up
+                        local PickUpSuccess =
+                            PickUpDroppedEgg(Egg)
+
+                        if PickUpSuccess then
+
+                            task.wait(0.5)
+
+                            -- 4. My Plot
+                            TeleportToMyPlot()
+
+                        end
+                    end
 
                 end
 
             end)
+
+        if not Success then
+            warn(
+                "[POST EGG PICKUP ERROR]:",
+                ErrorMessage
+            )
+        end
+
+        PostPickupRunning = false
+
+    end)
+end
 
         --==================================================
         -- ERROR HANDLING
