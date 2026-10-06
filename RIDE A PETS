@@ -1744,26 +1744,59 @@ TeleportsTab:CreateButton({
     end
 })
 
-TeleportsTab:CreateButton({
-    name = "🌋 Teleport to Volcano Now",
-    callback = function()
-        local Character = Player.Character
-        if not Character then return end
+--==================================================
+-- 🌋 FLOATING VOLCANO TELEPORT BUTTON
+--==================================================
 
-        local RootPart = Character:FindFirstChild("HumanoidRootPart")
-        if not RootPart then return end
+local VolcanoGui = Instance.new("ScreenGui")
+VolcanoGui.Name = "VolcanoTeleportGUI"
+VolcanoGui.ResetOnSpawn = false
+VolcanoGui.Parent = Player:WaitForChild("PlayerGui")
 
-        RootPart.CFrame = CFrame.new(
-            -5313.54,
-            40912.41,
-            -3563.97
-        )
-    end,
-})
+local VolcanoButton = Instance.new("TextButton")
+VolcanoButton.Name = "VolcanoButton"
+VolcanoButton.Size = UDim2.new(0, 160, 0, 50)
+VolcanoButton.Position = UDim2.new(0.5, -80, 0.7, 0)
 
-TeleportsTab:CreateText({
-    text = "Turn on the Noclip before Teleport to Volcano.",
-})
+VolcanoButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+VolcanoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+VolcanoButton.Text = "🌋 Volcano"
+VolcanoButton.TextSize = 18
+
+VolcanoButton.Parent = VolcanoGui
+
+-- Rounded corners
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = VolcanoButton
+
+-- Make button draggable
+local DragDetector = Instance.new("UIDragDetector")
+DragDetector.Parent = VolcanoButton
+
+--==================================================
+-- TELEPORT
+--==================================================
+
+VolcanoButton.Activated:Connect(function()
+
+    local Character = Player.Character
+    if not Character then
+        return
+    end
+
+    local RootPart = Character:FindFirstChild("HumanoidRootPart")
+    if not RootPart then
+        return
+    end
+
+    RootPart.CFrame = CFrame.new(
+        -5313.54,
+        40912.41,
+        -3563.97
+    )
+
+end)
 
 --==================================================
 -- EGG RARITY SCANNER
