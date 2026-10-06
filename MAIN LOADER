@@ -24,7 +24,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-H
 -- BLOX FRUITS 
 --==================================================
 
-elseif GameId ==
+elseif GameId == 994732206 then
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT'S"))()
 
