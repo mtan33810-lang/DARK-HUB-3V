@@ -702,7 +702,7 @@ end)
 AimTab:CreateToggle({
     name = "Hitbox Expander",
     description = "Expand other players' HumanoidRootPart hitboxes",
-    currentValue = false,
+    value = false,
 
     callback = function(Value)
 
