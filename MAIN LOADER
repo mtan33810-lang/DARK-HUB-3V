@@ -1,0 +1,19 @@
+local PlaceId = game.PlaceId
+local GameId = game.GameId
+
+if PlaceId == 124216119978534 then
+
+--==================================================
+-- RIDE A PET
+--==================================================
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/RIDE%20A%20PETS"))()
+
+--==================================================
+-- ARSENAL 
+--==================================================
+
+elseif PlaceId == 123974602339071
+    or GameId == 9294074907
+    or GameId == 9534705677
+    or GameId == 6035872082 then
