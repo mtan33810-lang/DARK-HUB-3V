@@ -17,3 +17,15 @@ elseif PlaceId == 123974602339071
     or GameId == 9294074907
     or GameId == 9534705677
     or GameId == 6035872082 then
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/ARSENAL%20GAMES"))()
+
+--==================================================
+-- BLOX FRUITS 
+--==================================================
+
+elseif GameId ==
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT'S"))()
+
+
