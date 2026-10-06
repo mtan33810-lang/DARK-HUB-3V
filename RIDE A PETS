@@ -24,6 +24,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 --==================================================
 -- CHARACTER / HUMANOID
@@ -527,17 +528,32 @@ Root.CFrame = SAVED_POSITION
 task.wait(0.5)
 
 --==============================================
--- THEN TELEPORT TO MY PLOT
+-- TWEEN FROM SAVED POSITION TO MY PLOT
 --==============================================
 
-Root.CFrame =
+local TargetCFrame =
     PlotCFrame + Vector3.new(0, 5, 0)
 
-task.wait(0.1)
+local TweenInfoData = TweenInfo.new(
+    2, -- Tween time
+    Enum.EasingStyle.Linear,
+    Enum.EasingDirection.Out
+)
+
+local Tween = TweenService:Create(
+    Root,
+    TweenInfoData,
+    {
+        CFrame = TargetCFrame
+    }
+)
+
+Tween:Play()
+Tween.Completed:Wait()
 
 Window:Notify({
     title = "My Plot",
-    content = "Saved position → My Plot",
+    content = "Saved Position → Tween → My Plot",
     duration = 2,
     icon = 7733960981
 })
