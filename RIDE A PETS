@@ -1,4 +1,8 @@
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
+local ok, result = pcall(function()
+    return loadstring(game:HttpGet("https://sirius.menu/gen2"))()
+end)
+
+print("Rayfield load:", ok, result)
 
 local Window = Rayfield:CreateWindow({
     name = "DARK HUB | RIDE A PET",
