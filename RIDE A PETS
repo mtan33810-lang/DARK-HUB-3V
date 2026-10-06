@@ -1673,6 +1673,7 @@ local sprint = TeleportsTab:CreateToggle({
 
 EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
     name = "🥚 Egg ESP Selection",
+    description = "Select you want to ESP",
     flag = "EggESPSelection",
     options = ESPEggOptions,
 
@@ -2289,6 +2290,7 @@ end
 RarityDropdown =
 TeleportsTab:CreateDropdown({
     name = "💎 Select Egg Rarities",
+    description = "Ride a flying pet if you're stealing a volcanic egg",
     multiSelect = true,
     options = RarityOptions,
     value = {},
@@ -2335,6 +2337,7 @@ table.sort(EggBlacklistOptions)
 EggBlacklistDropdown =
 TeleportsTab:CreateDropdown({
     name = "🚫 Blacklist Eggs",
+    description = "Select an Egg you Don't want to Dip",
     multiSelect = true,
     options = EggBlacklistOptions,
     value = {},
@@ -2354,10 +2357,6 @@ TeleportsTab:CreateDropdown({
 
         end
     })
-
-TeleportsTab:CreateText({
-    text = "Select an Egg you Don't want to Dip",
-})
 
 --==================================================
 -- INITIAL EGG SCAN
