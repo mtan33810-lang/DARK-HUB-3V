@@ -2754,7 +2754,7 @@ end
                         break
                     end
 
-                   --==================================================
+--==================================================
 -- VOLCANIC / BLOOM EGG REVERSE TELEPORT
 -- 4 → 3 → 2 → 1
 --==================================================
@@ -2789,10 +2789,37 @@ then
 
     local Speed = 250
 
+    --==================================================
+    -- REFRESH CHARACTER / HRP
+    --==================================================
+
+    local Character =
+        Player.Character
+
+    if not Character then
+        task.wait(0.5)
+        continue
+    end
+
+    HRP =
+        Character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not HRP then
+        task.wait(0.5)
+        continue
+    end
+
+    --==================================================
+    -- REVERSE TWEEN FUNCTION
+    --==================================================
+
     local function TweenBack(TargetCFrame)
 
         while AutoEggPickup
             and HRP
+            and HRP.Parent
             and (
                 HRP.Position
                 - TargetCFrame.Position
@@ -2816,16 +2843,20 @@ then
 
         if AutoEggPickup
             and HRP
+            and HRP.Parent
         then
-            HRP.CFrame = TargetCFrame
+
+            HRP.CFrame =
+                TargetCFrame
+
             task.wait(3)
         end
     end
 
-    --==============================================
+    --==================================================
     -- REVERSE PATH
     -- 4 → 3 → 2 → 1
-    --==============================================
+    --==================================================
 
     TweenBack(Location4)
 
@@ -2852,7 +2883,7 @@ then
     end
 
 end
-
+    
                     --==================================================
                     -- RESCAN AFTER DROP
                     --==================================================
