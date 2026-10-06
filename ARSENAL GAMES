@@ -336,42 +336,63 @@ local function getTeamIdentifier(player)
 end
 
 local function isSameTeam(player)
-
     if not player or player == LocalPlayer then
         return false
     end
 
+    -- Normal Roblox Team check
     if LocalPlayer.Team ~= nil
-        and player.Team ~= nil then
-
-        if LocalPlayer.Team == player.Team then
-            return true
-        end
-    end
-
-    local myTeam =
-        LocalPlayer:GetAttribute("Team")
-
-    local targetTeam =
-        player:GetAttribute("Team")
-
-    if myTeam ~= nil
-        and targetTeam ~= nil then
-
-        if myTeam == targetTeam then
-            return true
-        end
-    end
-
-    local character = player.Character
-
-    local root = character
-        and character:FindFirstChild("HumanoidRootPart")
-
-    if root
-        and root:FindFirstChild("TeammateLabel") then
+        and player.Team ~= nil
+        and LocalPlayer.Team == player.Team then
 
         return true
+    end
+
+    -- Player GamemodeTeam check
+    local MyGamemodeTeam =
+        LocalPlayer:GetAttribute("GamemodeTeam")
+
+    local TargetGamemodeTeam =
+        player:GetAttribute("GamemodeTeam")
+
+    if MyGamemodeTeam ~= nil
+        and TargetGamemodeTeam ~= nil
+        and MyGamemodeTeam == TargetGamemodeTeam then
+
+        return true
+    end
+
+    -- Character GamemodeTeam check
+    local MyCharacter = LocalPlayer.Character
+    local TargetCharacter = player.Character
+
+    if MyCharacter and TargetCharacter then
+
+        local MyCharacterTeam =
+            MyCharacter:GetAttribute("GamemodeTeam")
+
+        local TargetCharacterTeam =
+            TargetCharacter:GetAttribute("GamemodeTeam")
+
+        if MyCharacterTeam ~= nil
+            and TargetCharacterTeam ~= nil
+            and MyCharacterTeam == TargetCharacterTeam then
+
+            return true
+        end
+    end
+
+    -- Existing TeammateLabel check
+    if TargetCharacter then
+
+        local RootPart =
+            TargetCharacter:FindFirstChild("HumanoidRootPart")
+
+        if RootPart
+            and RootPart:FindFirstChild("TeammateLabel") then
+
+            return true
+        end
     end
 
     return false
