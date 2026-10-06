@@ -736,89 +736,176 @@ local function RunAfterEggPickup(Egg)
                 end
 
                 --==================================================
-                -- NORMAL EGG
-                --==================================================
+-- NORMAL EGG
+--==================================================
 
-                if VolcanoDipTween and SavedPositionTween then
+if VolcanoDipTween and SavedPositionTween then
 
-                    -- 1. Volcano
-                    local VolcanoSuccess =
-                        TweenToVolcanoDip()
+    --==============================================
+    -- Volcano ON + Saved ON
+    -- Pick Up → Volcano → Saved → Drop → END
+    --==============================================
 
-                    if not VolcanoSuccess then
-                        return
-                    end
+    local VolcanoSuccess =
+        TweenToVolcanoDip()
 
-                    -- 2. Wait at volcano
-                    task.wait(VolcanoPostDelay)
+    if not VolcanoSuccess then
+        return
+    end
 
-                    -- 3. Saved position
-                    local SavedSuccess =
-                        TweenToSavedPosition()
+    task.wait(VolcanoPostDelay)
 
-                    if not SavedSuccess then
-                        return
-                    end
+    local SavedSuccess =
+        TweenToSavedPosition()
 
-                    task.wait(0.5)
+    if not SavedSuccess then
+        return
+    end
 
-                    -- 4. Drop
-                    local DropSuccess =
-                        DropEgg()
+    task.wait(0.5)
 
-                    if DropSuccess then
-                        MarkEggAsDropped(Egg)
-                        task.wait(EggDropPostDelay)
-                    end
+    local DropSuccess =
+        DropEgg()
 
-                elseif VolcanoDipTween
-                    and not SavedPositionTween then
+    if DropSuccess then
+        MarkEggAsDropped(Egg)
+        task.wait(EggDropPostDelay)
+    end
 
-                    -- 1. Volcano
-                    local VolcanoSuccess =
-                        TweenToVolcanoDip()
 
-                    if not VolcanoSuccess then
-                        return
-                    end
+elseif VolcanoDipTween
+    and not SavedPositionTween then
 
-                    -- 2. Wait at volcano
-                    task.wait(VolcanoPostDelay)
+    --==============================================
+    -- Volcano ON + Saved OFF
+    -- Pick Up → Volcano → Coordinates → Drop
+    -- → Wait 3 → Pick Up → My Plot
+    --==============================================
 
-                    -- 3. My plot
-                    TeleportToMyPlot()
+    local VolcanoSuccess =
+        TweenToVolcanoDip()
 
-                elseif not VolcanoDipTween
-                    and SavedPositionTween then
+    if not VolcanoSuccess then
+        return
+    end
 
-                    -- 1. Saved
-                    local SavedSuccess =
-                        TweenToSavedPosition()
+    task.wait(VolcanoPostDelay)
 
-                    if not SavedSuccess then
-                        return
-                    end
+    -- Custom drop location
+    local Character =
+        Player.Character or Player.CharacterAdded:Wait()
 
-                    task.wait(0.5)
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
 
-                    -- 2. Drop
-                    local DropSuccess =
-                        DropEgg()
+    Root.CFrame = CFrame.new(
+        81.75,
+        40315.66,
+        894.93
+    )
 
-                    if DropSuccess then
-                        MarkEggAsDropped(Egg)
-                        task.wait(EggDropPostDelay)
-                    end
+    task.wait(0.5)
 
-                else
+    local DropSuccess =
+        DropEgg()
 
-                    -- My Plot
-                    TeleportToMyPlot()
+    if not DropSuccess then
+        return
+    end
 
-                end
+    MarkEggAsDropped(Egg)
 
-            end)
+    -- Wait exactly 3 seconds
+    task.wait(3)
 
+    -- Pick up egg again
+    local PickupSuccess =
+        PickupDroppedEgg(Egg)
+
+    if not PickupSuccess then
+        return
+    end
+
+    task.wait(0.3)
+
+    -- Tween to My Plot
+    TweenToMyPlotDirect()
+
+
+elseif not VolcanoDipTween
+    and SavedPositionTween then
+
+    --==============================================
+    -- Volcano OFF + Saved ON
+    -- Pick Up → Saved → Drop → END
+    --==============================================
+
+    local SavedSuccess =
+        TweenToSavedPosition()
+
+    if not SavedSuccess then
+        return
+    end
+
+    task.wait(0.5)
+
+    local DropSuccess =
+        DropEgg()
+
+    if DropSuccess then
+        MarkEggAsDropped(Egg)
+        task.wait(EggDropPostDelay)
+    end
+
+
+else
+
+    --==============================================
+    -- Volcano OFF + Saved OFF
+    -- Pick Up → Coordinates → Drop
+    -- → Wait 3 → Pick Up → My Plot
+    --==============================================
+
+    local Character =
+        Player.Character or Player.CharacterAdded:Wait()
+
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
+
+    Root.CFrame = CFrame.new(
+        81.75,
+        40315.66,
+        894.93
+    )
+
+    task.wait(0.5)
+
+    local DropSuccess =
+        DropEgg()
+
+    if not DropSuccess then
+        return
+    end
+
+    MarkEggAsDropped(Egg)
+
+    -- Wait exactly 3 seconds
+    task.wait(3)
+
+    -- Pick up egg again
+    local PickupSuccess =
+        PickupDroppedEgg(Egg)
+
+    if not PickupSuccess then
+        return
+    end
+
+    task.wait(0.3)
+
+    -- Tween to My Plot
+    TweenToMyPlotDirect()
+
+end
 
         --==================================================
         -- ERROR HANDLING
