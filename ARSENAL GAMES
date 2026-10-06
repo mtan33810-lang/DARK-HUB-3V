@@ -340,7 +340,7 @@ local function isSameTeam(player)
         return false
     end
 
-    -- Normal Roblox Team check
+    -- Normal Roblox Team
     if LocalPlayer.Team ~= nil
         and player.Team ~= nil
         and LocalPlayer.Team == player.Team then
@@ -348,48 +348,53 @@ local function isSameTeam(player)
         return true
     end
 
-    -- Player GamemodeTeam check
-    local MyGamemodeTeam =
+    -- Arsenal GamemodeTeam
+    local myTeam =
         LocalPlayer:GetAttribute("GamemodeTeam")
 
-    local TargetGamemodeTeam =
+    local targetTeam =
         player:GetAttribute("GamemodeTeam")
 
-    if MyGamemodeTeam ~= nil
-        and TargetGamemodeTeam ~= nil
-        and MyGamemodeTeam == TargetGamemodeTeam then
+    if myTeam ~= nil
+        and targetTeam ~= nil
+        and myTeam == targetTeam then
 
         return true
     end
 
-    -- Character GamemodeTeam check
-    local MyCharacter = LocalPlayer.Character
-    local TargetCharacter = player.Character
+    -- Character GamemodeTeam
+    local myCharacter =
+        LocalPlayer.Character
 
-    if MyCharacter and TargetCharacter then
+    local targetCharacter =
+        player.Character
 
-        local MyCharacterTeam =
-            MyCharacter:GetAttribute("GamemodeTeam")
+    if myCharacter and targetCharacter then
 
-        local TargetCharacterTeam =
-            TargetCharacter:GetAttribute("GamemodeTeam")
+        local myCharacterTeam =
+            myCharacter:GetAttribute("GamemodeTeam")
 
-        if MyCharacterTeam ~= nil
-            and TargetCharacterTeam ~= nil
-            and MyCharacterTeam == TargetCharacterTeam then
+        local targetCharacterTeam =
+            targetCharacter:GetAttribute("GamemodeTeam")
+
+        if myCharacterTeam ~= nil
+            and targetCharacterTeam ~= nil
+            and myCharacterTeam == targetCharacterTeam then
 
             return true
         end
     end
 
-    -- Existing TeammateLabel check
-    if TargetCharacter then
+    -- Existing teammate label
+    if targetCharacter then
 
-        local RootPart =
-            TargetCharacter:FindFirstChild("HumanoidRootPart")
+        local root =
+            targetCharacter:FindFirstChild(
+                "HumanoidRootPart"
+            )
 
-        if RootPart
-            and RootPart:FindFirstChild("TeammateLabel") then
+        if root
+            and root:FindFirstChild("TeammateLabel") then
 
             return true
         end
