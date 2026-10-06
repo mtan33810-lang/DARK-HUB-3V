@@ -281,7 +281,7 @@ task.spawn(function()
 end)
 
 --============================================================
--- TEAM CHECK
+-- TEAM IDENTIFIER 
 --============================================================
 
 local function getTeamIdentifier(player)
@@ -335,20 +335,20 @@ local function getTeamIdentifier(player)
     return nil
 end
 
+--============================================================
+-- TEAM CHECK
+--============================================================
+
 local function isSameTeam(player)
+
     if not player or player == LocalPlayer then
         return false
     end
 
-    -- Normal Roblox Team
-    if LocalPlayer.Team ~= nil
-        and player.Team ~= nil
-        and LocalPlayer.Team == player.Team then
+    --========================================================
+    -- ARSENAL GAMEMODE TEAM
+    --========================================================
 
-        return true
-    end
-
-    -- Arsenal GamemodeTeam
     local myTeam =
         LocalPlayer:GetAttribute("GamemodeTeam")
 
@@ -357,12 +357,15 @@ local function isSameTeam(player)
 
     if myTeam ~= nil
         and targetTeam ~= nil
-        and myTeam == targetTeam then
+        and tostring(myTeam) == tostring(targetTeam) then
 
         return true
     end
 
-    -- Character GamemodeTeam
+    --========================================================
+    -- CHARACTER GAMEMODE TEAM
+    --========================================================
+
     local myCharacter =
         LocalPlayer.Character
 
@@ -379,13 +382,46 @@ local function isSameTeam(player)
 
         if myCharacterTeam ~= nil
             and targetCharacterTeam ~= nil
-            and myCharacterTeam == targetCharacterTeam then
+            and tostring(myCharacterTeam)
+                == tostring(targetCharacterTeam) then
 
             return true
         end
     end
 
-    -- Existing teammate label
+    --========================================================
+    -- NORMAL ROBLOX TEAM
+    --========================================================
+
+    if LocalPlayer.Team ~= nil
+        and player.Team ~= nil
+        and LocalPlayer.Team == player.Team then
+
+        return true
+    end
+
+    --========================================================
+    -- OLD TEAM ATTRIBUTE
+    --========================================================
+
+    local myOldTeam =
+        LocalPlayer:GetAttribute("Team")
+
+    local targetOldTeam =
+        player:GetAttribute("Team")
+
+    if myOldTeam ~= nil
+        and targetOldTeam ~= nil
+        and tostring(myOldTeam)
+            == tostring(targetOldTeam) then
+
+        return true
+    end
+
+    --========================================================
+    -- TEAMMATE LABEL
+    --========================================================
+
     if targetCharacter then
 
         local root =
@@ -394,7 +430,9 @@ local function isSameTeam(player)
             )
 
         if root
-            and root:FindFirstChild("TeammateLabel") then
+            and root:FindFirstChild(
+                "TeammateLabel"
+            ) then
 
             return true
         end
