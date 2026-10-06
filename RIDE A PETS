@@ -670,12 +670,12 @@ local function DropEgg()
     return true
 end
 
---==================================================
--- POST EGG PICKUP FLOW
+ --==================================================
+-- POST EGG PICKUP FLOW - FIXED
 --==================================================
 
 local VolcanoPostDelay = 10
-local EggDropPostDelay = 5
+local EggDropPostDelay = 3
 
 local function RunAfterEggPickup(Egg)
 
@@ -687,396 +687,398 @@ local function RunAfterEggPickup(Egg)
 
     task.spawn(function()
 
-        local Success, ErrorMessage =
-            pcall(function()
+        local Success, ErrorMessage = pcall(function()
 
-                --==================================================
-                -- TWEEN TO MY PLOT
-                --==================================================
+            --==================================================
+            -- TWEEN TO MY PLOT
+            --==================================================
 
-                local function TweenToPlot()
+            local function TweenToMyPlot()
 
-                    local Character =
-                        Player.Character
-                        or Player.CharacterAdded:Wait()
+                local Character =
+                    Player.Character
+                    or Player.CharacterAdded:Wait()
 
-                    local Root =
-                        Character:WaitForChild(
-                            "HumanoidRootPart"
-                        )
+                local Root =
+                    Character:WaitForChild("HumanoidRootPart")
 
-                    local Plot =
-                        FindMyPlot()
+                local Plot = FindMyPlot()
 
-                    if not Plot then
-                        warn(
-                            "[EGG FLOW] My plot not found"
-                        )
-                        return false
-                    end
-
-                    local PlotCFrame =
-                        GetPlotCFrame(Plot)
-
-                    if not PlotCFrame then
-                        warn(
-                            "[EGG FLOW] Plot position not found"
-                        )
-                        return false
-                    end
-
-                    local TargetCFrame =
-                        PlotCFrame
-                        + Vector3.new(0, 5, 0)
-
-                    print(
-                        "[EGG FLOW] Tweening to My Plot"
-                    )
-
-                    local Tween =
-                        TweenService:Create(
-                            Root,
-                            TweenInfo.new(
-                                2,
-                                Enum.EasingStyle.Linear,
-                                Enum.EasingDirection.Out
-                            ),
-                            {
-                                CFrame = TargetCFrame
-                            }
-                        )
-
-                    Tween:Play()
-
-                    Tween.Completed:Wait()
-
-                    print(
-                        "[EGG FLOW] Arrived at My Plot"
-                    )
-
-                    return true
+                if not Plot then
+                    warn("[EGG FLOW] My plot not found")
+                    return false
                 end
 
+                local PlotCFrame =
+                    GetPlotCFrame(Plot)
 
-                --==================================================
-                -- FIND PICKUP PROMPT
-                --==================================================
-
-                local function PickupEggAgain()
-
-                    if not Egg then
-                        warn(
-                            "[EGG FLOW] Egg reference is nil"
-                        )
-                        return false
-                    end
-
-                    local FoundPrompt = nil
-
-                    -- Give the game time to recreate/update
-                    -- the dropped egg prompt.
-                    task.wait(0.5)
-
-                    for _, Object in ipairs(
-                        Egg:GetDescendants()
-                    ) do
-
-                        if Object:IsA(
-                            "ProximityPrompt"
-                        ) then
-
-                            local PromptText =
-                                string.lower(
-                                    tostring(
-                                        Object.ActionText
-                                        or ""
-                                    )
-                                )
-
-                            if PromptText == "pick up"
-                                or PromptText:find(
-                                    "pick",
-                                    1,
-                                    true
-                                )
-                            then
-
-                                FoundPrompt = Object
-                                break
-
-                            end
-
-                        end
-
-                    end
-
-                    if not FoundPrompt then
-                        warn(
-                            "[EGG FLOW] Pick Up prompt not found"
-                        )
-                        return false
-                    end
-
-                    if typeof(
-                        fireproximityprompt
-                    ) ~= "function"
-                    then
-                        warn(
-                            "[EGG FLOW] fireproximityprompt unavailable"
-                        )
-                        return false
-                    end
-
-                    print(
-                        "[EGG FLOW] Picking egg up again"
-                    )
-
-                    fireproximityprompt(
-                        FoundPrompt
-                    )
-
-                    task.wait(1)
-
-                    if not IsEggEquipped(Egg) then
-                        warn(
-                            "[EGG FLOW] Egg pickup could not be verified"
-                        )
-
-                        -- Don't immediately abort.
-                        -- The game may update the Tool state
-                        -- slightly later.
-                        task.wait(0.5)
-                    end
-
-                    return true
+                if not PlotCFrame then
+                    warn("[EGG FLOW] Plot position not found")
+                    return false
                 end
 
+                local TargetCFrame =
+                    PlotCFrame + Vector3.new(0, 5, 0)
 
-                --==================================================
-                -- BLACKLISTED EGG
-                --==================================================
+                print("[EGG FLOW] Tweening to My Plot")
 
-                if IsBlacklistedEgg(Egg) then
+                local Distance =
+                    (Root.Position - TargetCFrame.Position).Magnitude
 
-                    if SavedPositionTween then
+                local Duration =
+                    math.clamp(Distance / 150, 1, 4)
 
-                        local SavedSuccess =
-                            TweenToSavedPosition()
+                local StartCFrame =
+                    Root.CFrame
 
-                        if not SavedSuccess then
-                            return
-                        end
+                local StartTime =
+                    os.clock()
 
-                        task.wait(0.5)
+                while true do
 
-                        local DropSuccess =
-                            DropEgg()
-
-                        if DropSuccess then
-                            MarkEggAsDropped(Egg)
-                            task.wait(
-                                EggDropPostDelay
-                            )
-                        end
-
-                    else
-
-                        TeleportToMyPlot()
-
-                    end
-
-                    return
-                end
-
-
-                --==================================================
-                -- NORMAL EGG
-                --==================================================
-
-
-                --==================================================
-                -- VOLCANO ON + SAVED ON
-                --
-                -- Pick Up
-                -- → Volcano
-                -- → Saved
-                -- → Drop
-                -- → END
-                --==================================================
-
-                if VolcanoDipTween
-                    and SavedPositionTween
-                then
-
-                    local VolcanoSuccess =
-                        TweenToVolcanoDip()
-
-                    if not VolcanoSuccess then
-                        return
-                    end
-
-                    task.wait(
-                        VolcanoPostDelay
-                    )
-
-                    local SavedSuccess =
-                        TweenToSavedPosition()
-
-                    if not SavedSuccess then
-                        return
-                    end
-
-                    task.wait(0.5)
-
-                    local DropSuccess =
-                        DropEgg()
-
-                    if DropSuccess then
-
-                        MarkEggAsDropped(Egg)
-
-                        task.wait(
-                            EggDropPostDelay
-                        )
-
-                    end
-
-                    return
-                end
-
-
-                --==================================================
-                -- VOLCANO ON + SAVED OFF
-                --
-                -- Pick Up
-                -- → Volcano
-                -- → Coordinates
-                -- → Drop
-                -- → Wait 3
-                -- → Pick Up
-                -- → Tween My Plot
-                --==================================================
-
-                if VolcanoDipTween
-                    and not SavedPositionTween
-                then
-
-                    local VolcanoSuccess =
-                        TweenToVolcanoDip()
-
-                    if not VolcanoSuccess then
-                        return
-                    end
-
-                    task.wait(
-                        VolcanoPostDelay
-                    )
-
-                    -- Custom location
-                    local Character =
-                        Player.Character
-                        or Player.CharacterAdded:Wait()
-
-                    local Root =
-                        Character:WaitForChild(
-                            "HumanoidRootPart"
+                    local Alpha =
+                        math.clamp(
+                            (os.clock() - StartTime) / Duration,
+                            0,
+                            1
                         )
 
                     Root.CFrame =
-                        CFrame.new(
-                            81.75,
-                            40315.66,
-                            894.93
+                        StartCFrame:Lerp(
+                            TargetCFrame,
+                            Alpha
                         )
 
-                    task.wait(0.5)
+                    Root.AssemblyLinearVelocity =
+                        Vector3.zero
 
-                    -- Drop
-                    local DropSuccess =
-                        DropEgg()
+                    Root.AssemblyAngularVelocity =
+                        Vector3.zero
 
-                    if not DropSuccess then
-                        return
+                    if Alpha >= 1 then
+                        break
                     end
 
-                    -- IMPORTANT:
-                    -- Do NOT call MarkEggAsDropped here.
-                    -- We need to pick it up again.
+                    RunService.Heartbeat:Wait()
 
-                    print(
-                        "[EGG FLOW] Dropped at custom location"
+                end
+
+                Root.CFrame =
+                    TargetCFrame
+
+                print("[EGG FLOW] Arrived at My Plot")
+
+                return true
+            end
+
+
+            --==================================================
+            -- FIND PICKUP PROMPT
+            --==================================================
+
+            local function FindPickupPrompt(TargetEgg)
+
+                -- First try the original egg
+                if TargetEgg and TargetEgg.Parent then
+
+                    for _, Object in
+                        ipairs(TargetEgg:GetDescendants())
+                    do
+
+                        if Object:IsA("ProximityPrompt") then
+
+                            local ActionText =
+                                string.lower(
+                                    tostring(Object.ActionText or "")
+                                )
+
+                            if string.find(
+                                ActionText,
+                                "pick",
+                                1,
+                                true
+                            ) then
+
+                                return Object
+
+                            end
+                        end
+                    end
+                end
+
+
+                --==================================================
+                -- IF THE SERVER RECREATED THE EGG,
+                -- SEARCH FOR THE SAME EGG NEAR THE DROP LOCATION
+                --==================================================
+
+                local TargetName =
+                    TargetEgg and TargetEgg.Name
+
+                if not TargetName then
+                    return nil
+                end
+
+                local Character =
+                    Player.Character
+
+                local Root =
+                    Character
+                    and Character:FindFirstChild(
+                        "HumanoidRootPart"
                     )
 
-                    -- Wait exactly 3 seconds
-                    task.wait(3)
-
-                    -- Pick up again
-                    local PickupSuccess =
-                        PickupEggAgain()
-
-                    if not PickupSuccess then
-                        return
-                    end
-
-                    -- Tween to plot
-                    task.wait(0.3)
-
-                    TweenToPlot()
-
-                    return
+                if not Root then
+                    return nil
                 end
 
+                local BestPrompt = nil
+                local BestDistance = math.huge
 
-                --==================================================
-                -- VOLCANO OFF + SAVED ON
-                --
-                -- Pick Up
-                -- → Saved
-                -- → Drop
-                -- → END
-                --==================================================
+                for _, Object in
+                    ipairs(workspace:GetDescendants())
+                do
 
-                if not VolcanoDipTween
-                    and SavedPositionTween
-                then
+                    if Object:IsA("ProximityPrompt") then
 
-                    local SavedSuccess =
-                        TweenToSavedPosition()
+                        local ActionText =
+                            string.lower(
+                                tostring(Object.ActionText or "")
+                            )
 
-                    if not SavedSuccess then
-                        return
+                        if string.find(
+                            ActionText,
+                            "pick",
+                            1,
+                            true
+                        ) then
+
+                            local Parent =
+                                Object.Parent
+
+                            local EggObject = nil
+
+                            while Parent and Parent ~= workspace do
+
+                                if Parent.Name == TargetName then
+                                    EggObject = Parent
+                                    break
+                                end
+
+                                Parent = Parent.Parent
+
+                            end
+
+                            if EggObject then
+
+                                local EggPosition
+
+                                if EggObject:IsA("Model") then
+
+                                    local Okay, Pivot =
+                                        pcall(function()
+                                            return EggObject:GetPivot()
+                                        end)
+
+                                    if Okay then
+                                        EggPosition =
+                                            Pivot.Position
+                                    end
+
+                                elseif EggObject:IsA("BasePart") then
+
+                                    EggPosition =
+                                        EggObject.Position
+
+                                end
+
+                                if EggPosition then
+
+                                    local Distance =
+                                        (
+                                            EggPosition
+                                            - Root.Position
+                                        ).Magnitude
+
+                                    if Distance < BestDistance then
+
+                                        BestDistance =
+                                            Distance
+
+                                        BestPrompt =
+                                            Object
+
+                                    end
+
+                                end
+                            end
+                        end
+                    end
+                end
+
+                return BestPrompt
+            end
+
+
+            --==================================================
+            -- PICK UP THE DROPPED EGG AGAIN
+            --==================================================
+
+            local function PickUpEggAgain()
+
+                print("[EGG FLOW] Waiting before re-pickup")
+
+                task.wait(3)
+
+                print("[EGG FLOW] Looking for dropped egg")
+
+                local Prompt = nil
+
+                -- Try several times because the server may
+                -- need time to recreate the dropped egg.
+
+                for Attempt = 1, 10 do
+
+                    Prompt =
+                        FindPickupPrompt(Egg)
+
+                    if Prompt then
+                        break
                     end
 
                     task.wait(0.5)
 
-                    local DropSuccess =
-                        DropEgg()
-
-                    if DropSuccess then
-
-                        MarkEggAsDropped(Egg)
-
-                        task.wait(
-                            EggDropPostDelay
-                        )
-
-                    end
-
-                    return
                 end
 
+                if not Prompt then
 
-                --==================================================
-                -- VOLCANO OFF + SAVED OFF
-                --
-                -- Pick Up
-                -- → Coordinates
-                -- → Drop
-                -- → Wait 3
-                -- → Pick Up
-                -- → Tween My Plot
-                --==================================================
+                    warn(
+                        "[EGG FLOW] Could not find pickup prompt for dropped egg"
+                    )
 
+                    return false
+
+                end
+
+                print(
+                    "[EGG FLOW] Picking egg up again"
+                )
+
+                local Okay, Error =
+                    pcall(function()
+
+                        fireproximityprompt(
+                            Prompt
+                        )
+
+                    end)
+
+                if not Okay then
+
+                    warn(
+                        "[EGG FLOW] Pickup failed:",
+                        Error
+                    )
+
+                    return false
+
+                end
+
+                -- Give the server time to equip it
+                task.wait(1)
+
+                return true
+            end
+
+
+            --==================================================
+            -- BLACKLISTED EGG
+            --==================================================
+
+            if IsBlacklistedEgg(Egg) then
+
+                if SavedPositionTween then
+
+                    TweenToSavedPosition()
+
+                    task.wait(0.5)
+
+                    if DropEgg() then
+                        task.wait(EggDropPostDelay)
+                    end
+
+                else
+
+                    TweenToMyPlot()
+
+                end
+
+                return
+            end
+
+
+            --==================================================
+            -- 1. VOLCANO ON + SAVED ON
+            --
+            -- Pick Up
+            -- → Volcano
+            -- → Saved
+            -- → Drop
+            -- → END
+            --==================================================
+
+            if VolcanoDipTween
+                and SavedPositionTween
+            then
+
+                print(
+                    "[EGG FLOW] Volcano ON + Saved ON"
+                )
+
+                TweenToVolcanoDip()
+
+                task.wait(VolcanoPostDelay)
+
+                TweenToSavedPosition()
+
+                task.wait(0.5)
+
+                DropEgg()
+
+                print(
+                    "[EGG FLOW] Finished: Volcano → Saved → Drop"
+                )
+
+                return
+            end
+
+
+            --==================================================
+            -- 2. VOLCANO ON + SAVED OFF
+            --
+            -- Pick Up
+            -- → Volcano
+            -- → Custom Position
+            -- → Drop
+            -- → wait 3 sec
+            -- → Pick Up
+            -- → Tween My Plot
+            --==================================================
+
+            if VolcanoDipTween
+                and not SavedPositionTween
+            then
+
+                print(
+                    "[EGG FLOW] Volcano ON + Saved OFF"
+                )
+
+                -- Volcano
+                TweenToVolcanoDip()
+
+                task.wait(VolcanoPostDelay)
+
+                -- Custom drop position
                 local Character =
                     Player.Character
                     or Player.CharacterAdded:Wait()
@@ -1086,7 +1088,6 @@ local function RunAfterEggPickup(Egg)
                         "HumanoidRootPart"
                     )
 
-                -- Custom location
                 Root.CFrame =
                     CFrame.new(
                         81.75,
@@ -1097,37 +1098,127 @@ local function RunAfterEggPickup(Egg)
                 task.wait(0.5)
 
                 -- Drop
-                local DropSuccess =
+                local Dropped =
                     DropEgg()
 
-                if not DropSuccess then
+                if not Dropped then
+                    warn(
+                        "[EGG FLOW] Drop failed"
+                    )
                     return
                 end
-
-                -- IMPORTANT:
-                -- Do NOT mark the egg as ignored.
 
                 print(
-                    "[EGG FLOW] Dropped at custom location"
+                    "[EGG FLOW] Egg dropped at custom position"
                 )
 
-                -- Wait 3 seconds
-                task.wait(3)
+                -- Pick it up again
+                local PickedUp =
+                    PickUpEggAgain()
 
-                -- Pick up again
-                local PickupSuccess =
-                    PickupEggAgain()
-
-                if not PickupSuccess then
+                if not PickedUp then
                     return
                 end
 
-                -- Tween to My Plot
-                task.wait(0.3)
+                -- Tween to plot
+                TweenToMyPlot()
 
-                TweenToPlot()
+                return
+            end
 
-            end)
+
+            --==================================================
+            -- 3. VOLCANO OFF + SAVED ON
+            --
+            -- Pick Up
+            -- → Saved
+            -- → Drop
+            -- → END
+            --==================================================
+
+            if not VolcanoDipTween
+                and SavedPositionTween
+            then
+
+                print(
+                    "[EGG FLOW] Volcano OFF + Saved ON"
+                )
+
+                TweenToSavedPosition()
+
+                task.wait(0.5)
+
+                DropEgg()
+
+                print(
+                    "[EGG FLOW] Finished: Saved → Drop"
+                )
+
+                return
+            end
+
+
+            --==================================================
+            -- 4. VOLCANO OFF + SAVED OFF
+            --
+            -- Pick Up
+            -- → Custom Position
+            -- → Drop
+            -- → wait 3 sec
+            -- → Pick Up
+            -- → Tween My Plot
+            --==================================================
+
+            print(
+                "[EGG FLOW] Volcano OFF + Saved OFF"
+            )
+
+            local Character =
+                Player.Character
+                or Player.CharacterAdded:Wait()
+
+            local Root =
+                Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
+            -- Custom position
+            Root.CFrame =
+                CFrame.new(
+                    81.75,
+                    40315.66,
+                    894.93
+                )
+
+            task.wait(0.5)
+
+            -- Drop
+            local Dropped =
+                DropEgg()
+
+            if not Dropped then
+                warn(
+                    "[EGG FLOW] Drop failed"
+                )
+                return
+            end
+
+            print(
+                "[EGG FLOW] Egg dropped at custom position"
+            )
+
+            -- Pick up again
+            local PickedUp =
+                PickUpEggAgain()
+
+            if not PickedUp then
+                return
+            end
+
+            -- Tween to My Plot
+            TweenToMyPlot()
+
+        end)
 
 
         --==================================================
@@ -1146,7 +1237,6 @@ local function RunAfterEggPickup(Egg)
         PostPickupRunning = false
 
     end)
-
 end
 
 --==================================================
