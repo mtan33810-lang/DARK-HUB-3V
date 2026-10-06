@@ -14,6 +14,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-H
 --==================================================
 
 elseif PlaceId == 123974602339071
+    or GameId == 10057403337
     or GameId == 9294074907
     or GameId == 9534705677
     or GameId == 6035872082 then
