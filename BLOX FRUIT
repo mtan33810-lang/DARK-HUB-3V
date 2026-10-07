@@ -1,0 +1,4310 @@
+local Rayfield = loadstring(game:HttpGet(
+    "https://sirius.menu/gen2-preview"
+))()
+
+--//========================================================
+--// WINDOW
+--//========================================================
+
+local Window = Rayfield:CreateWindow({
+    name = "🍑 DARK HUB | BLOX FRUITS",
+    subtitle = "by MaX",
+    sidebarLayout = true,
+    theme = "ember",
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
+})
+
+--//========================================================
+--// SERVICES
+--//========================================================
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
+
+local LP = Players.LocalPlayer
+local LocalPlayer = LP
+
+--========================================================
+-- FARM TAB
+--========================================================
+
+local M = {}
+
+M.config = {
+    questInterval = 5,
+    attackInterval = 0.2,
+    heightOffset = 12,
+    hoverRange = 250,
+
+    bring = false,
+
+    equip = false,
+    equipType = "Melee",
+
+    stat = "Melee",
+    statAmount = 1,
+}
+
+M.stats = {
+    "Melee",
+    "Defense",
+    "Sword",
+    "Gun",
+    "Blox Fruit"
+}
+
+M._mobName = nil
+M._anchor = nil
+M._collecting = false
+
+M._fruitSkip = setmetatable({}, {__mode = "k"})
+M._fruitTries = setmetatable({}, {__mode = "k"})
+M._decollided = setmetatable({}, {__mode = "k"})
+
+M.selected = nil
+M.selectedBoss = nil
+M._matMob = nil
+
+M._statAuto = false
+M._farmOn = false
+M._bossOn = false
+M._nearestOn = false
+
+M._curKey = nil
+M._target = nil
+
+M._killCount = 0
+M._killReq = 8
+M._prevAlive = nil
+
+M._farmGen = 0
+M._lastTick = 0
+M._watchdogOn = false
+
+--========================================================
+-- REMOTE
+--========================================================
+
+local function commF()
+    local remotes = RS:FindFirstChild("Remotes")
+    return remotes and remotes:FindFirstChild("CommF_")
+end
+
+local function hrp()
+    local char = LP.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function humanoid()
+    local char = LP.Character
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+--========================================================
+-- PLAYER LEVEL
+--========================================================
+
+function M.playerLevel()
+    local ok, level = pcall(function()
+        return LP.Data.Level.Value
+    end)
+
+    return ok and level or 1
+end
+
+--========================================================
+-- QUEST DATA
+--========================================================
+
+M.sea1 = {
+    {id="BanditQuest1",tier=1,level=1,mob="Bandit",label="Bandit (Lv 1)"},
+    {id="JungleQuest",tier=1,level=10,mob="Monkey",label="Monkey (Lv 10)"},
+    {id="JungleQuest",tier=2,level=15,mob="Gorilla",label="Gorilla (Lv 15)"},
+    {id="BuggyQuest1",tier=1,level=30,mob="Pirate",label="Pirate (Lv 30)"},
+    {id="BuggyQuest1",tier=2,level=40,mob="Brute",label="Brute (Lv 40)"},
+    {id="DesertQuest",tier=1,level=60,mob="Desert Bandit",label="Desert Bandit (Lv 60)"},
+    {id="DesertQuest",tier=2,level=75,mob="Desert Officer",label="Desert Officer (Lv 75)"},
+    {id="SnowQuest",tier=1,level=90,mob="Snow Bandit",label="Snow Bandit (Lv 90)"},
+    {id="SnowQuest",tier=2,level=100,mob="Snowman",label="Snowman (Lv 100)"},
+    {id="MarineQuest2",tier=1,level=120,mob="Chief Petty Officer",label="Chief Petty Officer (Lv 120)"},
+    {id="MarineQuest2",tier=2,level=130,mob="Vice Admiral",label="Vice Admiral (Lv 130)"},
+    {id="SkyQuest",tier=1,level=150,mob="Sky Bandit",label="Sky Bandit (Lv 150)"},
+    {id="SkyQuest",tier=2,level=175,mob="Dark Master",label="Dark Master (Lv 175)"},
+    {id="PrisonerQuest",tier=1,level=190,mob="Prisoner",label="Prisoner (Lv 190)"},
+    {id="PrisonerQuest",tier=2,level=210,mob="Dangerous Prisoner",label="Dangerous Prisoner (Lv 210)"},
+    {id="ColosseumQuest",tier=1,level=250,mob="Toga Warrior",label="Toga Warrior (Lv 250)"},
+    {id="ColosseumQuest",tier=2,level=275,mob="Gladiator",label="Gladiator (Lv 275)"},
+    {id="MagmaQuest",tier=1,level=300,mob="Military Soldier",label="Military Soldier (Lv 300)"},
+    {id="MagmaQuest",tier=2,level=325,mob="Military Spy",label="Military Spy (Lv 325)"},
+    {id="FishmanQuest",tier=1,level=375,mob="Fishman Warrior",label="Fishman Warrior (Lv 375)"},
+    {id="FishmanQuest",tier=2,level=400,mob="Fishman Commando",label="Fishman Commando (Lv 400)"},
+    {id="SkyExp1Quest",tier=1,level=450,mob="God's Guard",label="God's Guard (Lv 450)"},
+    {id="SkyExp1Quest",tier=2,level=475,mob="Shanda",label="Shanda (Lv 475)"},
+    {id="SkyExp2Quest",tier=1,level=525,mob="Royal Squad",label="Royal Squad (Lv 525)"},
+    {id="SkyExp2Quest",tier=2,level=550,mob="Royal Soldier",label="Royal Soldier (Lv 550)"},
+    {id="FountainQuest",tier=1,level=625,mob="Galley Pirate",label="Galley Pirate (Lv 625)"},
+    {id="FountainQuest",tier=2,level=650,mob="Galley Captain",label="Galley Captain (Lv 650)"},
+}
+
+M.sea2 = {
+    {id="Area1Quest",tier=1,level=700,mob="Raider",label="Raider (Lv 700)"},
+    {id="Area1Quest",tier=2,level=725,mob="Mercenary",label="Mercenary (Lv 725)"},
+    {id="Area2Quest",tier=1,level=775,mob="Swan Pirate",label="Swan Pirate (Lv 775)"},
+    {id="Area2Quest",tier=2,level=800,mob="Factory Staff",label="Factory Staff (Lv 800)"},
+    {id="MarineQuest3",tier=1,level=875,mob="Marine Lieutenant",label="Marine Lieutenant (Lv 875)"},
+    {id="MarineQuest3",tier=2,level=900,mob="Marine Captain",label="Marine Captain (Lv 900)"},
+    {id="ZombieQuest",tier=1,level=950,mob="Zombie",label="Zombie (Lv 950)"},
+    {id="ZombieQuest",tier=2,level=975,mob="Vampire",label="Vampire (Lv 975)"},
+    {id="SnowMountainQuest",tier=1,level=1000,mob="Snow Trooper",label="Snow Trooper (Lv 1000)"},
+    {id="SnowMountainQuest",tier=2,level=1050,mob="Winter Warrior",label="Winter Warrior (Lv 1050)"},
+    {id="IceSideQuest",tier=1,level=1100,mob="Lab Subordinate",label="Lab Subordinate (Lv 1100)"},
+    {id="IceSideQuest",tier=2,level=1125,mob="Horned Warrior",label="Horned Warrior (Lv 1125)"},
+    {id="FireSideQuest",tier=1,level=1175,mob="Magma Ninja",label="Magma Ninja (Lv 1175)"},
+    {id="FireSideQuest",tier=2,level=1200,mob="Lava Pirate",label="Lava Pirate (Lv 1200)"},
+    {id="ShipQuest1",tier=1,level=1250,mob="Ship Deckhand",label="Ship Deckhand (Lv 1250)"},
+    {id="ShipQuest1",tier=2,level=1275,mob="Ship Engineer",label="Ship Engineer (Lv 1275)"},
+    {id="ShipQuest2",tier=1,level=1300,mob="Ship Steward",label="Ship Steward (Lv 1300)"},
+    {id="ShipQuest2",tier=2,level=1325,mob="Ship Officer",label="Ship Officer (Lv 1325)"},
+    {id="FrostQuest",tier=1,level=1350,mob="Arctic Warrior",label="Arctic Warrior (Lv 1350)"},
+    {id="FrostQuest",tier=2,level=1375,mob="Snow Lurker",label="Snow Lurker (Lv 1375)"},
+    {id="ForgottenQuest",tier=1,level=1425,mob="Sea Soldier",label="Sea Soldier (Lv 1425)"},
+    {id="ForgottenQuest",tier=2,level=1450,mob="Water Fighter",label="Water Fighter (Lv 1450)"},
+    {id="BartiloQuest",tier=1,level=775,mob="Swan Pirate",kills=50,label="Bartilo Quest (50 Swan Pirates)"},
+}
+
+M.sea3 = {
+    {id="PiratePortQuest",tier=1,level=1500,mob="Pirate Millionaire",label="Pirate Millionaire (Lv 1500)"},
+    {id="PiratePortQuest",tier=2,level=1525,mob="Pistol Billionaire",label="Pistol Billionaire (Lv 1525)"},
+    {id="DragonCrewQuest",tier=1,level=1575,mob="Dragon Crew Warrior",label="Dragon Crew Warrior (Lv 1575)"},
+    {id="VenomCrewQuest",tier=4,level=1700,mob="Marine Commodore",label="Marine Commodore (Lv 1700)"},
+    {id="VenomCrewQuest",tier=5,level=1725,mob="Marine Rear Admiral",label="Marine Rear Admiral (Lv 1725)"},
+    {id="VenomCrewQuest",tier=7,level=1775,mob="Fishman Raider",label="Fishman Raider (Lv 1775)"},
+    {id="VenomCrewQuest",tier=8,level=1800,mob="Fishman Captain",label="Fishman Captain (Lv 1800)"},
+    {id="VenomCrewQuest",tier=9,level=1825,mob="Forest Pirate",label="Forest Pirate (Lv 1825)"},
+    {id="VenomCrewQuest",tier=10,level=1850,mob="Mythological Pirate",label="Mythological Pirate (Lv 1850)"},
+    {id="VenomCrewQuest",tier=12,level=1900,mob="Jungle Pirate",label="Jungle Pirate (Lv 1900)"},
+    {id="VenomCrewQuest",tier=13,level=1925,mob="Musketeer Pirate",label="Musketeer Pirate (Lv 1925)"},
+    {id="HauntedQuest1",tier=1,level=1975,mob="Reborn Skeleton",label="Reborn Skeleton (Lv 1975)"},
+    {id="HauntedQuest1",tier=2,level=2000,mob="Living Zombie",label="Living Zombie (Lv 2000)"},
+    {id="HauntedQuest2",tier=2,level=2050,mob="Posessed Mummy",label="Posessed Mummy (Lv 2050)"},
+    {id="NutsIslandQuest",tier=1,level=2075,mob="Peanut Scout",label="Peanut Scout (Lv 2075)"},
+    {id="NutsIslandQuest",tier=2,level=2100,mob="Peanut President",label="Peanut President (Lv 2100)"},
+    {id="IceCreamIslandQuest",tier=1,level=2125,mob="Ice Cream Chef",label="Ice Cream Chef (Lv 2125)"},
+    {id="IceCreamIslandQuest",tier=2,level=2150,mob="Ice Cream Commander",label="Ice Cream Commander (Lv 2150)"},
+    {id="CakeQuest2",tier=1,level=2250,mob="Baking Staff",label="Baking Staff (Lv 2250)"},
+    {id="CakeQuest2",tier=2,level=2275,mob="Head Baker",label="Head Baker (Lv 2275)"},
+    {id="ChocQuest1",tier=1,level=2300,mob="Cocoa Warrior",label="Cocoa Warrior (Lv 2300)"},
+    {id="ChocQuest1",tier=2,level=2325,mob="Chocolate Bar Battler",label="Chocolate Bar Battler (Lv 2325)"},
+    {id="ChocQuest2",tier=1,level=2350,mob="Sweet Thief",label="Sweet Thief (Lv 2350)"},
+    {id="ChocQuest2",tier=2,level=2375,mob="Candy Rebel",label="Candy Rebel (Lv 2375)"},
+    {id="CandyQuest1",tier=1,level=2400,mob="Candy Pirate",label="Candy Pirate (Lv 2400)"},
+    {id="CandyQuest1",tier=2,level=2425,mob="Snow Demon",label="Snow Demon (Lv 2425)"},
+    {id="TikiQuest1",tier=1,level=2450,mob="Isle Outlaw",label="Isle Outlaw (Lv 2450)"},
+    {id="TikiQuest1",tier=2,level=2475,mob="Island Boy",label="Island Boy (Lv 2475)"},
+    {id="TikiQuest2",tier=1,level=2500,mob="Sun-kissed Warrior",label="Sun-kissed Warrior (Lv 2500)"},
+    {id="TikiQuest2",tier=2,level=2525,mob="Isle Champion",label="Isle Champion (Lv 2525)"},
+    {id="TikiQuest3",tier=1,level=2550,mob="Serpent Hunter",label="Serpent Hunter (Lv 2550)"},
+    {id="TikiQuest3",tier=2,level=2575,mob="Skull Slayer",label="Skull Slayer (Lv 2575)"},
+    {id="SubmergedQuest1",tier=1,level=2600,mob="Reef Bandit",label="Reef Bandit (Lv 2600)"},
+    {id="SubmergedQuest1",tier=2,level=2625,mob="Coral Pirate",label="Coral Pirate (Lv 2625)"},
+    {id="SubmergedQuest2",tier=1,level=2650,mob="Sea Chanter",label="Sea Chanter (Lv 2650)"},
+    {id="SubmergedQuest2",tier=2,level=2675,mob="Ocean Prophet",label="Ocean Prophet (Lv 2675)"},
+    {id="SubmergedQuest3",tier=2,level=2700,mob="Grand Devotee",label="Grand Devotee (Lv 2700)"},
+}
+
+--========================================================
+-- SPAWNS
+--========================================================
+
+M.spawns = {
+    ["Bandit"] = Vector3.new(-1088,17,-1428),
+    ["Monkey"] = Vector3.new(-1866.3,29.9,21.6),
+    ["Gorilla"] = Vector3.new(-1266.6,14.5,-462),
+    ["Pirate"] = Vector3.new(-981,30.4,3966.8),
+    ["Brute"] = Vector3.new(-1085.9,28.1,4342.7),
+    ["Desert Bandit"] = Vector3.new(999.9,7.6,4490.3),
+    ["Desert Officer"] = Vector3.new(1523.8,15.3,4095.4),
+    ["Snow Bandit"] = Vector3.new(1519.5,78,-1510.9),
+    ["Snowman"] = Vector3.new(1121.5,98.2,-1669),
+    ["Chief Petty Officer"] = Vector3.new(-4763.7,13.4,4288.8),
+    ["Sky Bandit"] = Vector3.new(-4973.7,280.7,-1119.4),
+    ["Dark Master"] = Vector3.new(-5283.2,505.1,-221),
+    ["Prisoner"] = Vector3.new(5278.6,7.1,391.6),
+    ["Dangerous Prisoner"] = Vector3.new(5058.3,9.1,900.9),
+    ["Toga Warrior"] = Vector3.new(-1973.1,9,-2744.9),
+    ["Gladiator"] = Vector3.new(-1161.9,11.6,-3097.2),
+    ["Military Soldier"] = Vector3.new(-5623.8,17,8314.1),
+    ["Military Spy"] = Vector3.new(-5952.5,76.9,8742.4),
+    ["Fishman Warrior"] = Vector3.new(60736.8,23.8,1396.3),
+    ["Fishman Commando"] = Vector3.new(61808.1,24.6,1328.6),
+    ["God's Guard"] = Vector3.new(-4082.9,1087.3,-414.1),
+    ["Shanda"] = Vector3.new(-6040.2,5468,1734.2),
+    ["Royal Squad"] = Vector3.new(-6706.9,5551.4,1155.4),
+    ["Royal Soldier"] = Vector3.new(-7138.5,5541.1,1050.8),
+    ["Galley Pirate"] = Vector3.new(5430.4,78,3953.6),
+    ["Galley Captain"] = Vector3.new(5409.5,77.7,4687),
+    ["Raider"] = Vector3.new(-612.4,40,2557.4),
+    ["Mercenary"] = Vector3.new(-1135.9,72.9,1248.3),
+    ["Swan Pirate"] = Vector3.new(1067,72.8,1080.9),
+    ["Factory Staff"] = Vector3.new(386.1,72.8,91.8),
+    ["Marine Lieutenant"] = Vector3.new(-2583.9,71,-3039.6),
+    ["Marine Captain"] = Vector3.new(-2103.9,73,-3259.3),
+    ["Zombie"] = Vector3.new(-5615,49.3,-938.5),
+    ["Vampire"] = Vector3.new(-6132.4,9,-1466.2),
+    ["Snow Trooper"] = Vector3.new(484.3,400.8,-5472.4),
+    ["Winter Warrior"] = Vector3.new(1226.3,428.8,-5216),
+    ["Lab Subordinate"] = Vector3.new(-5998.3,90,-4386.5),
+    ["Horned Warrior"] = Vector3.new(-6540,29.2,-5718),
+    ["Magma Ninja"] = Vector3.new(-5711.4,47.4,-5658.5),
+    ["Lava Pirate"] = Vector3.new(-5111.3,32.2,-5115.9),
+    ["Ship Deckhand"] = Vector3.new(1157.3,125.6,32930.1),
+    ["Ship Engineer"] = Vector3.new(834.8,43.7,32720.9),
+    ["Ship Steward"] = Vector3.new(801.4,125.8,33505.2),
+    ["Ship Officer"] = Vector3.new(694.5,179.9,33112.6),
+    ["Arctic Warrior"] = Vector3.new(6271.3,27.6,-6151.5),
+    ["Snow Lurker"] = Vector3.new(5524.2,27.6,-6583.8),
+    ["Sea Soldier"] = Vector3.new(-2550.9,28.5,-9840),
+    ["Water Fighter"] = Vector3.new(-3331.7,239.1,-10553.4),
+
+    ["Pirate Millionaire"] = Vector3.new(-232.9,57,5757.8),
+    ["Pistol Billionaire"] = Vector3.new(-54.8,83.8,5947.8),
+    ["Dragon Crew Warrior"] = Vector3.new(7217.8,56.6,-680.8),
+    ["Marine Commodore"] = Vector3.new(2577.3,75.6,-7739.9),
+    ["Marine Rear Admiral"] = Vector3.new(3920.1,146.2,-7175.2),
+    ["Fishman Raider"] = Vector3.new(-10223.1,332.6,-8482.5),
+    ["Fishman Captain"] = Vector3.new(-10736.7,331.8,-8807.6),
+    ["Forest Pirate"] = Vector3.new(-13105.5,332.2,-7705.8),
+    ["Mythological Pirate"] = Vector3.new(-13221,519.1,-6689),
+    ["Jungle Pirate"] = Vector3.new(-12321.3,331.4,-10669.3),
+    ["Musketeer Pirate"] = Vector3.new(-13556.1,391.4,-9735.9),
+    ["Reborn Skeleton"] = Vector3.new(-8710.1,141,6112.9),
+    ["Living Zombie"] = Vector3.new(-10170.9,141.2,6159.6),
+    ["Posessed Mummy"] = Vector3.new(-9399.6,12.2,6118.8),
+    ["Peanut Scout"] = Vector3.new(-1924,37.3,-10199.7),
+    ["Peanut President"] = Vector3.new(-1993.4,37.2,-10682.9),
+    ["Ice Cream Chef"] = Vector3.new(-502.4,64.6,-10873.8),
+    ["Ice Cream Commander"] = Vector3.new(-366.8,64.7,-11094.4),
+    ["Baking Staff"] = Vector3.new(-1774.1,34.7,-12850.5),
+    ["Head Baker"] = Vector3.new(-2389.2,51,-13018.3),
+    ["Cocoa Warrior"] = Vector3.new(-128.7,26.2,-12249.8),
+    ["Chocolate Bar Battler"] = Vector3.new(598.8,25.6,-12395.1),
+    ["Sweet Thief"] = Vector3.new(-77.6,25.6,-12765.6),
+    ["Candy Rebel"] = Vector3.new(166.8,25.6,-13035.3),
+    ["Candy Pirate"] = Vector3.new(-1226.8,36.3,-14777.6),
+    ["Snow Demon"] = Vector3.new(-936.2,14,-14552.5),
+    ["Isle Outlaw"] = Vector3.new(-16351.8,23.5,-282.5),
+    ["Island Boy"] = Vector3.new(-16736.2,22.2,-131.7),
+    ["Sun-kissed Warrior"] = Vector3.new(-16413.5,56.7,1054.4),
+    ["Isle Champion"] = Vector3.new(-16735.7,23.3,1110.6),
+    ["Serpent Hunter"] = Vector3.new(-16536,106.9,1347.1),
+    ["Skull Slayer"] = Vector3.new(-16829.4,193.2,1753.4),
+    ["Reef Bandit"] = Vector3.new(10899.9,-2145.2,9279.3),
+    ["Coral Pirate"] = Vector3.new(10703.7,-2087.3,9255.4),
+    ["Sea Chanter"] = Vector3.new(10680.1,-2056.7,9933.9),
+    ["Ocean Prophet"] = Vector3.new(11129.8,-2007.8,10051.5),
+    ["Grand Devotee"] = Vector3.new(9559.2,-1994.4,9798.7),
+}
+
+--========================================================
+-- KILL COUNTS
+--========================================================
+
+M.kills = {}
+
+for _, list in ipairs({M.sea1,M.sea2,M.sea3}) do
+    for _, q in ipairs(list) do
+        M.kills[q.mob] = q.kills or 8
+    end
+end
+
+M.kills["Bandit"] = 5
+M.kills["Monkey"] = 6
+M.kills["Gorilla"] = 8
+M.kills["Snow Bandit"] = 7
+M.kills["Snowman"] = 8
+M.kills["Chief Petty Officer"] = 8
+M.kills["Vice Admiral"] = 1
+M.kills["Sky Bandit"] = 7
+M.kills["Dark Master"] = 8
+M.kills["Toga Warrior"] = 7
+M.kills["Royal Squad"] = 8
+M.kills["Galley Captain"] = 9
+M.kills["Marine Captain"] = 9
+M.kills["Winter Warrior"] = 9
+M.kills["Horned Warrior"] = 9
+
+--========================================================
+-- BOSSES
+--========================================================
+
+M.bosses = {
+    {name="Chef",level=55,pos=Vector3.new(-1120.5,54.7,4121.2)},
+    {name="Yeti",level=110,pos=Vector3.new(1181.7,104,-1616.9)},
+    {name="Mob Boss",level=120,pos=Vector3.new(-2880.7,6.7,5430.9)},
+    {name="Saber Expert",level=200,pos=Vector3.new(-1527.2,34.1,-33.2)},
+    {name="Warden",level=230,pos=Vector3.new(5623.2,1.4,733.8)},
+    {name="Magma General",level=350,pos=Vector3.new(-5625.7,55.4,8623)},
+    {name="Fishman Lord",level=425,pos=Vector3.new(61352.9,67.2,1029.1)},
+    {name="Sky Warlord",level=500,pos=Vector3.new(-6271.6,5472.8,1887.8)},
+    {name="Cyborg",level=675,pos=Vector3.new(6252.4,9.3,4941.4)},
+    {name="Ice Admiral",level=700,pos=Vector3.new(1212.4,20.4,-1429.6)},
+}
+
+M.bosses2 = {
+    {name="Diamond",level=750,pos=Vector3.new(-1711.4,206,-97.1)},
+    {name="Jeremy",level=850,pos=Vector3.new(2338,451.4,700.1)},
+    {name="Smoke Admiral",level=1150,pos=Vector3.new(-4857.4,233.7,-5583.2)},
+    {name="Awakened Ice Admiral",level=1400,pos=Vector3.new(6551.8,325.3,-6989.9)},
+    {name="rip_indra",level=1500,pos=Vector3.new(-26952.3,21.5,329.4)},
+}
+
+M.bosses3 = {
+    {name="Kilo Admiral",level=1750,pos=Vector3.new(2998.3,508.8,-7344.3)},
+    {name="Captain Elephant",level=1875,pos=Vector3.new(-13365.5,321.2,-8485)},
+    {name="Longma",level=2000,pos=Vector3.new(-10156.2,337.8,-9445.9)},
+    {name="Cake Queen",level=2175,pos=Vector3.new(-678.5,381.9,-11114.3)},
+    {name="Cake Prince",level=2200,pos=Vector3.new(-2089.9,4536.9,-14800)},
+}
+
+--========================================================
+-- MATERIALS
+--========================================================
+
+M.sea2materials = {
+    {mat="Scrap Metal",mob="Factory Staff"},
+    {mat="Vampire Fang",mob="Vampire"},
+    {mat="Magma Ore",mob="Magma Ninja"},
+    {mat="Conjured Cocoa",mob="Ship Deckhand"},
+    {mat="Mystic Droplet",mob="Water Fighter"},
+}
+
+M.sea3materials = {
+    {mat="Fish Tail",mob="Fishman Raider"},
+    {mat="Mystic Droplet",mob="Ocean Prophet"},
+    {mat="Ectoplasm",mob="Reborn Skeleton"},
+    {mat="Dragon Scale",mob="Dragon Crew Warrior"},
+    {mat="Gunpowder",mob="Pirate Millionaire"},
+}
+
+--========================================================
+-- QUEST HELPERS
+--========================================================
+
+function M.currentList()
+    local level = M.playerLevel()
+
+    if level >= 1500 then
+        return M.sea3
+    elseif level >= 700 then
+        return M.sea2
+    end
+
+    return M.sea1
+end
+
+function M.bestForLevel()
+    local list = M.currentList()
+    local level = M.playerLevel()
+    local best = list[1]
+
+    for _, q in ipairs(list) do
+        if q.level <= level then
+            best = q
+        else
+            break
+        end
+    end
+
+    return best
+end
+
+--========================================================
+-- ENEMIES
+--========================================================
+
+function M.aliveMobs(name)
+    local folder = workspace:FindFirstChild("Enemies")
+    local result = {}
+
+    if not folder then
+        return result
+    end
+
+    for _, enemy in ipairs(folder:GetChildren()) do
+        if enemy.Name:lower() == name:lower() then
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+            if hum and hum.Health > 0 then
+                result[#result + 1] = enemy
+            end
+        end
+    end
+
+    return result
+end
+
+function M.nearestMob(name)
+    local root = hrp()
+    local folder = workspace:FindFirstChild("Enemies")
+
+    if not root or not folder then
+        return nil
+    end
+
+    local best
+    local bestDistance
+
+    for _, enemy in ipairs(folder:GetChildren()) do
+        if enemy.Name:lower() == name:lower() then
+
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+            local part =
+                enemy:FindFirstChild("HumanoidRootPart")
+                or enemy.PrimaryPart
+
+            if hum and hum.Health > 0 and part then
+                local distance =
+                    (part.Position - root.Position).Magnitude
+
+                if not bestDistance or distance < bestDistance then
+                    best = enemy
+                    bestDistance = distance
+                end
+            end
+        end
+    end
+
+    return best
+end
+
+function M.nearestAnyMob()
+    local root = hrp()
+    local folder = workspace:FindFirstChild("Enemies")
+
+    if not root or not folder then
+        return nil
+    end
+
+    local best
+    local bestDistance
+
+    for _, enemy in ipairs(folder:GetChildren()) do
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
+        local part =
+            enemy:FindFirstChild("HumanoidRootPart")
+            or enemy.PrimaryPart
+
+        if hum and hum.Health > 0 and part then
+            local distance =
+                (part.Position - root.Position).Magnitude
+
+            if not bestDistance or distance < bestDistance then
+                best = enemy
+                bestDistance = distance
+            end
+        end
+    end
+
+    return best
+end
+
+--========================================================
+-- EQUIPMENT
+--========================================================
+
+local function isKind(tool, kind)
+
+    if not tool:IsA("Tool") then
+        return false
+    end
+
+    if kind == "Fruit" then
+        return tool.ToolTip == "Blox Fruit"
+    end
+
+    return tool.ToolTip == kind
+end
+
+function M.equipWeapon(kind)
+
+    local char = LP.Character
+    local hum = humanoid()
+
+    if not char or not hum then
+        return
+    end
+
+    local equipped = char:FindFirstChildOfClass("Tool")
+
+    if equipped and isKind(equipped, kind) then
+        return
+    end
+
+    local backpack = LP:FindFirstChild("Backpack")
+
+    for _, container in ipairs({char, backpack}) do
+
+        if container then
+
+            for _, tool in ipairs(container:GetChildren()) do
+
+                if isKind(tool, kind) then
+                    pcall(function()
+                        hum:EquipTool(tool)
+                    end)
+
+                    return
+                end
+            end
+        end
+    end
+end
+
+--========================================================
+-- TELEPORT
+--========================================================
+
+
+local Teleport = {}
+
+Teleport.config = {
+    speed = 100, -- studs per second
+}
+
+local currentTween
+
+function Teleport.go(position)
+
+    if typeof(position) ~= "Vector3" then
+        return false
+    end
+
+    local root = hrp()
+
+    if not root then
+        return false
+    end
+
+    -- Cancel previous teleport
+    if currentTween then
+        currentTween:Cancel()
+        currentTween = nil
+    end
+
+    local distance =
+        (root.Position - position).Magnitude
+
+    if distance < 3 then
+        root.CFrame = CFrame.new(position)
+        return true
+    end
+
+    local duration =
+        math.max(
+            distance / Teleport.config.speed,
+            0.05
+        )
+
+    currentTween = TweenService:Create(
+        root,
+        TweenInfo.new(
+            duration,
+            Enum.EasingStyle.Linear,
+            Enum.EasingDirection.Out
+        ),
+        {
+            CFrame = CFrame.new(position)
+        }
+    )
+
+    currentTween:Play()
+
+    currentTween.Completed:Connect(function()
+        if currentTween then
+            currentTween = nil
+        end
+    end)
+
+    return true
+end
+
+function Teleport.cancel()
+
+    if currentTween then
+        currentTween:Cancel()
+        currentTween = nil
+    end
+end
+
+--========================================================
+-- COMBAT ADAPTER
+--========================================================
+
+local Combat = {}
+
+Combat.config = {
+    range = 120,
+    targetPlayers = false,
+    playerRange = 60
+}
+
+function Combat.attackOnce(enemy)
+
+    if not enemy then
+        return
+    end
+
+    local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+    if not hum or hum.Health <= 0 then
+        return
+    end
+
+    local char = LP.Character
+
+    if not char then
+        return
+    end
+
+    -- Basic standalone weapon activation.
+    -- Your previous combat module can be inserted here if
+    -- your game requires RegisterAttack/RegisterHit logic.
+
+    local tool = char:FindFirstChildOfClass("Tool")
+
+    if tool then
+        pcall(function()
+            tool:Activate()
+        end)
+    end
+end
+
+function Combat.nearest()
+    return M.nearestAnyMob()
+end
+
+function Combat.attackPlayersInRange()
+    -- Player attacking is intentionally not enabled by default.
+end
+
+function Combat.setMobAuto()
+end
+
+--========================================================
+-- QUEST
+--========================================================
+
+function M.startQuest()
+
+    local remote = commF()
+
+    if not remote then
+        return
+    end
+
+    local quest = M.selected or M.bestForLevel()
+
+    if not quest then
+        return
+    end
+
+    pcall(function()
+        remote:InvokeServer(
+            "StartQuest",
+            quest.id,
+            quest.tier
+        )
+    end)
+end
+
+--========================================================
+-- STATS
+--========================================================
+
+function M.addPoint(stat, amount)
+
+    local remote = commF()
+
+    if not remote then
+        return
+    end
+
+    stat = stat or M.config.stat
+    amount = amount or M.config.statAmount
+
+    pcall(function()
+        remote:InvokeServer(
+            "AddPoint",
+            stat,
+            amount
+        )
+    end)
+end
+
+function M.setStatAuto(state)
+
+    M._statAuto = state
+
+    if not state then
+        return
+    end
+
+    task.spawn(function()
+
+        while M._statAuto do
+
+            M.addPoint(
+                M.config.stat,
+                M.config.statAmount
+            )
+
+            task.wait(1)
+        end
+
+    end)
+end
+
+--========================================================
+-- FARM STEP
+--========================================================
+
+function M._farmStep()
+
+    local quest =
+        M.selected
+        or M.bestForLevel()
+
+    if not quest then
+        task.wait(1)
+        return
+    end
+
+    M._mobName = quest.mob
+
+    local key =
+        quest.id .. "#" .. tostring(quest.tier)
+
+    -- New quest target
+    if key ~= M._curKey then
+
+        M._curKey = key
+        M._target = nil
+        M._anchor = nil
+
+        M._killCount = 0
+        M._killReq =
+            quest.kills
+            or M.kills[quest.mob]
+            or 8
+
+        M._prevAlive = nil
+
+        M.startQuest()
+    end
+
+    -- Restart quest when required kills reached.
+    if M._killCount >= M._killReq then
+
+        M._killCount = 0
+        M._prevAlive = nil
+
+        M.startQuest()
+
+        task.wait(0.2)
+    end
+
+    local mobs =
+        M.aliveMobs(quest.mob)
+
+    local currentAlive = {}
+
+    for _, enemy in ipairs(mobs) do
+        currentAlive[enemy] = true
+    end
+
+    if M._prevAlive then
+
+        for enemy in pairs(M._prevAlive) do
+
+            if not currentAlive[enemy] then
+                M._killCount += 1
+            end
+
+        end
+    end
+
+    M._prevAlive = currentAlive
+
+    local target =
+        M.nearestMob(quest.mob)
+
+    if target then
+
+        M._target = target
+
+        local part =
+            target:FindFirstChild("HumanoidRootPart")
+            or target.PrimaryPart
+
+        local root = hrp()
+
+        if not part or not root then
+            task.wait(0.2)
+            return
+        end
+
+        local distance =
+            (part.Position - root.Position).Magnitude
+
+        if distance > M.config.hoverRange then
+
+            Teleport.go(
+                part.Position
+                + Vector3.new(
+                    0,
+                    M.config.heightOffset,
+                    0
+                )
+            )
+
+            task.wait(
+                math.clamp(
+                    distance / Teleport.config.speed,
+                    0.2,
+                    5
+                )
+            )
+        end
+
+        if M.config.equip then
+            M.equipWeapon(
+                M.config.equipType
+            )
+        end
+
+        if M.config.bring then
+
+            M._anchor =
+                part.Position
+
+            for _, enemy in ipairs(mobs) do
+                Combat.attackOnce(enemy)
+            end
+
+        else
+
+            Combat.attackOnce(target)
+        end
+
+        task.wait(
+            M.config.attackInterval
+        )
+
+        return
+    end
+
+    -- No enemy found.
+    -- Move toward its spawn.
+
+    local spawn =
+        M.spawns[quest.mob]
+
+    local root = hrp()
+
+    if spawn and root then
+
+        local distance =
+            (root.Position - spawn).Magnitude
+
+        if distance > 150 then
+
+            Teleport.go(
+                spawn
+                + Vector3.new(
+                    0,
+                    M.config.heightOffset,
+                    0
+                )
+            )
+
+            task.wait(
+                math.clamp(
+                    distance / Teleport.config.speed,
+                    0.3,
+                    5
+                )
+            )
+
+        else
+
+            task.wait(1)
+
+        end
+
+    else
+
+        task.wait(1)
+    end
+end
+
+--========================================================
+-- LEVEL FARM
+--========================================================
+
+function M.runFarmLoop()
+
+    local generation = M._farmGen
+
+    task.spawn(function()
+
+        while
+            M._farmOn
+            and M._farmGen == generation
+        do
+
+            M._lastTick = os.clock()
+
+            local ok, err =
+                pcall(function()
+                    M._farmStep()
+                end)
+
+            if not ok then
+                warn(
+                    "[Farm Error]",
+                    tostring(err)
+                )
+
+                task.wait(0.5)
+            end
+        end
+    end)
+end
+
+function M.startWatchdog()
+
+    if M._watchdogOn then
+        return
+    end
+
+    M._watchdogOn = true
+
+    task.spawn(function()
+
+        while M._farmOn do
+
+            if
+                M._lastTick > 0
+                and os.clock() - M._lastTick > 5
+            then
+
+                M._farmGen += 1
+                M._lastTick = os.clock()
+
+                M.runFarmLoop()
+            end
+
+            task.wait(2)
+        end
+
+        M._watchdogOn = false
+    end)
+end
+
+function M.setFarm(state)
+
+    M._farmOn = state
+
+    if state then
+        M._bossOn = false
+        M._nearestOn = false
+    end
+
+    M._curKey = nil
+    M._target = nil
+    M._anchor = nil
+    M._collecting = false
+
+    M._killCount = 0
+    M._killReq = 8
+    M._prevAlive = nil
+
+    M._fruitSkip =
+        setmetatable({}, {__mode="k"})
+
+    M._fruitTries =
+        setmetatable({}, {__mode="k"})
+
+    M._decollided =
+        setmetatable({}, {__mode="k"})
+
+    if state then
+
+        M._farmGen += 1
+        M._lastTick = os.clock()
+
+        M.runFarmLoop()
+        M.startWatchdog()
+    end
+end
+
+--========================================================
+-- NEAREST FARM
+--========================================================
+
+function M.setNearestFarm(state)
+
+    M._nearestOn = state
+
+    if state then
+        M._farmOn = false
+        M._bossOn = false
+    end
+
+    if not state then
+        M._target = nil
+        return
+    end
+
+    task.spawn(function()
+
+        while M._nearestOn do
+
+            local target =
+                Combat.nearest()
+
+            if target then
+
+                M._target = target
+
+                local part =
+                    target:FindFirstChild("HumanoidRootPart")
+                    or target.PrimaryPart
+
+                local root = hrp()
+
+                if part and root then
+
+                    local distance =
+                        (part.Position - root.Position).Magnitude
+
+                    if distance > M.config.hoverRange then
+
+                        Teleport.go(
+                            part.Position
+                            + Vector3.new(
+                                0,
+                                M.config.heightOffset,
+                                0
+                            )
+                        )
+                    end
+
+                    if M.config.equip then
+                        M.equipWeapon(
+                            M.config.equipType
+                        )
+                    end
+
+                    Combat.attackOnce(target)
+                end
+
+            else
+
+                M._target = nil
+
+            end
+
+            task.wait(
+                M.config.attackInterval
+            )
+        end
+    end)
+end
+
+--========================================================
+-- BOSS FARM
+--========================================================
+
+function M.setBossFarm(state)
+
+    M._bossOn = state
+
+    if state then
+        M._farmOn = false
+        M._nearestOn = false
+    end
+
+    M._target = nil
+
+    if not state then
+        return
+    end
+
+    task.spawn(function()
+
+        while M._bossOn do
+
+            local boss =
+                M.selectedBoss
+
+            if not boss then
+
+                task.wait(1)
+
+            else
+
+                local target =
+                    M.nearestMob(
+                        boss.name
+                    )
+
+                if target then
+
+                    M._target = target
+
+                    local part =
+                        target:FindFirstChild("HumanoidRootPart")
+                        or target.PrimaryPart
+
+                    local root = hrp()
+
+                    if part and root then
+
+                        local distance =
+                            (part.Position - root.Position).Magnitude
+
+                        if distance > M.config.hoverRange then
+
+                            Teleport.go(
+                                part.Position
+                                + Vector3.new(
+                                    0,
+                                    M.config.heightOffset,
+                                    0
+                                )
+                            )
+                        end
+
+                        if M.config.equip then
+                            M.equipWeapon(
+                                M.config.equipType
+                            )
+                        end
+
+                        Combat.attackOnce(target)
+                    end
+
+                    task.wait(
+                        M.config.attackInterval
+                    )
+
+                else
+
+                    M._target = nil
+
+                    if boss.pos then
+
+                        Teleport.go(
+                            boss.pos
+                            + Vector3.new(
+                                0,
+                                M.config.heightOffset,
+                                0
+                            )
+                        )
+                    end
+
+                    task.wait(2)
+                end
+            end
+        end
+    end)
+end
+
+--========================================================
+-- MATERIAL FARM
+--========================================================
+
+local function entryByMob(list, mob)
+
+    for _, quest in ipairs(list) do
+
+        if quest.mob == mob then
+            return quest
+        end
+
+    end
+end
+
+function M.setMaterialFarm(state)
+
+    if state then
+
+        local list =
+            M.currentList()
+
+        local mob =
+            M._matMob
+
+        if not mob then
+            return
+        end
+
+        local quest =
+            entryByMob(
+                list,
+                mob
+            )
+
+        if not quest then
+            return
+        end
+
+        M.selected = quest
+        M._curKey = nil
+    end
+
+    M.setFarm(state)
+end
+
+--========================================================
+-- AUTO NEXT ISLAND
+--========================================================
+
+function M.setAutoNextIsland(state)
+
+    if state then
+        M.selected = nil
+        M._curKey = nil
+    end
+
+    M.setFarm(state)
+end
+
+--========================================================
+-- STOP EVERYTHING
+--========================================================
+
+function M.stop()
+
+    M._statAuto = false
+    M._farmOn = false
+    M._bossOn = false
+    M._nearestOn = false
+
+    M._farmGen += 1
+
+    M._target = nil
+    M._anchor = nil
+    M._collecting = false
+end
+
+--========================================================
+-- BRING / FOLLOW UPDATE
+--========================================================
+
+RunService.RenderStepped:Connect(function()
+
+    if not (
+        M._farmOn
+        or M._bossOn
+        or M._nearestOn
+    ) then
+        return
+    end
+
+    local root = hrp()
+
+    if not root then
+        return
+    end
+
+    if M.config.bring and M._anchor then
+
+        root.CFrame =
+            CFrame.new(
+                M._anchor
+                + Vector3.new(
+                    0,
+                    M.config.heightOffset,
+                    0
+                )
+            )
+
+        root.AssemblyLinearVelocity =
+            Vector3.zero
+
+        if M._mobName then
+
+            local folder =
+                workspace:FindFirstChild("Enemies")
+
+            if folder then
+
+                for _, enemy in ipairs(folder:GetChildren()) do
+
+                    if enemy.Name:lower()
+                        == M._mobName:lower()
+                    then
+
+                        local hum =
+                            enemy:FindFirstChildOfClass(
+                                "Humanoid"
+                            )
+
+                        local part =
+                            enemy:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+                            or enemy.PrimaryPart
+
+                        if hum and
+                            hum.Health > 0 and
+                            part
+                        then
+
+                            if not M._decollided[enemy] then
+
+                                for _, obj in ipairs(
+                                    enemy:GetDescendants()
+                                ) do
+
+                                    if obj:IsA("BasePart") then
+                                        obj.CanCollide = false
+                                    end
+
+                                end
+
+                                M._decollided[enemy] = true
+                            end
+
+                            part.CFrame =
+                                CFrame.new(
+                                    M._anchor
+                                )
+
+                            part.AssemblyLinearVelocity =
+                                Vector3.zero
+                        end
+                    end
+                end
+            end
+        end
+
+    else
+
+        local target =
+            M._target
+
+        local part =
+            target
+            and (
+                target:FindFirstChild(
+                    "HumanoidRootPart"
+                )
+                or target.PrimaryPart
+            )
+
+        if part then
+
+            local distance =
+                (part.Position - root.Position).Magnitude
+
+            if distance <
+                M.config.hoverRange
+            then
+
+                root.CFrame =
+                    CFrame.new(
+                        part.Position
+                        + Vector3.new(
+                            0,
+                            M.config.heightOffset,
+                            0
+                        )
+                    )
+
+                root.AssemblyLinearVelocity =
+                    Vector3.zero
+            end
+        end
+    end
+end)
+
+--========================================================
+-- FARM TAB
+--========================================================
+
+local FarmTab = Window:CreateTab({
+    name = "Farm ",
+    icon = nil,
+})
+
+--========================================================
+-- GENERAL
+--========================================================
+
+FarmTab:CreateSection({ name = "GENERAL FARMING", icon = nil })
+
+FarmTab:CreateToggle({
+    name = "Auto Level Farm",
+    currentValue = false,
+
+    callback = function(state)
+        M.setFarm(state)
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Farm Nearest",
+    currentValue = false,
+
+    callback = function(state)
+        M.setNearestFarm(state)
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Auto Next Island",
+    currentValue = false,
+
+    callback = function(state)
+        M.setAutoNextIsland(state)
+    end
+})
+
+--========================================================
+-- QUEST
+--========================================================
+
+FarmTab:CreateSection({ name = "QUEST ", icon = nil })
+
+local questLabels = {
+    "Auto (by level)"
+}
+
+for _, quest in ipairs(M.sea1) do
+    questLabels[#questLabels + 1] =
+        quest.label
+end
+
+for _, quest in ipairs(M.sea2) do
+    questLabels[#questLabels + 1] =
+        quest.label
+end
+
+for _, quest in ipairs(M.sea3) do
+    questLabels[#questLabels + 1] =
+        quest.label
+end
+
+FarmTab:CreateDropdown({
+    name = "Quest",
+    options = questLabels,
+    currentValue = "Auto (by level)",
+
+    callback = function(value)
+
+        if value == "Auto (by level)" then
+
+            M.selected = nil
+
+        else
+
+            for _, list in ipairs({
+                M.sea1,
+                M.sea2,
+                M.sea3
+            }) do
+
+                for _, quest in ipairs(list) do
+
+                    if quest.label == value then
+                        M.selected = quest
+                        break
+                    end
+                end
+            end
+        end
+
+        M._curKey = nil
+    end
+})
+
+--========================================================
+-- MOVEMENT
+--========================================================
+
+FarmTab:CreateSection({ name = "MOVEMENT ", icon = nil })
+
+FarmTab:CreateSlider({
+    name = "Height Offset",
+    range = {0, 40},
+    currentValue = M.config.heightOffset,
+
+    callback = function(value)
+        M.config.heightOffset = value
+    end
+})
+
+FarmTab:CreateSlider({
+    name = "Hover Range",
+    range = {50, 500},
+    currentValue = M.config.hoverRange,
+
+    callback = function(value)
+        M.config.hoverRange = value
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Bring Mob",
+    currentValue = false,
+
+    callback = function(state)
+
+        M.config.bring = state
+
+        if not state then
+            M._anchor = nil
+        end
+    end
+})
+
+--========================================================
+-- COMBAT
+--========================================================
+
+FarmTab:CreateSection({ name = "COMBAT", icon = nil })
+
+FarmTab:CreateToggle({
+    name = "Auto Attack Mobs",
+    currentValue = true,
+
+    callback = function(state)
+        -- Farm already attacks its selected target.
+        -- Kept as a UI control for compatibility.
+        M._autoAttack = state
+    end
+})
+
+FarmTab:CreateSlider({
+    name = "Attack Range",
+    range = {1, 300},
+    currentValue = Combat.config.range,
+
+    callback = function(value)
+        Combat.config.range = value
+    end
+})
+
+FarmTab:CreateSlider({
+    name = "Attack Delay",
+    range = {0.05, 1},
+    currentValue = M.config.attackInterval,
+
+    callback = function(value)
+        M.config.attackInterval = value
+    end
+})
+
+--========================================================
+-- EQUIPMENT
+--========================================================
+
+FarmTab:CreateSection({ name = "EQUIPMENT ", icon = nil })
+
+FarmTab:CreateDropdown({
+    name = "Auto Equip Type",
+
+    options = {
+        "Melee",
+        "Sword",
+        "Gun",
+        "Fruit"
+    },
+
+    currentValue = "Melee",
+
+    callback = function(value)
+        M.config.equipType = value
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Auto Equip",
+    currentValue = false,
+
+    callback = function(state)
+        M.config.equip = state
+    end
+})
+
+--========================================================
+-- BOSS
+--========================================================
+
+FarmTab:CreateSection({ name = "BOSS FARM", icon = nil })
+
+local allBosses = {}
+
+for _, boss in ipairs(M.bosses) do
+    allBosses[#allBosses + 1] = boss
+end
+
+for _, boss in ipairs(M.bosses2) do
+    allBosses[#allBosses + 1] = boss
+end
+
+for _, boss in ipairs(M.bosses3) do
+    allBosses[#allBosses + 1] = boss
+end
+
+local bossLabels = {}
+
+for _, boss in ipairs(allBosses) do
+
+    bossLabels[#bossLabels + 1] =
+        ("%s (Lv %d)")
+        :format(
+            boss.name,
+            boss.level
+        )
+end
+
+FarmTab:CreateDropdown({
+    name = "Boss",
+    options = bossLabels,
+    currentValue = bossLabels[1],
+
+    callback = function(value)
+
+        for _, boss in ipairs(allBosses) do
+
+            local label =
+                ("%s (Lv %d)")
+                :format(
+                    boss.name,
+                    boss.level
+                )
+
+            if label == value then
+                M.selectedBoss = boss
+                break
+            end
+        end
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Farm Boss",
+    currentValue = false,
+
+    callback = function(state)
+        M.setBossFarm(state)
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Auto Saber",
+    currentValue = false,
+
+    callback = function(state)
+
+        if state then
+
+            for _, boss in ipairs(allBosses) do
+
+                if boss.name == "Saber Expert" then
+                    M.selectedBoss = boss
+                    break
+                end
+            end
+        end
+
+        M.setBossFarm(state)
+    end
+})
+
+--========================================================
+-- MATERIALS
+--========================================================
+
+FarmTab:CreateSection({ name = "MATERIALS", icon = nil })
+
+local allMaterials = {}
+
+for _, material in ipairs(M.sea2materials) do
+    allMaterials[#allMaterials + 1] = material
+end
+
+for _, material in ipairs(M.sea3materials) do
+    allMaterials[#allMaterials + 1] = material
+end
+
+local materialLabels = {}
+
+for _, material in ipairs(allMaterials) do
+
+    materialLabels[#materialLabels + 1] =
+        material.mat
+        .. " ("
+        .. material.mob
+        .. ")"
+end
+
+FarmTab:CreateDropdown({
+    name = "Material",
+    options = materialLabels,
+    currentValue = materialLabels[1],
+
+    callback = function(value)
+
+        for _, material in ipairs(allMaterials) do
+
+            local label =
+                material.mat
+                .. " ("
+                .. material.mob
+                .. ")"
+
+            if label == value then
+
+                M._matMob =
+                    material.mob
+
+                break
+            end
+        end
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Material Farm",
+    currentValue = false,
+
+    callback = function(state)
+        M.setMaterialFarm(state)
+    end
+})
+
+--========================================================
+-- STATS
+--========================================================
+
+FarmTab:CreateSection({ name = "STATS", icon = nil })
+
+FarmTab:CreateDropdown({
+    name = "Stat",
+    options = M.stats,
+    currentValue = M.stats[1],
+
+    callback = function(value)
+        M.config.stat = value
+    end
+})
+
+FarmTab:CreateSlider({
+    name = "Amount",
+    range = {1, 100},
+    currentValue = M.config.statAmount,
+
+    callback = function(value)
+        M.config.statAmount = value
+    end
+})
+
+FarmTab:CreateToggle({
+    name = "Auto Add Points",
+    currentValue = false,
+
+    callback = function(state)
+        M.setStatAuto(state)
+    end
+})
+
+--========================================================
+-- STOP
+--========================================================
+
+FarmTab:CreateButton({
+    name = "Stop All Farming",
+
+    callback = function()
+        M.stop()
+    end
+})
+
+--========================================================
+-- INITIAL STATE
+--========================================================
+
+M.selectedBoss = allBosses[1]
+
+if allMaterials[1] then
+    M._matMob = allMaterials[1].mob
+end
+
+
+--//========================================================
+--// COMBAT TAB
+--//========================================================
+
+local Config = {
+    playerRange = 60,
+    mobRange = 120,
+
+    fastAttack = false,
+    attackDelay = 0.15,
+
+    killAura = false,
+    auraRange = 60,
+    lineOfSight = true,
+    targetPlayers = true,
+
+    aimbot = false,
+    aimSmooth = 0.15,
+
+    autoSkills = false,
+    skillInterval = 0.25,
+
+    skills = {
+        Z = true,
+        X = true,
+        C = false,
+        V = false,
+        F = false,
+    },
+
+    followNearest = false,
+    followDistance = 6,
+    attackFollowTarget = false,
+
+    spectate = false,
+
+    autoBounty = false,
+
+    bounty = {
+        team = "Both",
+        method = "Nearest",
+
+        noFriends = true,
+        noCup = true,
+
+        safeHealth = 20,
+        maxTargetTime = 20,
+
+        invisibleKen = false,
+
+        chatAfterKill = false,
+        chatMessage = "gg",
+    },
+}
+
+--//========================================================
+--// STATE
+--//========================================================
+
+local State = {
+    combo = 0,
+
+    autoPlayer = false,
+    autoMob = false,
+    killAura = false,
+    autoSkills = false,
+    follow = false,
+    bounty = false,
+    noStun = false,
+
+    oldCameraSubject = nil,
+}
+
+local Connections = {}
+local Threads = {}
+
+--//========================================================
+--// CONNECTION / THREAD MANAGEMENT
+--//========================================================
+
+local function connect(connection)
+    table.insert(Connections, connection)
+    return connection
+end
+
+local function spawnThread(callback)
+    local thread = task.spawn(callback)
+    table.insert(Threads, thread)
+    return thread
+end
+
+local function stopThread(thread)
+    if thread then
+        pcall(task.cancel, thread)
+    end
+end
+
+--//========================================================
+--// CHARACTER HELPERS
+--//========================================================
+
+local function getCharacter()
+    return LocalPlayer.Character
+end
+
+local function getHumanoid(character)
+    return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getRoot(character)
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getMyRoot()
+    return getRoot(getCharacter())
+end
+
+local function getMyHumanoid()
+    return getHumanoid(getCharacter())
+end
+
+local function alive(character)
+    local humanoid = getHumanoid(character)
+    return humanoid and humanoid.Health > 0
+end
+
+--//========================================================
+--// NETWORK
+--//========================================================
+
+local function getNetwork()
+    local modules = ReplicatedStorage:FindFirstChild("Modules")
+    local net = modules and modules:FindFirstChild("Net")
+
+    if not net then
+        return nil, nil
+    end
+
+    return
+        net:FindFirstChild("RE/RegisterAttack"),
+        net:FindFirstChild("RE/RegisterHit")
+end
+
+--//========================================================
+--// ATTACK HELPERS
+--//========================================================
+
+local function attackDelay()
+    if Config.fastAttack then
+        return 0.08
+    end
+
+    return Config.attackDelay
+end
+
+local function getTargetPart(character)
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("HumanoidRootPart")
+        or character.PrimaryPart
+        or character:FindFirstChildWhichIsA("BasePart")
+end
+
+local function isFishingRod(tool)
+    if not tool or not tool:IsA("Tool") then
+        return false
+    end
+
+    local tooltip = tostring(tool.ToolTip or "")
+
+    return
+        tooltip:find("Fishing") ~= nil
+        or tooltip:find("Rod") ~= nil
+        or tool.Name:find("Rod") ~= nil
+end
+
+local function isRaidChip(tool)
+    return tool
+        and tool:IsA("Tool")
+        and tool.Name:find("Microchip") ~= nil
+end
+
+local function unequipBadTool()
+    local character = getCharacter()
+
+    if not character then
+        return
+    end
+
+    local equipped = character:FindFirstChildOfClass("Tool")
+
+    if not equipped then
+        return
+    end
+
+    if isFishingRod(equipped) or isRaidChip(equipped) then
+        local humanoid = getHumanoid(character)
+
+        if humanoid then
+            pcall(function()
+                humanoid:UnequipTools()
+            end)
+        end
+    end
+end
+
+local function equipWeapon()
+    local character = getCharacter()
+    local humanoid = getHumanoid(character)
+
+    if not humanoid then
+        return
+    end
+
+    local equipped = character:FindFirstChildOfClass("Tool")
+
+    if equipped
+        and not isFishingRod(equipped)
+        and not isRaidChip(equipped)
+    then
+        return
+    end
+
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+
+    if not backpack then
+        return
+    end
+
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool")
+            and not isFishingRod(tool)
+            and not isRaidChip(tool)
+        then
+            pcall(function()
+                humanoid:EquipTool(tool)
+            end)
+
+            break
+        end
+    end
+end
+
+--//========================================================
+--// LINE OF SIGHT
+--//========================================================
+
+local function hasLineOfSight(targetPart, targetModel)
+    local root = getMyRoot()
+
+    if not root or not targetPart then
+        return false
+    end
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+
+    local ignore = {
+        getCharacter(),
+        targetModel,
+    }
+
+    params.FilterDescendantsInstances = ignore
+
+    local direction = targetPart.Position - root.Position
+
+    local result = workspace:Raycast(
+        root.Position,
+        direction,
+        params
+    )
+
+    return result == nil
+end
+
+--//========================================================
+--// MOB SEARCH
+--//========================================================
+
+local function getNearestMob(range)
+    local root = getMyRoot()
+    local enemies = workspace:FindFirstChild("Enemies")
+
+    if not root or not enemies then
+        return nil
+    end
+
+    local closest
+    local closestDistance
+
+    for _, enemy in ipairs(enemies:GetChildren()) do
+        local humanoid = getHumanoid(enemy)
+        local part = getTargetPart(enemy)
+
+        if humanoid
+            and humanoid.Health > 0
+            and part
+        then
+            local distance =
+                (part.Position - root.Position).Magnitude
+
+            if distance <= range then
+                if not closestDistance
+                    or distance < closestDistance
+                then
+                    closest = enemy
+                    closestDistance = distance
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+--//========================================================
+--// PLAYER SEARCH
+--//========================================================
+
+local function getNearestPlayer(range)
+    local root = getMyRoot()
+
+    if not root then
+        return nil
+    end
+
+    local closest
+    local closestDistance
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local character = player.Character
+            local targetRoot = getRoot(character)
+            local humanoid = getHumanoid(character)
+
+            if targetRoot
+                and humanoid
+                and humanoid.Health > 0
+            then
+                local distance =
+                    (targetRoot.Position - root.Position).Magnitude
+
+                if (not range or distance <= range) then
+                    if not closestDistance
+                        or distance < closestDistance
+                    then
+                        closest = character
+                        closestDistance = distance
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+local function getPlayersInRange(range)
+    local root = getMyRoot()
+    local result = {}
+
+    if not root then
+        return result
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local character = player.Character
+            local targetRoot = getRoot(character)
+            local humanoid = getHumanoid(character)
+
+            if targetRoot
+                and humanoid
+                and humanoid.Health > 0
+            then
+                if
+                    (targetRoot.Position - root.Position).Magnitude
+                    <= range
+                then
+                    table.insert(result, character)
+                end
+            end
+        end
+    end
+
+    return result
+end
+
+--//========================================================
+--// ATTACK
+--//========================================================
+
+local function attackTarget(target)
+    if not target or not alive(target) then
+        return
+    end
+
+    unequipBadTool()
+
+    local RegisterAttack, RegisterHit = getNetwork()
+
+    if not RegisterAttack or not RegisterHit then
+        return
+    end
+
+    local part = getTargetPart(target)
+
+    if not part then
+        return
+    end
+
+    State.combo = (State.combo % 4) + 1
+
+    pcall(function()
+        RegisterAttack:FireServer(
+            0.4,
+            State.combo
+        )
+
+        RegisterHit:FireServer(
+            part,
+            {},
+            nil
+        )
+    end)
+end
+
+local function attackTargets(targets)
+    if #targets == 0 then
+        return
+    end
+
+    for _, target in ipairs(targets) do
+        if target and alive(target) then
+            attackTarget(target)
+        end
+    end
+end
+
+--//========================================================
+--// AUTO PLAYER ATTACK
+--//========================================================
+
+local function startPlayerAttack()
+    if State.autoPlayer then
+        return
+    end
+
+    State.autoPlayer = true
+
+    spawnThread(function()
+        while State.autoPlayer do
+            local targets =
+                getPlayersInRange(Config.playerRange)
+
+            attackTargets(targets)
+
+            task.wait(attackDelay())
+        end
+    end)
+end
+
+local function stopPlayerAttack()
+    State.autoPlayer = false
+end
+
+--//========================================================
+--// AUTO MOB ATTACK
+--//========================================================
+
+local function startMobAttack()
+    if State.autoMob then
+        return
+    end
+
+    State.autoMob = true
+
+    spawnThread(function()
+        while State.autoMob do
+            local target =
+                getNearestMob(Config.mobRange)
+
+            if target then
+                attackTarget(target)
+            end
+
+            task.wait(attackDelay())
+        end
+    end)
+end
+
+local function stopMobAttack()
+    State.autoMob = false
+end
+
+--//========================================================
+--// KILL AURA
+--//========================================================
+
+local function startKillAura()
+    if State.killAura then
+        return
+    end
+
+    State.killAura = true
+
+    spawnThread(function()
+        while State.killAura do
+            local root = getMyRoot()
+
+            if root then
+                local enemies =
+                    workspace:FindFirstChild("Enemies")
+
+                if enemies then
+                    for _, enemy in ipairs(enemies:GetChildren()) do
+                        local humanoid = getHumanoid(enemy)
+                        local part = getTargetPart(enemy)
+
+                        if humanoid
+                            and humanoid.Health > 0
+                            and part
+                        then
+                            local distance =
+                                (part.Position - root.Position).Magnitude
+
+                            if distance <= Config.auraRange then
+                                if not Config.lineOfSight
+                                    or hasLineOfSight(part, enemy)
+                                then
+                                    attackTarget(enemy)
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if Config.targetPlayers then
+                    for _, character in ipairs(
+                        getPlayersInRange(Config.auraRange)
+                    ) do
+                        local part = getTargetPart(character)
+
+                        if part then
+                            if not Config.lineOfSight
+                                or hasLineOfSight(part, character)
+                            then
+                                attackTarget(character)
+                            end
+                        end
+                    end
+                end
+            end
+
+            task.wait(attackDelay())
+        end
+    end)
+end
+
+local function stopKillAura()
+    State.killAura = false
+end
+
+--//========================================================
+--// AUTO SKILLS
+--//========================================================
+
+local function pressKey(key)
+    local keyCode = Enum.KeyCode[key]
+
+    if not keyCode then
+        return
+    end
+
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(
+            true,
+            keyCode,
+            false,
+            game
+        )
+
+        task.wait(0.03)
+
+        VirtualInputManager:SendKeyEvent(
+            false,
+            keyCode,
+            false,
+            game
+        )
+    end)
+end
+
+local function startAutoSkills()
+    if State.autoSkills then
+        return
+    end
+
+    State.autoSkills = true
+
+    spawnThread(function()
+        while State.autoSkills do
+            for _, key in ipairs({
+                "Z",
+                "X",
+                "C",
+                "V",
+                "F",
+            }) do
+                if not State.autoSkills then
+                    break
+                end
+
+                if Config.skills[key] then
+                    pressKey(key)
+                end
+            end
+
+            task.wait(Config.skillInterval)
+        end
+    end)
+end
+
+local function stopAutoSkills()
+    State.autoSkills = false
+end
+
+--//========================================================
+--// FOLLOW
+--//========================================================
+
+local function startFollow()
+    if State.follow then
+        return
+    end
+
+    State.follow = true
+
+    spawnThread(function()
+        while State.follow do
+            local target =
+                getNearestPlayer()
+
+            local targetRoot =
+                target and getRoot(target)
+
+            local myRoot =
+                getMyRoot()
+
+            if targetRoot and myRoot then
+                local destination =
+                    targetRoot.Position
+                    - targetRoot.CFrame.LookVector
+                    * Config.followDistance
+
+                pcall(function()
+                    myRoot.CFrame =
+                        CFrame.lookAt(
+                            destination,
+                            targetRoot.Position
+                        )
+                end)
+
+                if Config.attackFollowTarget then
+                    attackTarget(target)
+                end
+            end
+
+            task.wait(0.25)
+        end
+    end)
+end
+
+local function stopFollow()
+    State.follow = false
+end
+
+--//========================================================
+--// AIMBOT
+--//========================================================
+
+connect(
+    RunService.RenderStepped:Connect(function()
+        if not Config.aimbot then
+            return
+        end
+
+        local camera = workspace.CurrentCamera
+
+        if not camera then
+            return
+        end
+
+        local target =
+            getNearestPlayer()
+
+        local targetRoot =
+            target and getRoot(target)
+
+        if targetRoot then
+            local desired =
+                CFrame.lookAt(
+                    camera.CFrame.Position,
+                    targetRoot.Position
+                )
+
+            camera.CFrame =
+                camera.CFrame:Lerp(
+                    desired,
+                    Config.aimSmooth
+                )
+        end
+    end)
+)
+
+--//========================================================
+--// SPECTATE
+--//========================================================
+
+connect(
+    RunService.RenderStepped:Connect(function()
+        local camera = workspace.CurrentCamera
+
+        if not camera then
+            return
+        end
+
+        if Config.spectate then
+            local target =
+                getNearestPlayer()
+
+            local humanoid =
+                target and getHumanoid(target)
+
+            if humanoid then
+                if not State.oldCameraSubject then
+                    State.oldCameraSubject =
+                        camera.CameraSubject
+                end
+
+                camera.CameraSubject = humanoid
+            end
+        else
+            if State.oldCameraSubject then
+                camera.CameraSubject =
+                    State.oldCameraSubject
+
+                State.oldCameraSubject = nil
+            end
+        end
+    end)
+)
+
+--//========================================================
+--// BOUNTY HELPERS
+--//========================================================
+
+local function healthPercent()
+    local humanoid = getMyHumanoid()
+
+    if not humanoid or humanoid.MaxHealth <= 0 then
+        return 100
+    end
+
+    return
+        (humanoid.Health / humanoid.MaxHealth) * 100
+end
+
+local function isHoldingCup(character)
+    if not character then
+        return false
+    end
+
+    for _, object in ipairs(character:GetChildren()) do
+        if object:IsA("Tool")
+            and object.Name == "Cup"
+        then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function validBountyTarget(player)
+    if player == LocalPlayer then
+        return false
+    end
+
+    local character = player.Character
+    local humanoid = getHumanoid(character)
+    local root = getRoot(character)
+
+    if not humanoid
+        or humanoid.Health <= 0
+        or not root
+    then
+        return false
+    end
+
+    if Config.bounty.noFriends then
+        local success, isFriend =
+            pcall(function()
+                return LocalPlayer:IsFriendsWith(
+                    player.UserId
+                )
+            end)
+
+        if success and isFriend then
+            return false
+        end
+    end
+
+    if Config.bounty.noCup
+        and isHoldingCup(character)
+    then
+        return false
+    end
+
+    if Config.bounty.team ~= "Both" then
+        if player.Team then
+            if not string.find(
+                string.lower(player.Team.Name),
+                string.lower(Config.bounty.team)
+            ) then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+local function selectBounty()
+    local myRoot = getMyRoot()
+
+    if not myRoot then
+        return nil
+    end
+
+    local best
+    local bestScore
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if validBountyTarget(player) then
+            local character = player.Character
+            local root = getRoot(character)
+            local humanoid = getHumanoid(character)
+
+            local score
+
+            if Config.bounty.method == "Lowest HP" then
+                score = humanoid.Health
+            else
+                score =
+                    (root.Position - myRoot.Position).Magnitude
+            end
+
+            if not bestScore or score < bestScore then
+                best = player
+                bestScore = score
+            end
+        end
+    end
+
+    return best
+end
+
+--//========================================================
+--// CHAT
+--//========================================================
+
+local function sendChat(message)
+    pcall(function()
+        local TextChatService =
+            game:GetService("TextChatService")
+
+        if TextChatService.ChatVersion ==
+            Enum.ChatVersion.TextChatService
+        then
+            local channels =
+                TextChatService:FindFirstChild("TextChannels")
+
+            local general =
+                channels
+                and channels:FindFirstChild("RBXGeneral")
+
+            if general then
+                general:SendAsync(message)
+            end
+        else
+            local events =
+                ReplicatedStorage
+                :FindFirstChild("DefaultChatSystemChatEvents")
+
+            local request =
+                events
+                and events:FindFirstChild("SayMessageRequest")
+
+            if request then
+                request:FireServer(
+                    message,
+                    "All"
+                )
+            end
+        end
+    end)
+end
+
+--//========================================================
+--// AUTO BOUNTY
+--//========================================================
+
+local function startBounty()
+    if State.bounty then
+        return
+    end
+
+    State.bounty = true
+
+    spawnThread(function()
+        while State.bounty do
+            if healthPercent() <=
+                Config.bounty.safeHealth
+            then
+                local character = getCharacter()
+                local root = getRoot(character)
+
+                if root then
+                    pcall(function()
+                        root.CFrame =
+                            root.CFrame
+                            + Vector3.new(0, 100, 0)
+                    end)
+                end
+
+                task.wait(1)
+            else
+                local target =
+                    selectBounty()
+
+                if target then
+                    local startTime =
+                        os.clock()
+
+                    while State.bounty
+                        and os.clock() - startTime
+                            < Config.bounty.maxTargetTime
+                    do
+                        if healthPercent() <=
+                            Config.bounty.safeHealth
+                        then
+                            break
+                        end
+
+                        local character =
+                            target.Character
+
+                        local humanoid =
+                            getHumanoid(character)
+
+                        local targetRoot =
+                            getRoot(character)
+
+                        if not character
+                            or not humanoid
+                            or humanoid.Health <= 0
+                            or not targetRoot
+                        then
+                            if Config.bounty.chatAfterKill then
+                                sendChat(
+                                    Config.bounty.chatMessage
+                                )
+                            end
+
+                            break
+                        end
+
+                        local offset =
+                            Config.followDistance
+
+                        local yOffset =
+                            Config.bounty.invisibleKen
+                            and 4
+                            or 0
+
+                        local destination =
+                            targetRoot.Position
+                            - targetRoot.CFrame.LookVector
+                            * offset
+                            + Vector3.new(
+                                0,
+                                yOffset,
+                                0
+                            )
+
+                        local myRoot =
+                            getMyRoot()
+
+                        if myRoot then
+                            pcall(function()
+                                myRoot.CFrame =
+                                    CFrame.lookAt(
+                                        destination,
+                                        targetRoot.Position
+                                    )
+                            end)
+                        end
+
+                        attackTarget(character)
+
+                        task.wait(attackDelay())
+                    end
+                else
+                    task.wait(0.5)
+                end
+            end
+        end
+    end)
+end
+
+local function stopBounty()
+    State.bounty = false
+end
+
+--//========================================================
+--// NO STUN
+--//========================================================
+
+local function startNoStun()
+    if State.noStun then
+        return
+    end
+
+    State.noStun = true
+
+    spawnThread(function()
+        while State.noStun do
+            local character =
+                getCharacter()
+
+            local humanoid =
+                getHumanoid(character)
+
+            if humanoid then
+                if humanoid.PlatformStand then
+                    humanoid.PlatformStand = false
+                end
+            end
+
+            if character then
+                for _, attribute in ipairs({
+                    "Stun",
+                    "Stunned",
+                }) do
+                    if character:GetAttribute(attribute) then
+                        character:SetAttribute(
+                            attribute,
+                            false
+                        )
+                    end
+                end
+            end
+
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function stopNoStun()
+    State.noStun = false
+end
+
+--//========================================================
+--// COMBAT TAB
+--//========================================================
+
+local CombatTab = Window:CreateTab({
+    name = "Combat",
+    icon = nil,
+})
+
+--// PLAYER COMBAT
+
+CombatTab:CreateSection({ name = "PLAYER COMBAT", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Auto Attack Players",
+    flag = "AutoAttackPlayers",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startPlayerAttack()
+        else
+            stopPlayerAttack()
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Player Range",
+    flag = "PlayerRange",
+    range = {10, 200},
+    increment = 1,
+    currentValue = Config.playerRange,
+
+    callback = function(value)
+        Config.playerRange = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Fast Attack",
+    flag = "FastAttack",
+    currentValue = Config.fastAttack,
+
+    callback = function(value)
+        Config.fastAttack = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Attack While Farming",
+    flag = "TargetPlayers",
+    currentValue = Config.targetPlayers,
+
+    callback = function(value)
+        Config.targetPlayers = value
+    end,
+})
+
+--// MOB COMBAT
+
+CombatTab:CreateSection({ name = "MOB COMBAT", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Auto Attack Mobs",
+    flag = "AutoAttackMobs",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startMobAttack()
+        else
+            stopMobAttack()
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Mob Range",
+    flag = "MobRange",
+    range = {10, 250},
+    increment = 1,
+    currentValue = Config.mobRange,
+
+    callback = function(value)
+        Config.mobRange = value
+    end,
+})
+
+--// KILL AURA
+
+CombatTab:CreateSection({ name = "KILL AURA", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Kill Aura",
+    flag = "KillAura",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startKillAura()
+        else
+            stopKillAura()
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Aura Range",
+    flag = "AuraRange",
+    range = {10, 200},
+    increment = 1,
+    currentValue = Config.auraRange,
+
+    callback = function(value)
+        Config.auraRange = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Line of Sight",
+    flag = "LineOfSight",
+    currentValue = Config.lineOfSight,
+
+    callback = function(value)
+        Config.lineOfSight = value
+    end,
+})
+
+--// AIMBOT
+
+CombatTab:CreateSection({ name = "AIMBOT", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Aimbot",
+    flag = "Aimbot",
+    currentValue = Config.aimbot,
+
+    callback = function(value)
+        Config.aimbot = value
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Smoothness",
+    flag = "AimSmooth",
+    range = {3, 100},
+    increment = 1,
+    currentValue =
+        math.floor(Config.aimSmooth * 100),
+
+    callback = function(value)
+        Config.aimSmooth = value / 100
+    end,
+})
+
+--// AUTO SKILLS
+
+CombatTab:CreateSection({ name = "AUTO SKILLS", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Auto Skills",
+    flag = "AutoSkills",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startAutoSkills()
+        else
+            stopAutoSkills()
+        end
+    end,
+})
+
+for _, key in ipairs({
+    "Z",
+    "X",
+    "C",
+    "V",
+    "F",
+}) do
+    CombatTab:CreateToggle({
+        name = "Skill " .. key,
+        flag = "Skill" .. key,
+        currentValue = Config.skills[key],
+
+        callback = function(value)
+            Config.skills[key] = value
+        end,
+    })
+end
+
+CombatTab:CreateSlider({
+    name = "Skill Interval",
+    flag = "SkillInterval",
+    range = {100, 1000},
+    increment = 10,
+    suffix = " ms",
+    currentValue =
+        math.floor(Config.skillInterval * 1000),
+
+    callback = function(value)
+        Config.skillInterval =
+            value / 1000
+    end,
+})
+
+--// PLAYER TRACKING
+
+CombatTab:CreateSection({ name = "PLAYER TRACKING", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Follow Nearest",
+    flag = "FollowNearest",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startFollow()
+        else
+            stopFollow()
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Follow Distance",
+    flag = "FollowDistance",
+    range = {2, 20},
+    increment = 1,
+    currentValue =
+        Config.followDistance,
+
+    callback = function(value)
+        Config.followDistance = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "1v1 Attack Target",
+    flag = "AttackFollowTarget",
+    currentValue = false,
+
+    callback = function(value)
+        Config.attackFollowTarget = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Spectate Nearest",
+    flag = "SpectateNearest",
+    currentValue = false,
+
+    callback = function(value)
+        Config.spectate = value
+    end,
+})
+
+--// AUTO BOUNTY
+
+CombatTab:CreateSection({ name = "AUTO BOUNTY V4", icon = nil })
+
+CombatTab:CreateToggle({
+    name = "Auto Bounty V4",
+    flag = "AutoBounty",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startBounty()
+        else
+            stopBounty()
+        end
+    end,
+})
+
+CombatTab:CreateDropdown({
+    name = "Target Team",
+    flag = "TargetTeam",
+
+    options = {
+        "Both",
+        "Pirates",
+        "Marines",
+    },
+
+    currentOption = {"Both"},
+
+    callback = function(option)
+        Config.bounty.team =
+            option[1]
+    end,
+})
+
+CombatTab:CreateDropdown({
+    name = "Farm Method",
+    flag = "BountyMethod",
+
+    options = {
+        "Nearest",
+        "Lowest HP",
+    },
+
+    currentOption = {"Nearest"},
+
+    callback = function(option)
+        Config.bounty.method =
+            option[1]
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Don't Attack Friends",
+    flag = "NoFriends",
+    currentValue =
+        Config.bounty.noFriends,
+
+    callback = function(value)
+        Config.bounty.noFriends = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Don't Attack Cup Holders",
+    flag = "NoCup",
+    currentValue =
+        Config.bounty.noCup,
+
+    callback = function(value)
+        Config.bounty.noCup = value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "No Stun",
+    flag = "NoStun",
+    currentValue = false,
+
+    callback = function(value)
+        if value then
+            startNoStun()
+        else
+            stopNoStun()
+        end
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Invisible From Ken",
+    flag = "InvisibleKen",
+    currentValue =
+        Config.bounty.invisibleKen,
+
+    callback = function(value)
+        Config.bounty.invisibleKen =
+            value
+    end,
+})
+
+CombatTab:CreateToggle({
+    name = "Chat After Kill",
+    flag = "ChatAfterKill",
+    currentValue =
+        Config.bounty.chatAfterKill,
+
+    callback = function(value)
+        Config.bounty.chatAfterKill =
+            value
+    end,
+})
+
+CombatTab:CreateInput({
+    name = "Kill Message",
+    flag = "KillMessage",
+
+    placeholderText = "gg",
+
+    removeTextAfterFocusLost = false,
+
+    currentValue =
+        Config.bounty.chatMessage,
+
+    callback = function(value)
+        if value ~= "" then
+            Config.bounty.chatMessage =
+                value
+        end
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Safe Zone HP",
+    flag = "SafeHealth",
+    range = {0, 100},
+    increment = 1,
+    suffix = "%",
+    currentValue =
+        Config.bounty.safeHealth,
+
+    callback = function(value)
+        Config.bounty.safeHealth =
+            value
+    end,
+})
+
+CombatTab:CreateSlider({
+    name = "Maximum Target Time",
+    flag = "MaxTargetTime",
+    range = {5, 60},
+    increment = 1,
+    suffix = " s",
+    currentValue =
+        Config.bounty.maxTargetTime,
+
+    callback = function(value)
+        Config.bounty.maxTargetTime =
+            value
+    end,
+})
+
+--//========================================================
+--// UTILITY TAB
+--//========================================================
+
+CombatTab:CreateSection({ name = "CHARACTER ", icon = nil })
+
+CombatTab:CreateButton({
+    name = "Equip Weapon",
+    callback = function()
+        equipWeapon()
+    end,
+})
+
+CombatTab:CreateButton({
+    name = "Unequip Fishing Rod",
+    callback = function()
+        unequipBadTool()
+    end,
+})
+
+CombatTab:CreateButton({
+    name = "Stop All Features",
+    callback = function()
+        State.autoPlayer = false
+        State.autoMob = false
+        State.killAura = false
+        State.autoSkills = false
+        State.follow = false
+        State.bounty = false
+        State.noStun = false
+
+        Config.aimbot = false
+        Config.spectate = false
+
+        local camera =
+            workspace.CurrentCamera
+
+        local humanoid =
+            getMyHumanoid()
+
+        if camera and humanoid then
+            camera.CameraSubject =
+                humanoid
+        end
+    end,
+})
+
+--//========================================================
+--// CHARACTER RESPAWN
+--//========================================================
+
+connect(
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
+
+        if Config.spectate then
+            State.oldCameraSubject = nil
+        end
+
+        equipWeapon()
+    end)
+)
+
+--//========================================================
+--// STARTUP
+--//========================================================
+
+task.spawn(function()
+    task.wait(1)
+    equipWeapon()
+end)
+
+
+--========================================================
+-- PLAYER MODULE
+--========================================================
+
+local PlayerModule = {}
+
+PlayerModule.config = {
+    noclip = false,
+    walkWater = false,
+
+    speedOn = false,
+    walkSpeed = 50,
+
+    jumpOn = false,
+    jumpPower = 120,
+
+    ken = false,
+    buso = false,
+
+    antiAfk = true,
+}
+
+PlayerModule._esp = {}
+PlayerModule._espOn = false
+PlayerModule._platform = nil
+PlayerModule._connections = {}
+
+--========================================================
+-- HELPERS
+--========================================================
+
+local function playerGetCharacter()
+    return LP.Character
+end
+
+local function playerGetRoot()
+    local character = playerGetCharacter()
+
+    return character
+        and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function playerGetHumanoid()
+    local character = playerGetCharacter()
+
+    return character
+        and character:FindFirstChildOfClass("Humanoid")
+end
+
+--========================================================
+-- PLAYER ESP
+--========================================================
+
+local function createESP(player)
+
+    if player == LP then
+        return
+    end
+
+    local character = player.Character
+
+    if not character then
+        return
+    end
+
+    if PlayerModule._esp[player] then
+        return
+    end
+
+    local highlight = Instance.new("Highlight")
+
+    highlight.Name = "DarkHub_PlayerESP"
+    highlight.FillColor =
+        Color3.fromRGB(255, 80, 80)
+
+    highlight.OutlineColor =
+        Color3.fromRGB(255, 255, 255)
+
+    highlight.FillTransparency = 0.6
+    highlight.OutlineTransparency = 0
+
+    highlight.Adornee = character
+    highlight.Parent = character
+
+    local billboard = Instance.new("BillboardGui")
+
+    billboard.Name = "DarkHub_Distance"
+    billboard.Size =
+        UDim2.fromOffset(120, 30)
+
+    billboard.StudsOffset =
+        Vector3.new(0, 3, 0)
+
+    billboard.AlwaysOnTop = true
+    billboard.Adornee =
+        character:FindFirstChild("HumanoidRootPart")
+        or character
+
+    billboard.Parent = character
+
+    local label = Instance.new("TextLabel")
+
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.fromScale(1, 1)
+
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 11
+
+    label.TextColor3 =
+        Color3.new(1, 1, 1)
+
+    label.TextStrokeTransparency = 0.5
+    label.Text = player.Name
+
+    label.Parent = billboard
+
+    PlayerModule._esp[player] = {
+        highlight = highlight,
+        billboard = billboard,
+        label = label,
+        character = character,
+    }
+end
+
+local function removeESP(player)
+
+    local esp =
+        PlayerModule._esp[player]
+
+    if not esp then
+        return
+    end
+
+    pcall(function()
+        esp.highlight:Destroy()
+        esp.billboard:Destroy()
+    end)
+
+    PlayerModule._esp[player] = nil
+end
+
+local function clearESP()
+
+    for player in pairs(
+        PlayerModule._esp
+    ) do
+
+        removeESP(player)
+
+    end
+end
+
+local function setESP(enabled)
+
+    PlayerModule._espOn = enabled
+
+    if not enabled then
+        clearESP()
+        return
+    end
+
+    for _, player in ipairs(
+        Players:GetPlayers()
+    ) do
+
+        if player ~= LP then
+            createESP(player)
+        end
+
+    end
+end
+
+--========================================================
+-- ESP LOOP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.Heartbeat:Connect(function()
+
+        if not PlayerModule._espOn then
+            return
+        end
+
+        local myRoot = playerGetRoot()
+
+        for _, player in ipairs(
+            Players:GetPlayers()
+        ) do
+
+            if player ~= LP then
+
+                local character =
+                    player.Character
+
+                if character then
+
+                    local esp =
+                        PlayerModule._esp[player]
+
+                    if not esp
+                        or esp.character ~= character
+                    then
+
+                        removeESP(player)
+                        createESP(player)
+
+                        esp =
+                            PlayerModule._esp[player]
+                    end
+
+                    if esp then
+
+                        local targetRoot =
+                            character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if targetRoot
+                            and myRoot
+                        then
+
+                            local distance =
+                                math.floor(
+                                    (
+                                        targetRoot.Position
+                                        - myRoot.Position
+                                    ).Magnitude
+                                )
+
+                            esp.label.Text =
+                                player.Name
+                                .. "\n"
+                                .. distance
+                                .. "m"
+
+                        end
+                    end
+                end
+            end
+        end
+
+        for player in pairs(
+            PlayerModule._esp
+        ) do
+
+            if not Players:FindFirstChild(
+                player.Name
+            ) then
+
+                removeESP(player)
+
+            end
+        end
+    end)
+)
+
+--========================================================
+-- NOCLIP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.Stepped:Connect(function()
+
+        if not PlayerModule.config.noclip then
+            return
+        end
+
+        local character =
+            playerGetCharacter()
+
+        if not character then
+            return
+        end
+
+        for _, part in ipairs(
+            character:GetDescendants()
+        ) do
+
+            if part:IsA("BasePart")
+                and part.Name ~= "HumanoidRootPart"
+            then
+                part.CanCollide = false
+            end
+
+        end
+    end)
+)
+
+--========================================================
+-- WALK ON WATER
+--========================================================
+
+local WaterPlatform = nil
+local WaterY = nil
+local LastWaterTime = 0
+
+local WATER_PLATFORM_SIZE = Vector3.new(40, 1, 40)
+local WATER_PLATFORM_OFFSET = 3
+local WATER_CHECK_DISTANCE = 12
+local WATER_KEEP_TIME = 1.5
+
+local function RemoveWaterPlatform()
+    if WaterPlatform then
+        pcall(function()
+            WaterPlatform:Destroy()
+        end)
+        WaterPlatform = nil
+    end
+
+    WaterY = nil
+end
+
+local function CreateWaterPlatform()
+    if WaterPlatform and WaterPlatform.Parent then
+        return WaterPlatform
+    end
+
+    local part = Instance.new("Part")
+    part.Name = "WalkOnWaterPlatform"
+    part.Size = WATER_PLATFORM_SIZE
+    part.Anchored = true
+    part.CanCollide = true
+    part.CanTouch = false
+    part.CanQuery = false
+    part.Transparency = 1
+    part.CastShadow = false
+    part.Parent = workspace
+
+    WaterPlatform = part
+
+    return part
+end
+
+local function FindWaterY(root)
+    if not root then
+        return nil
+    end
+
+    local character = LP.Character
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        character,
+        WaterPlatform
+    }
+    params.IgnoreWater = false
+    params.RespectCanCollide = false
+
+    local origin = root.Position + Vector3.new(0, 8, 0)
+    local direction = Vector3.new(0, -WATER_CHECK_DISTANCE - 8, 0)
+
+    local result = workspace:Raycast(
+        origin,
+        direction,
+        params
+    )
+
+    if result and result.Material == Enum.Material.Water then
+        return result.Position.Y
+    end
+
+    -- Extra checks around the player.
+    -- This helps when the center ray misses the water.
+
+    local offsets = {
+        Vector3.new(6, 8, 0),
+        Vector3.new(-6, 8, 0),
+        Vector3.new(0, 8, 6),
+        Vector3.new(0, 8, -6),
+        Vector3.new(6, 8, 6),
+        Vector3.new(-6, 8, -6),
+        Vector3.new(6, 8, -6),
+        Vector3.new(-6, 8, 6),
+    }
+
+    for _, offset in ipairs(offsets) do
+        local checkOrigin = root.Position + offset
+
+        local hit = workspace:Raycast(
+            checkOrigin,
+            direction,
+            params
+        )
+
+        if hit and hit.Material == Enum.Material.Water then
+            return hit.Position.Y
+        end
+    end
+
+    return nil
+end
+
+local function IsNearWater(root)
+    if not root then
+        return false
+    end
+
+    local humanoid = playerGetHumanoid()
+
+    -- First check the normal Roblox swimming state.
+    if humanoid then
+        if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+            local y = root.Position.Y
+
+            if y then
+                return true, y
+            end
+        end
+    end
+
+    -- Then perform physical water detection.
+    local waterY = FindWaterY(root)
+
+    if waterY then
+        return true, waterY
+    end
+
+    return false, nil
+end
+
+table.insert(PlayerModule._connections, RunService.Heartbeat:Connect(function()
+    if not PlayerModule.config.walkWater then
+        RemoveWaterPlatform()
+        return
+    end
+
+    local root = playerGetRoot()
+    local humanoid = playerGetHumanoid()
+
+    if not root or not humanoid then
+        RemoveWaterPlatform()
+        return
+    end
+
+    -- Don't interfere with farming.
+    local farm = M
+
+    local farming =
+        M._farmOn
+        or M._bossOn
+        or M._nearestOn
+
+    if farming then
+        RemoveWaterPlatform()
+        return
+    end
+
+    local nearWater, detectedWaterY = IsNearWater(root)
+
+    if nearWater and detectedWaterY then
+        WaterY = detectedWaterY
+        LastWaterTime = os.clock()
+    end
+
+    -- Keep the platform alive briefly after leaving the water.
+    -- This prevents the platform from disappearing while the
+    -- Humanoid changes from Swimming -> Running.
+    local recentlyOnWater =
+        (os.clock() - LastWaterTime) <= WATER_KEEP_TIME
+
+    if nearWater or recentlyOnWater then
+
+        if not WaterY then
+            WaterY = root.Position.Y - 3
+        end
+
+        local platform = CreateWaterPlatform()
+
+        if platform then
+
+            -- Put the platform slightly below the character.
+            local platformY = WaterY
+
+            platform.CFrame = CFrame.new(
+                root.Position.X,
+                platformY,
+                root.Position.Z
+            )
+
+            -- Make sure the player is above the platform.
+            local desiredY = platformY + WATER_PLATFORM_OFFSET
+
+            if root.Position.Y < desiredY then
+                root.CFrame = CFrame.new(
+                    root.Position.X,
+                    desiredY,
+                    root.Position.Z
+                )
+
+                root.AssemblyLinearVelocity = Vector3.new(
+                    root.AssemblyLinearVelocity.X,
+                    0,
+                    root.AssemblyLinearVelocity.Z
+                )
+            end
+
+            -- Prevent Swimming from continuing to fight the platform.
+            if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+                pcall(function()
+                    humanoid:ChangeState(
+                        Enum.HumanoidStateType.Running
+                    )
+                end)
+            end
+        end
+
+    else
+        RemoveWaterPlatform()
+    end
+end))
+
+-- SPEED / JUMP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.RenderStepped:Connect(function()
+
+        local humanoid =
+            playerGetHumanoid()
+
+        if not humanoid then
+            return
+        end
+
+        if PlayerModule.config.speedOn then
+
+            humanoid.WalkSpeed =
+                PlayerModule.config.walkSpeed
+
+        end
+
+        if PlayerModule.config.jumpOn then
+
+            humanoid.UseJumpPower = true
+
+            humanoid.JumpPower =
+                PlayerModule.config.jumpPower
+
+        end
+    end)
+)
+
+--========================================================
+-- HAKI
+--========================================================
+
+local function getRemotes()
+
+    return ReplicatedStorage:
+        FindFirstChild("Remotes")
+
+end
+
+function PlayerModule.setKen(enabled)
+
+    PlayerModule.config.ken = enabled
+
+    local remotes =
+        getRemotes()
+
+    if not remotes then
+        return
+    end
+
+    local CommE =
+        remotes:FindFirstChild("CommE")
+
+    if CommE then
+
+        pcall(function()
+
+            CommE:FireServer(
+                "Ken",
+                enabled
+            )
+
+        end)
+
+    end
+end
+
+function PlayerModule.setBuso(enabled)
+
+    PlayerModule.config.buso = enabled
+
+    local remotes =
+        getRemotes()
+
+    if not remotes then
+        return
+    end
+
+    local CommF =
+        remotes:FindFirstChild("CommF_")
+
+    if CommF then
+
+        pcall(function()
+
+            CommF:InvokeServer("Buso")
+
+        end)
+
+    end
+end
+
+--========================================================
+-- ANTI-AFK
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    LP.Idled:Connect(function()
+
+        if not PlayerModule.config.antiAfk then
+            return
+        end
+
+        pcall(function()
+
+            VirtualUser:CaptureController()
+
+            VirtualUser:ClickButton2(
+                Vector2.new()
+            )
+
+        end)
+
+    end)
+)
+
+--========================================================
+-- CHARACTER RESET
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    LP.CharacterAdded:Connect(function()
+
+        task.wait(0.5)
+
+        local humanoid =
+            playerGetHumanoid()
+
+        if humanoid then
+
+            humanoid.WalkSpeed = 16
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = 50
+
+        end
+
+        clearESP()
+
+    end)
+)
+
+--========================================================
+-- PLAYER TAB
+--========================================================
+
+local PlayerTab = Window:CreateTab({
+    name = "Player",
+    icon = nil,
+})
+
+--========================================================
+-- ESP
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "PLAYER ESP",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Player ESP",
+    flag = "PlayerESP",
+    value = false,
+
+    callback = function(value)
+
+        setESP(value)
+
+    end,
+})
+
+--========================================================
+-- MOBILITY
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "MOBILITY",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "NoClip",
+    flag = "PlayerNoClip",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.noclip = value
+
+        if not value then
+
+            local character = LP.Character
+
+            if character then
+
+                for _, part in ipairs(
+                    character:GetDescendants()
+                ) do
+
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+
+                end
+
+            end
+
+        end
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Walk on Water",
+    flag = "WalkWater",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.walkWater =
+            value
+
+        if not value
+            and PlayerModule._platform
+        then
+
+            PlayerModule._platform:Destroy()
+            PlayerModule._platform = nil
+
+        end
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Speed Boost",
+    flag = "SpeedBoost",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.speedOn =
+            value
+
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name = "Walk Speed",
+    flag = "WalkSpeed",
+
+    range = {
+        16,
+        300
+    },
+
+    increment = 1,
+    value = 50,
+
+    callback = function(value)
+
+        PlayerModule.config.walkSpeed =
+            value
+
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Super Jump",
+    flag = "SuperJump",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.jumpOn =
+            value
+
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name = "Jump Power",
+    flag = "JumpPower",
+
+    range = {
+        50,
+        500
+    },
+
+    increment = 1,
+    value = 120,
+
+    callback = function(value)
+
+        PlayerModule.config.jumpPower =
+            value
+
+    end,
+})
+
+--========================================================
+-- HAKI
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "HAKI",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Auto Ken",
+    flag = "AutoKen",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.setKen(value)
+
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Auto Buso",
+    flag = "AutoBuso",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.setBuso(value)
+
+    end,
+})
+
+--========================================================
+-- UTILITY
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "UTILITY",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Anti-AFK",
+    flag = "AntiAFK",
+    value = true,
+
+    callback = function(value)
+
+        PlayerModule.config.antiAfk =
+            value
+
+    end,
+})
+
+
+
+
+
