@@ -597,6 +597,186 @@ local function GetAimTarget()
 end
 
 --========================================================
+-- FIRE BUTTON
+-- Uses Settings.AimTarget
+--========================================================
+
+local FireGui = Instance.new("ScreenGui")
+FireGui.Name = "FireButtonGUI"
+FireGui.ResetOnSpawn = false
+FireGui.Parent = lp:WaitForChild("PlayerGui")
+
+local FireFrame = Instance.new("Frame")
+FireFrame.Size = UDim2.fromOffset(180, 90)
+FireFrame.Position = UDim2.new(0.5, -90, 0.7, 0)
+FireFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+FireFrame.BorderSizePixel = 0
+FireFrame.Active = true
+FireFrame.Parent = FireGui
+
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 10)
+FrameCorner.Parent = FireFrame
+
+local FireButton = Instance.new("TextButton")
+FireButton.Size = UDim2.new(1, -20, 1, -20)
+FireButton.Position = UDim2.fromOffset(10, 10)
+FireButton.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+FireButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FireButton.Text = "🔥 FIRE"
+FireButton.TextSize = 22
+FireButton.Font = Enum.Font.GothamBold
+FireButton.BorderSizePixel = 0
+FireButton.Parent = FireFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+ButtonCorner.Parent = FireButton
+
+
+--========================================================
+-- FIRE FUNCTION
+--========================================================
+
+local function FireAtAimTarget()
+
+    local target = Settings.AimTarget
+
+    if not target then
+        return
+    end
+
+    local character = target.Character
+    if not character then
+        return
+    end
+
+    local targetPart =
+        character:FindFirstChild(Settings.TargetPart)
+        or character:FindFirstChild("HumanoidRootPart")
+
+    if not targetPart then
+        return
+    end
+
+    local myCharacter = lp.Character
+    local root =
+        myCharacter
+        and myCharacter:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        return
+    end
+
+    -- Make the shot point from the player toward the target.
+    local origin = root.Position
+    local targetPosition = targetPart.Position
+
+    local shotCFrame = CFrame.lookAt(
+        origin,
+        targetPosition
+    )
+
+    -- Your game's server-side gun handler should receive
+    -- this request and validate the shot.
+    local gun =
+        lp.Character and lp.Character:FindFirstChild("Gun")
+        or lp.Backpack and lp.Backpack:FindFirstChild("Gun")
+
+    if not gun then
+        return
+    end
+
+    local shootEvent = gun:FindFirstChild("Shoot")
+
+    if not shootEvent then
+        return
+    end
+
+    shootEvent:FireServer(
+        shotCFrame,
+        CFrame.new(targetPosition)
+    )
+end
+
+
+--========================================================
+-- FIRE BUTTON
+--========================================================
+
+FireButton.Activated:Connect(function()
+
+    -- Refresh the target immediately before firing.
+    if not Settings.AimTarget
+        or not IsValidTarget(Settings.AimTarget) then
+
+        Settings.AimTarget = GetAimTarget()
+    end
+
+    FireAtAimTarget()
+
+end)
+
+
+--========================================================
+-- DRAGGABLE GUI
+-- PC + MOBILE
+--========================================================
+
+local dragging = false
+local dragStart
+local startPosition
+
+local function UpdateDrag(input)
+
+    local delta = input.Position - dragStart
+
+    FireFrame.Position = UDim2.new(
+        startPosition.X.Scale,
+        startPosition.X.Offset + delta.X,
+        startPosition.Y.Scale,
+        startPosition.Y.Offset + delta.Y
+    )
+
+end
+
+FireFrame.InputBegan:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPosition = FireFrame.Position
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+
+        end)
+
+    end
+
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if not dragging then
+        return
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        UpdateDrag(input)
+
+    end
+
+end)
+
+--========================================================
 -- MURDERER-ONLY HITBOX
 --========================================================
 
