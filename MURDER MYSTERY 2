@@ -7,7 +7,7 @@ local Rayfield = loadstring(game:HttpGet(
 ))()
 
 local Window = Rayfield:CreateWindow({
-    name = "🔪 DARK HUB | MURDER MYSTERY 2",
+    name = "🔪 DARK HUB | MURDER MYSTERY 2 ",
     subtitle = "by MaX",
     sidebarLayout = true,
     theme = "ember",
