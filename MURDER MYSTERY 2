@@ -166,8 +166,30 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
+--========================================================
+-- GUN ESP + AUTO TELEPORT / SNAP BACK
+--========================================================
+
 local GunDropESP = false
 local GunDropHighlight = nil
+local GunTeleporting = false
+
+local function GetGunDropPart(gunDrop)
+    if not gunDrop then
+        return nil
+    end
+
+    if gunDrop:IsA("BasePart") then
+        return gunDrop
+    end
+
+    if gunDrop:IsA("Model") then
+        return gunDrop.PrimaryPart
+            or gunDrop:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return nil
+end
 
 local function UpdateGunDropESP()
     if GunDropHighlight then
@@ -185,6 +207,12 @@ local function UpdateGunDropESP()
         return
     end
 
+    local gunPart = GetGunDropPart(gunDrop)
+
+    if not gunPart then
+        return
+    end
+
     GunDropHighlight = Instance.new("Highlight")
     GunDropHighlight.Name = "GunDropESP"
     GunDropHighlight.Adornee = gunDrop
@@ -196,40 +224,87 @@ local function UpdateGunDropESP()
     GunDropHighlight.Parent = gunDrop
 end
 
+--========================================================
+-- TELEPORT TO GUN -> SNAP BACK
+--========================================================
+
 local function TeleportToGunDrop()
+    if not GunDropESP then
+        return
+    end
+
+    if GunTeleporting then
+        return
+    end
+
     local character = lp.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+
+    if not root then
+        return
+    end
 
     local gunDrop = Workspace:FindFirstChild("GunDrop", true)
-    if not gunDrop then return end
 
-    local gunPart
-
-    if gunDrop:IsA("BasePart") then
-        gunPart = gunDrop
-    elseif gunDrop:IsA("Model") then
-        gunPart = gunDrop.PrimaryPart
-            or gunDrop:FindFirstChildWhichIsA("BasePart", true)
+    if not gunDrop then
+        return
     end
 
-    if not gunPart then return end
+    local gunPart = GetGunDropPart(gunDrop)
 
+    if not gunPart then
+        return
+    end
+
+    GunTeleporting = true
+
+    -- Save current position
     local oldCFrame = root.CFrame
 
+    -- Teleport above the gun
     root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
 
-    task.wait(0.1)
+    -- Small delay so the character reaches the gun
+    task.wait(0.12)
 
-    root.CFrame = oldCFrame
+    -- Snap back to original position
+    if root and root.Parent then
+        root.CFrame = oldCFrame
+
+        -- Stop leftover movement
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    GunTeleporting = false
 end
 
+--========================================================
+-- DETECT GUN APPEARING
+--========================================================
+
 Workspace.DescendantAdded:Connect(function(obj)
-    if obj.Name == "GunDrop" and GunDropESP then
-        task.wait()
-        UpdateGunDropESP()
+    if obj.Name ~= "GunDrop" then
+        return
     end
+
+    if not GunDropESP then
+        return
+    end
+
+    task.wait()
+
+    UpdateGunDropESP()
+
+    -- Automatically teleport to the newly spawned gun
+    task.spawn(function()
+        TeleportToGunDrop()
+    end)
 end)
+
+--========================================================
+-- DETECT GUN REMOVING
+--========================================================
 
 Workspace.DescendantRemoving:Connect(function(obj)
     if obj.Name == "GunDrop" then
@@ -253,6 +328,10 @@ ESPTab:CreateToggle({
     end,
 })
 
+--========================================================
+-- GUN ESP TOGGLE
+--========================================================
+
 ESPTab:CreateToggle({
     name = "Gun ESP",
     default = false,
@@ -261,10 +340,15 @@ ESPTab:CreateToggle({
         GunDropESP = value
         UpdateGunDropESP()
 
+        -- If gun already exists when enabled,
+        -- teleport immediately and snap back.
         if value then
             task.spawn(function()
                 task.wait(0.1)
-                TeleportToGunDrop()
+
+                if Workspace:FindFirstChild("GunDrop", true) then
+                    TeleportToGunDrop()
+                end
             end)
         end
     end,
