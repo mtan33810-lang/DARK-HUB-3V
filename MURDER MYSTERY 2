@@ -730,11 +730,19 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 --========================================================
+-- AIM TAB
+--========================================================
+
+local grid = AimTab:CreateGroup()
+
+local left = grid:CreateGroup({ direction = "column" })
+
+--========================================================
 -- HBE TOGGLE
 --========================================================
 
-AimTab:CreateToggle({
-    name = "Murderer Hitbox",
+left:CreateToggle({
+    name = "Hitbox ",
     description = "Works only when you are Murderer",
     value = false,
 
@@ -753,10 +761,42 @@ AimTab:CreateToggle({
 })
 
 --========================================================
+-- AIMBOT TOGGLE
+--========================================================
+
+left:CreateToggle({ 
+    name = "Aimbot",
+    value = false,
+
+    callback = function(value)
+        Settings.Aimbot = value
+
+        if not value then
+            Settings.AimTarget = nil
+        end
+    end,
+})
+
+--========================================================
+-- FOV TOGGLE
+--========================================================
+
+left:CreateToggle({
+    name = "Show FOV",
+    value = true,
+
+    callback = function(value)
+        Settings.ShowFOV = value
+    end,
+})
+
+--========================================================
 -- HITBOX SIZE SLIDER
 --========================================================
 
-AimTab:CreateSlider({
+local right = grid:CreateGroup({ direction = "column" })
+
+right:CreateSlider({ 
     name = "Hitbox Size",
     range = {2, 50},
     increment = 1,
@@ -779,56 +819,10 @@ AimTab:CreateSlider({
 })
 
 --========================================================
--- AIMBOT TOGGLE
---========================================================
-
-AimTab:CreateToggle({
-    name = "Aimbot",
-    value = false,
-
-    callback = function(value)
-        Settings.Aimbot = value
-
-        if not value then
-            Settings.AimTarget = nil
-        end
-    end,
-})
-
---========================================================
--- FOV TOGGLE
---========================================================
-
-AimTab:CreateToggle({
-    name = "Show FOV",
-    value = true,
-
-    callback = function(value)
-        Settings.ShowFOV = value
-    end,
-})
-
---========================================================
--- FOV SLIDER
---========================================================
-
-AimTab:CreateSlider({
-    name = "FOV",
-    range = {20, 500},
-    increment = 5,
-    suffix = "°",
-    currentValue = Settings.FOV,
-
-    callback = function(value)
-        Settings.FOV = value
-    end,
-})
-
---========================================================
 -- SMOOTHNESS SLIDER
 --========================================================
 
-AimTab:CreateSlider({
+right:CreateSlider({ 
     name = "Smoothness",
     range = {1, 100},
     increment = 1,
@@ -841,10 +835,26 @@ AimTab:CreateSlider({
 })
 
 --========================================================
+-- FOV SLIDER
+--========================================================
+
+right:CreateSlider({ 
+    name = "FOV",
+    range = {20, 500},
+    increment = 5,
+    suffix = "°",
+    currentValue = Settings.FOV,
+
+    callback = function(value)
+        Settings.FOV = value
+    end,
+})
+
+--========================================================
 -- AIM PART SELECTOR
 --========================================================
 
-AimTab:CreateDropdown({
+right:CreateDropdown({ 
     name = "Aim Part",
     options = {
         "Head",
@@ -860,7 +870,7 @@ AimTab:CreateDropdown({
         Settings.TargetPart = option
         Settings.AimTarget = nil
     end,
-})
+})   
 
 --========================================================
 -- STABLE AIM LOOP
