@@ -895,28 +895,27 @@ end
 
     local myRole = GetLocalRole()
 
-    -- Sheriff = Murderer only
-    if myRole == "Sheriff" then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= lp then
-                if GetPlayerRole(player) == "Murderer" then
-                    ApplyHitbox(player.Character)
-                else
-                    RestoreHitbox(player.Character)
-                end
-            end
-        end
+    -- 🔴 YOU = MURDERER → EVERYONE gets hitbox
+    if myRole == "Murderer" then
 
-    -- Murderer = everyone
-    elseif myRole == "Murderer" then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= lp then
                 ApplyHitbox(player.Character)
             end
         end
 
-    -- Innocent = everyone normal
+    -- 🔵 SHERIFF → EVERYONE normal
+    elseif myRole == "Sheriff" then
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+                RestoreHitbox(player.Character)
+            end
+        end
+
+    -- 🟢 INNOCENT → EVERYONE normal
     else
+
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= lp then
                 RestoreHitbox(player.Character)
