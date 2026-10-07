@@ -10,7 +10,7 @@ local Window = Rayfield:CreateWindow({
     name = "🔪 DARK HUB | MURDER MYSTERY 2",
     subtitle = "by MaX",
     sidebarLayout = true,
-    theme = "cobalt",
+    theme = "ember",
 
     configuration = {
         autoSave = true,
