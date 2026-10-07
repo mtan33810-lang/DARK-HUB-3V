@@ -584,7 +584,7 @@ end
 
 getgenv().HBE = false
 
-local HITBOX_SIZE = Vector3.new(15, 15, 15)
+local HITBOX_SIZE = Vector3.new(255, 255, 255)
 local HITBOX_COLOUR = Color3.fromRGB(255, 0, 0)
 
 --========================================================
@@ -636,7 +636,7 @@ local function RestoreHitbox(char)
     end
 
     root.Size = Vector3.new(2, 2, 1)
-    root.Transparency = 1
+    root.Transparency = 0.5
     root.CanCollide = false
 end
 
