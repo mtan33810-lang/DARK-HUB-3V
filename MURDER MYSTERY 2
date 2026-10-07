@@ -384,6 +384,7 @@ ESPTab:CreateToggle({
 
 local Settings = {
     Aimbot = false,
+    FireButton = false,
     ShowFOV = true,
 
     FOV = 120,
@@ -895,7 +896,7 @@ end
 
     local myRole = GetLocalRole()
 
-    -- 🔴 YOU = MURDERER → EVERYONE gets hitbox
+    --  YOU = MURDERER → EVERYONE gets hitbox
     if myRole == "Murderer" then
 
         for _, player in ipairs(Players:GetPlayers()) do
@@ -904,7 +905,7 @@ end
             end
         end
 
-    -- 🔵 SHERIFF → EVERYONE normal
+    --  SHERIFF → EVERYONE normal
     elseif myRole == "Sheriff" then
 
         for _, player in ipairs(Players:GetPlayers()) do
@@ -913,7 +914,7 @@ end
             end
         end
 
-    -- 🟢 INNOCENT → EVERYONE normal
+    --  INNOCENT → EVERYONE normal
     else
 
         for _, player in ipairs(Players:GetPlayers()) do
@@ -1035,6 +1036,24 @@ left:CreateToggle({
 
         if not value then
             Settings.AimTarget = nil
+        end
+    end,
+})
+
+--========================================================
+-- FIRE BUTTON 
+--========================================================
+
+left:CreateToggle({
+    name = "Fire Button",
+    description = "Show or hide the mobile Fire button",
+    value = false,
+
+    callback = function(value)
+        Settings.FireButton = value
+
+        if FireGui then
+            FireGui.Enabled = value
         end
     end,
 })
