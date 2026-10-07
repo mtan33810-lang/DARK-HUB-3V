@@ -405,7 +405,7 @@ FOVCircle.Visible = false
 
 local AimTab = Window:CreateTab({
     name = "🎯 Aimbot ",
-    icon = 4483362458,
+    icon = nil,
 })
 
 AimTab:CreateSection("AIM SETTINGS")
@@ -684,67 +684,40 @@ end
 --========================================================
 
     local function UpdateHitboxes()
+    if not getgenv().HBE then
+        return
+    end
 
-if not getgenv().HBE then
-    return
-end
+    local myRole = GetLocalRole()
 
-local myRole = GetLocalRole()
+    -- Sheriff = Murderer only
+    if myRole == "Sheriff" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+                if GetPlayerRole(player) == "Murderer" then
+                    ApplyHitbox(player.Character)
+                else
+                    RestoreHitbox(player.Character)
+                end
+            end
+        end
 
---====================================================
--- SHERIFF
--- Only enlarge the Murderer
---====================================================
-
-if myRole == "Sheriff" then
-
-    for _, player in ipairs(Players:GetPlayers()) do
-
-        if player ~= lp then
-
-            if GetPlayerRole(player) == "Murderer" then
+    -- Murderer = everyone
+    elseif myRole == "Murderer" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
                 ApplyHitbox(player.Character)
-            else
+            end
+        end
+
+    -- Innocent = everyone normal
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
                 RestoreHitbox(player.Character)
             end
-
         end
     end
-
-    return
-end
-
---====================================================
--- MURDERER
--- Enlarge everyone except yourself
---====================================================
-
-if myRole == "Murderer" then
-
-    for _, player in ipairs(Players:GetPlayers()) do
-
-        if player ~= lp then
-            ApplyHitbox(player.Character)
-        end
-
-    end
-
-    return
-end
-
---====================================================
--- INNOCENT / UNKNOWN
--- Everyone normal
---====================================================
-
-for _, player in ipairs(Players:GetPlayers()) do
-
-    if player ~= lp then
-        RestoreHitbox(player.Character)
-    end
-
-end
-
 end
 
 --========================================================
@@ -766,26 +739,8 @@ local function StartHitboxes()
             return
         end
 
-        -- Sheriff / Innocent = restore hitboxes
-        if not IsMurderer() then
-
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= lp then
-                    RestoreHitbox(player.Character)
-                end
-            end
-
-            return
-        end
-
-        -- Murderer = apply hitboxes
-        for _, player in ipairs(Players:GetPlayers()) do
-
-            if player ~= lp then
-                ApplyHitbox(player.Character)
-            end
-
-        end
+        -- Use the new role-based hitbox system
+        UpdateHitboxes()
 
     end)
 
@@ -846,7 +801,7 @@ local left = grid:CreateGroup({ direction = "column" })
 
 left:CreateToggle({
     name = "Hitbox ",
-    description = "Works only when you are Murderer",
+    description = "Sheriff = Murderer only | Murderer = Everyone",
     value = false,
 
     callback = function(value)
@@ -981,7 +936,7 @@ right:CreateDropdown({
 
 local MainTab = Window:CreateTab({
     name = "Local Player ",
-    icon = nil,
+    icon = 4483362458,
 })
 
 --============================================================
