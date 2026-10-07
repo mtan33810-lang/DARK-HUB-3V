@@ -237,43 +237,49 @@ local function TeleportToGunDrop()
         return
     end
 
-    local character = lp.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-
-    if not root then
-        return
-    end
-
-    local gunDrop = Workspace:FindFirstChild("GunDrop", true)
-
-    if not gunDrop then
-        return
-    end
-
-    local gunPart = GetGunDropPart(gunDrop)
-
-    if not gunPart then
-        return
-    end
-
     GunTeleporting = true
 
-    -- Save current position
-    local oldCFrame = root.CFrame
+    local reachedGun = false
 
-    -- Teleport above the gun
-    root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
+    while GunDropESP and not reachedGun do
+        local character = lp.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
 
-    -- Small delay so the character reaches the gun
-    task.wait(0.01)
+        if not root then
+            task.wait(0.1)
+            continue
+        end
 
-    -- Snap back to original position
-    if root and root.Parent then
-        root.CFrame = oldCFrame
+        -- Find the same GunDrop used by Gun ESP
+        local gunDrop = Workspace:FindFirstChild("GunDrop", true)
 
-        -- Stop leftover movement
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
+        if not gunDrop then
+            task.wait(0.1)
+            continue
+        end
+
+        local gunPart = GetGunDropPart(gunDrop)
+
+        if not gunPart then
+            task.wait(0.1)
+            continue
+        end
+
+        -- Keep teleporting until we are actually at the gun
+        local targetCFrame =
+            gunPart.CFrame + Vector3.new(0, 3, 0)
+
+        root.CFrame = targetCFrame
+
+        -- Check distance from the gun
+        local distance =
+            (root.Position - gunPart.Position).Magnitude
+
+        if distance <= 5 then
+            reachedGun = true
+        end
+
+        task.wait(0.05)
     end
 
     GunTeleporting = false
@@ -341,7 +347,7 @@ ESPTab:CreateToggle({
         UpdateGunDropESP()
 
         -- If gun already exists when enabled,
-        -- teleport immediately and snap back.
+        -- keep teleporting until the gun is reached.
         if value then
             task.spawn(function()
                 task.wait(0.1)
