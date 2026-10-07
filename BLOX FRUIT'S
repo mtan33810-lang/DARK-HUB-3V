@@ -31,6 +31,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -3431,3 +3432,619 @@ task.spawn(function()
     task.wait(1)
     equipWeapon()
 end)
+
+
+--========================================================
+-- PLAYER MODULE
+--========================================================
+
+local PlayerModule = {}
+
+PlayerModule.config = {
+    noclip = false,
+
+    speedOn = false,
+    walkSpeed = 50,
+
+    jumpOn = false,
+    jumpPower = 120,
+
+    walkWater = false,
+
+    ken = false,
+    buso = false,
+
+    antiAfk = true,
+}
+
+PlayerModule._esp = {}
+PlayerModule._espOn = false
+PlayerModule._platform = nil
+PlayerModule._connections = {}
+
+--========================================================
+-- HELPERS
+--========================================================
+
+local function getCharacter()
+    return LP.Character
+end
+
+local function getRoot()
+    local character = getCharacter()
+
+    return character
+        and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getHumanoid()
+    local character = getCharacter()
+
+    return character
+        and character:FindFirstChildOfClass("Humanoid")
+end
+
+--========================================================
+-- PLAYER ESP
+--========================================================
+
+local function createESP(player)
+
+    if player == LP then
+        return
+    end
+
+    local character = player.Character
+
+    if not character then
+        return
+    end
+
+    if PlayerModule._esp[player] then
+        return
+    end
+
+    local highlight = Instance.new("Highlight")
+
+    highlight.Name = "DarkHub_PlayerESP"
+    highlight.FillColor =
+        Color3.fromRGB(255, 80, 80)
+
+    highlight.OutlineColor =
+        Color3.fromRGB(255, 255, 255)
+
+    highlight.FillTransparency = 0.6
+    highlight.OutlineTransparency = 0
+
+    highlight.Adornee = character
+    highlight.Parent = character
+
+    local billboard = Instance.new("BillboardGui")
+
+    billboard.Name = "DarkHub_Distance"
+    billboard.Size =
+        UDim2.fromOffset(120, 30)
+
+    billboard.StudsOffset =
+        Vector3.new(0, 3, 0)
+
+    billboard.AlwaysOnTop = true
+    billboard.Adornee =
+        character:FindFirstChild("HumanoidRootPart")
+        or character
+
+    billboard.Parent = character
+
+    local label = Instance.new("TextLabel")
+
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.fromScale(1, 1)
+
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 11
+
+    label.TextColor3 =
+        Color3.new(1, 1, 1)
+
+    label.TextStrokeTransparency = 0.5
+    label.Text = player.Name
+
+    label.Parent = billboard
+
+    PlayerModule._esp[player] = {
+        highlight = highlight,
+        billboard = billboard,
+        label = label,
+        character = character,
+    }
+end
+
+local function removeESP(player)
+
+    local esp =
+        PlayerModule._esp[player]
+
+    if not esp then
+        return
+    end
+
+    pcall(function()
+        esp.highlight:Destroy()
+        esp.billboard:Destroy()
+    end)
+
+    PlayerModule._esp[player] = nil
+end
+
+local function clearESP()
+
+    for player in pairs(
+        PlayerModule._esp
+    ) do
+
+        removeESP(player)
+
+    end
+end
+
+local function setESP(enabled)
+
+    PlayerModule._espOn = enabled
+
+    if not enabled then
+        clearESP()
+        return
+    end
+
+    for _, player in ipairs(
+        Players:GetPlayers()
+    ) do
+
+        if player ~= LP then
+            createESP(player)
+        end
+
+    end
+end
+
+--========================================================
+-- ESP LOOP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.Heartbeat:Connect(function()
+
+        if not PlayerModule._espOn then
+            return
+        end
+
+        local myRoot = getRoot()
+
+        for _, player in ipairs(
+            Players:GetPlayers()
+        ) do
+
+            if player ~= LP then
+
+                local character =
+                    player.Character
+
+                if character then
+
+                    local esp =
+                        PlayerModule._esp[player]
+
+                    if not esp
+                        or esp.character ~= character
+                    then
+
+                        removeESP(player)
+                        createESP(player)
+
+                        esp =
+                            PlayerModule._esp[player]
+                    end
+
+                    if esp then
+
+                        local targetRoot =
+                            character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if targetRoot
+                            and myRoot
+                        then
+
+                            local distance =
+                                math.floor(
+                                    (
+                                        targetRoot.Position
+                                        - myRoot.Position
+                                    ).Magnitude
+                                )
+
+                            esp.label.Text =
+                                player.Name
+                                .. "\n"
+                                .. distance
+                                .. "m"
+
+                        end
+                    end
+                end
+            end
+        end
+
+        for player in pairs(
+            PlayerModule._esp
+        ) do
+
+            if not Players:FindFirstChild(
+                player.Name
+            ) then
+
+                removeESP(player)
+
+            end
+        end
+    end)
+)
+
+--========================================================
+-- NOCLIP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.Stepped:Connect(function()
+
+        if not PlayerModule.config.noclip then
+            return
+        end
+
+        local character =
+            getCharacter()
+
+        if not character then
+            return
+        end
+
+        for _, part in ipairs(
+            character:GetDescendants()
+        ) do
+
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+
+        end
+    end)
+)
+
+--========================================================
+-- SPEED / JUMP
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    RunService.RenderStepped:Connect(function()
+
+        local humanoid =
+            getHumanoid()
+
+        if not humanoid then
+            return
+        end
+
+        if PlayerModule.config.speedOn then
+
+            humanoid.WalkSpeed =
+                PlayerModule.config.walkSpeed
+
+        end
+
+        if PlayerModule.config.jumpOn then
+
+            humanoid.UseJumpPower = true
+
+            humanoid.JumpPower =
+                PlayerModule.config.jumpPower
+
+        end
+    end)
+)
+
+--========================================================
+-- HAKI
+--========================================================
+
+local function getRemotes()
+
+    return ReplicatedStorage:
+        FindFirstChild("Remotes")
+
+end
+
+function PlayerModule.setKen(enabled)
+
+    PlayerModule.config.ken = enabled
+
+    local remotes =
+        getRemotes()
+
+    if not remotes then
+        return
+    end
+
+    local CommE =
+        remotes:FindFirstChild("CommE")
+
+    if CommE then
+
+        pcall(function()
+
+            CommE:FireServer(
+                "Ken",
+                enabled
+            )
+
+        end)
+
+    end
+end
+
+function PlayerModule.setBuso(enabled)
+
+    PlayerModule.config.buso = enabled
+
+    local remotes =
+        getRemotes()
+
+    if not remotes then
+        return
+    end
+
+    local CommF =
+        remotes:FindFirstChild("CommF_")
+
+    if CommF then
+
+        pcall(function()
+
+            CommF:InvokeServer("Buso")
+
+        end)
+
+    end
+end
+
+--========================================================
+-- ANTI-AFK
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    LP.Idled:Connect(function()
+
+        if not PlayerModule.config.antiAfk then
+            return
+        end
+
+        pcall(function()
+
+            VirtualUser:CaptureController()
+
+            VirtualUser:ClickButton2(
+                Vector2.new()
+            )
+
+        end)
+
+    end)
+)
+
+--========================================================
+-- CHARACTER RESET
+--========================================================
+
+table.insert(
+    PlayerModule._connections,
+
+    LP.CharacterAdded:Connect(function()
+
+        task.wait(0.5)
+
+        local humanoid =
+            getHumanoid()
+
+        if humanoid then
+
+            humanoid.WalkSpeed = 16
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = 50
+
+        end
+
+        clearESP()
+
+    end)
+)
+
+--========================================================
+-- PLAYER TAB
+--========================================================
+
+local PlayerTab = Window:CreateTab({
+    name = "Player",
+    icon = nil,
+})
+
+--========================================================
+-- ESP
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "PLAYER ESP",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Player ESP",
+    flag = "PlayerESP",
+    value = false,
+
+    callback = function(value)
+
+        setESP(value)
+
+    end,
+})
+
+--========================================================
+-- MOBILITY
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "MOBILITY",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "NoClip",
+    flag = "PlayerNoClip",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.noclip =
+            value
+
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Speed Boost",
+    flag = "SpeedBoost",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.speedOn =
+            value
+
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name = "Walk Speed",
+    flag = "WalkSpeed",
+
+    range = {
+        16,
+        300
+    },
+
+    increment = 1,
+    value = 50,
+
+    callback = function(value)
+
+        PlayerModule.config.walkSpeed =
+            value
+
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Super Jump",
+    flag = "SuperJump",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.config.jumpOn =
+            value
+
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name = "Jump Power",
+    flag = "JumpPower",
+
+    range = {
+        50,
+        500
+    },
+
+    increment = 1,
+    value = 120,
+
+    callback = function(value)
+
+        PlayerModule.config.jumpPower =
+            value
+
+    end,
+})
+
+--========================================================
+-- HAKI
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "HAKI",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Auto Ken",
+    flag = "AutoKen",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.setKen(value)
+
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Auto Buso",
+    flag = "AutoBuso",
+    value = false,
+
+    callback = function(value)
+
+        PlayerModule.setBuso(value)
+
+    end,
+})
+
+--========================================================
+-- UTILITY
+--========================================================
+
+PlayerTab:CreateSection({
+    name = "UTILITY",
+    icon = nil,
+})
+
+PlayerTab:CreateToggle({
+    name = "Anti-AFK",
+    flag = "AntiAFK",
+    value = true,
+
+    callback = function(value)
+
+        PlayerModule.config.antiAfk =
+            value
+
+    end,
+})
