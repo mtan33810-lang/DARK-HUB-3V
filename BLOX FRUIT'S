@@ -3729,131 +3729,230 @@ table.insert(
 )
 
 --========================================================
--- WALK ON WATER - STABLE VERSION
+-- WALK ON WATER
 --========================================================
 
-local WaterPlatform
+local WaterPlatform = nil
+local WaterY = nil
+local LastWaterTime = 0
 
-local function removeWaterPlatform()
+local WATER_PLATFORM_SIZE = Vector3.new(40, 1, 40)
+local WATER_PLATFORM_OFFSET = 3
+local WATER_CHECK_DISTANCE = 12
+local WATER_KEEP_TIME = 1.5
+
+local function RemoveWaterPlatform()
     if WaterPlatform then
         pcall(function()
             WaterPlatform:Destroy()
         end)
-
         WaterPlatform = nil
     end
 
-    PlayerModule._platform = nil
+    WaterY = nil
 end
 
-local function createWaterPlatform()
-    if WaterPlatform then
+local function CreateWaterPlatform()
+    if WaterPlatform and WaterPlatform.Parent then
         return WaterPlatform
     end
 
-    local platform = Instance.new("Part")
+    local part = Instance.new("Part")
+    part.Name = "WalkOnWaterPlatform"
+    part.Size = WATER_PLATFORM_SIZE
+    part.Anchored = true
+    part.CanCollide = true
+    part.CanTouch = false
+    part.CanQuery = false
+    part.Transparency = 1
+    part.CastShadow = false
+    part.Parent = workspace
 
-    platform.Name = "DarkHub_WaterPlatform"
-    platform.Size = Vector3.new(50, 1, 50)
+    WaterPlatform = part
 
-    platform.Anchored = true
-    platform.CanCollide = true
-    platform.CanTouch = false
-    platform.CanQuery = false
-
-    platform.Transparency = 1
-
-    platform.Parent = workspace
-
-    WaterPlatform = platform
-    PlayerModule._platform = platform
-
-    return platform
+    return part
 end
 
-table.insert(
-    PlayerModule._connections,
+local function FindWaterY(root)
+    if not root then
+        return nil
+    end
 
-    RunService.Heartbeat:Connect(function()
+    local character = LP.Character
 
-        if not PlayerModule.config.walkWater then
-            removeWaterPlatform()
-            return
-        end
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        character,
+        WaterPlatform
+    }
+    params.IgnoreWater = false
+    params.RespectCanCollide = false
 
-        local character = LP.Character
-        local root = getRoot()
-        local hum = getHumanoid()
+    local origin = root.Position + Vector3.new(0, 8, 0)
+    local direction = Vector3.new(0, -WATER_CHECK_DISTANCE - 8, 0)
 
-        if not character
-            or not root
-            or not hum
-            or hum.Health <= 0
-        then
-            removeWaterPlatform()
-            return
-        end
+    local result = workspace:Raycast(
+        origin,
+        direction,
+        params
+    )
 
-        ----------------------------------------------------
-        -- Don't use Swimming state.
-        -- Check the Terrain material around the player.
-        ----------------------------------------------------
+    if result and result.Material == Enum.Material.Water then
+        return result.Position.Y
+    end
 
-        local terrain = workspace.Terrain
+    -- Extra checks around the player.
+    -- This helps when the center ray misses the water.
 
-        local position = root.Position
+    local offsets = {
+        Vector3.new(6, 8, 0),
+        Vector3.new(-6, 8, 0),
+        Vector3.new(0, 8, 6),
+        Vector3.new(0, 8, -6),
+        Vector3.new(6, 8, 6),
+        Vector3.new(-6, 8, -6),
+        Vector3.new(6, 8, -6),
+        Vector3.new(-6, 8, 6),
+    }
 
-        local region = Region3.new(
-            position - Vector3.new(3, 8, 3),
-            position + Vector3.new(3, 3, 3)
-        ):ExpandToGrid(4)
+    for _, offset in ipairs(offsets) do
+        local checkOrigin = root.Position + offset
 
-        local materials = terrain:ReadVoxels(
-            region,
-            4
+        local hit = workspace:Raycast(
+            checkOrigin,
+            direction,
+            params
         )
 
-        local foundWater = false
-        local waterY = nil
+        if hit and hit.Material == Enum.Material.Water then
+            return hit.Position.Y
+        end
+    end
 
-        local materialData = materials[1]
+    return nil
+end
 
-        if materialData then
+local function IsNearWater(root)
+    if not root then
+        return false
+    end
 
-            for x = 1, #materialData do
+    local humanoid = myHum()
 
-                for y = 1, #materialData[x] do
+    -- First check the normal Roblox swimming state.
+    if humanoid then
+        if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+            local y = root.Position.Y
 
-                    for z = 1, #materialData[x][y] do
+            if y then
+                return true, y
+            end
+        end
+    end
 
-                        if materialData[x][y][z]
-                            == Enum.Material.Water
-                        then
+    -- Then perform physical water detection.
+    local waterY = FindWaterY(root)
 
-                            foundWater = true
+    if waterY then
+        return true, waterY
+    end
 
-                            -- Approximate water surface
-                            local voxelY =
-                                region.CFrame.Position.Y
-                                + (
-                                    y - 1
-                                ) * 4
+    return false, nil
+end
 
-                            if not waterY
-                                or voxelY > waterY
-                            then
-                                waterY = voxelY
-                            end
+Core.track(RunService.Heartbeat:Connect(function()
+    if not M.config.walkWater then
+        RemoveWaterPlatform()
+        return
+    end
 
-                        end
+    local root = myHrp()
+    local humanoid = myHum()
 
-                    end
+    if not root or not humanoid then
+        RemoveWaterPlatform()
+        return
+    end
 
-                end
+    -- Don't interfere with farming.
+    local farm = M._core and M._core.modules and M._core.modules.farm
 
+    local farming =
+        farm and (
+            farm._farmOn
+            or farm._bossOn
+            or farm._nearestOn
+        )
+
+    if farming then
+        RemoveWaterPlatform()
+        return
+    end
+
+    local nearWater, detectedWaterY = IsNearWater(root)
+
+    if nearWater and detectedWaterY then
+        WaterY = detectedWaterY
+        LastWaterTime = os.clock()
+    end
+
+    -- Keep the platform alive briefly after leaving the water.
+    -- This prevents the platform from disappearing while the
+    -- Humanoid changes from Swimming -> Running.
+    local recentlyOnWater =
+        (os.clock() - LastWaterTime) <= WATER_KEEP_TIME
+
+    if nearWater or recentlyOnWater then
+
+        if not WaterY then
+            WaterY = root.Position.Y - 3
+        end
+
+        local platform = CreateWaterPlatform()
+
+        if platform then
+
+            -- Put the platform slightly below the character.
+            local platformY = WaterY
+
+            platform.CFrame = CFrame.new(
+                root.Position.X,
+                platformY,
+                root.Position.Z
+            )
+
+            -- Make sure the player is above the platform.
+            local desiredY = platformY + WATER_PLATFORM_OFFSET
+
+            if root.Position.Y < desiredY then
+                root.CFrame = CFrame.new(
+                    root.Position.X,
+                    desiredY,
+                    root.Position.Z
+                )
+
+                root.AssemblyLinearVelocity = Vector3.new(
+                    root.AssemblyLinearVelocity.X,
+                    0,
+                    root.AssemblyLinearVelocity.Z
+                )
             end
 
+            -- Prevent Swimming from continuing to fight the platform.
+            if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+                pcall(function()
+                    humanoid:ChangeState(
+                        Enum.HumanoidStateType.Running
+                    )
+                end)
+            end
         end
+
+    else
+        RemoveWaterPlatform()
+    end
+end))
 
         ----------------------------------------------------
         -- No water nearby
