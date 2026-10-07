@@ -33,7 +33,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-H
 -- MURDER MYSTERY 2
 --==================================================
 
-elseif GameId ==  then
+elseif PlaceId == 142823291 then
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/MURDER%20MYSTERY%202"))()
 
