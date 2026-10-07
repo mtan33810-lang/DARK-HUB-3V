@@ -3718,7 +3718,9 @@ table.insert(
             character:GetDescendants()
         ) do
 
-            if part:IsA("BasePart") then
+            if part:IsA("BasePart")
+                and part.Name ~= "HumanoidRootPart"
+            then
                 part.CanCollide = false
             end
 
@@ -3727,15 +3729,47 @@ table.insert(
 )
 
 --========================================================
--- WALK ON WATER - FIXED
+-- WALK ON WATER - STABLE VERSION
 --========================================================
 
-local WaterRayParams = RaycastParams.new()
+local WaterPlatform
 
-WaterRayParams.FilterType =
-    Enum.RaycastFilterType.Exclude
+local function removeWaterPlatform()
+    if WaterPlatform then
+        pcall(function()
+            WaterPlatform:Destroy()
+        end)
 
-WaterRayParams.IgnoreWater = false
+        WaterPlatform = nil
+    end
+
+    PlayerModule._platform = nil
+end
+
+local function createWaterPlatform()
+    if WaterPlatform then
+        return WaterPlatform
+    end
+
+    local platform = Instance.new("Part")
+
+    platform.Name = "DarkHub_WaterPlatform"
+    platform.Size = Vector3.new(50, 1, 50)
+
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.CanTouch = false
+    platform.CanQuery = false
+
+    platform.Transparency = 1
+
+    platform.Parent = workspace
+
+    WaterPlatform = platform
+    PlayerModule._platform = platform
+
+    return platform
+end
 
 table.insert(
     PlayerModule._connections,
@@ -3743,118 +3777,124 @@ table.insert(
     RunService.Heartbeat:Connect(function()
 
         if not PlayerModule.config.walkWater then
-
-            if PlayerModule._platform then
-                PlayerModule._platform:Destroy()
-                PlayerModule._platform = nil
-            end
-
+            removeWaterPlatform()
             return
         end
 
         local character = LP.Character
         local root = getRoot()
-        local humanoid = getHumanoid()
+        local hum = getHumanoid()
 
-        if not character or not root or not humanoid then
+        if not character
+            or not root
+            or not hum
+            or hum.Health <= 0
+        then
+            removeWaterPlatform()
             return
         end
 
-        -- Ignore your own character and the platform
-        local filter = {character}
+        ----------------------------------------------------
+        -- Don't use Swimming state.
+        -- Check the Terrain material around the player.
+        ----------------------------------------------------
 
-        if PlayerModule._platform then
-            table.insert(
-                filter,
-                PlayerModule._platform
-            )
-        end
+        local terrain = workspace.Terrain
 
-        WaterRayParams.FilterDescendantsInstances =
-            filter
+        local position = root.Position
 
-        -- Look for Terrain water underneath/around player
-        local origin =
-            root.Position
-            + Vector3.new(0, 10, 0)
+        local region = Region3.new(
+            position - Vector3.new(3, 8, 3),
+            position + Vector3.new(3, 3, 3)
+        ):ExpandToGrid(4)
 
-        local direction =
-            Vector3.new(0, -80, 0)
+        local materials = terrain:ReadVoxels(
+            region,
+            4
+        )
 
-        local result =
-            workspace:Raycast(
-                origin,
-                direction,
-                WaterRayParams
-            )
+        local foundWater = false
+        local waterY = nil
 
-        local waterY
+        local materialData = materials[1]
 
-        if result
-            and result.Material
-                == Enum.Material.Water
-        then
+        if materialData then
 
-            waterY = result.Position.Y
+            for x = 1, #materialData do
 
-        end
+                for y = 1, #materialData[x] do
 
-        -- Not over water
-        if not waterY then
+                    for z = 1, #materialData[x][y] do
 
-            if PlayerModule._platform then
-                PlayerModule._platform:Destroy()
-                PlayerModule._platform = nil
+                        if materialData[x][y][z]
+                            == Enum.Material.Water
+                        then
+
+                            foundWater = true
+
+                            -- Approximate water surface
+                            local voxelY =
+                                region.CFrame.Position.Y
+                                + (
+                                    y - 1
+                                ) * 4
+
+                            if not waterY
+                                or voxelY > waterY
+                            then
+                                waterY = voxelY
+                            end
+
+                        end
+
+                    end
+
+                end
+
             end
 
+        end
+
+        ----------------------------------------------------
+        -- No water nearby
+        ----------------------------------------------------
+
+        if not foundWater or not waterY then
+            removeWaterPlatform()
             return
         end
 
-        -- Create platform once
-        if not PlayerModule._platform then
-
-            local platform =
-                Instance.new("Part")
-
-            platform.Name =
-                "DarkHub_WaterPlatform"
-
-            platform.Size =
-                Vector3.new(40, 1, 40)
-
-            platform.Anchored = true
-            platform.CanCollide = true
-            platform.CanTouch = false
-            platform.CanQuery = false
-            platform.Transparency = 1
-
-            platform.Parent = workspace
-
-            PlayerModule._platform =
-                platform
-        end
+        ----------------------------------------------------
+        -- Create platform
+        ----------------------------------------------------
 
         local platform =
-            PlayerModule._platform
+            createWaterPlatform()
 
-        -- Keep platform directly under the player
+        ----------------------------------------------------
+        -- Follow player
+        ----------------------------------------------------
+
         platform.CFrame =
             CFrame.new(
                 root.Position.X,
-                waterY - 0.5,
+                waterY,
                 root.Position.Z
             )
 
+        ----------------------------------------------------
         -- Keep player above water
-        local targetY =
-            waterY + 3
+        ----------------------------------------------------
 
-        if root.Position.Y < targetY then
+        local desiredY =
+            waterY + 3.2
+
+        if root.Position.Y < desiredY then
 
             root.CFrame =
                 CFrame.new(
                     root.Position.X,
-                    targetY,
+                    desiredY,
                     root.Position.Z
                 )
 
@@ -3862,7 +3902,7 @@ table.insert(
 
     end)
 )
-
+    
 --========================================================
 -- SPEED / JUMP
 --========================================================
@@ -4060,9 +4100,27 @@ PlayerTab:CreateToggle({
 
     callback = function(value)
 
-        PlayerModule.config.noclip =
-            value
+        PlayerModule.config.noclip = value
 
+        if not value then
+
+            local character = LP.Character
+
+            if character then
+
+                for _, part in ipairs(
+                    character:GetDescendants()
+                ) do
+
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+
+                end
+
+            end
+
+        end
     end,
 })
 
