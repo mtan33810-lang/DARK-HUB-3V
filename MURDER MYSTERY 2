@@ -265,7 +265,7 @@ local function TeleportToGunDrop()
     root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
 
     -- Small delay so the character reaches the gun
-    task.wait(0.12)
+    task.wait(0.1)
 
     -- Snap back to original position
     if root and root.Parent then
@@ -929,31 +929,46 @@ local MainTab = Window:CreateTab({
 -- WALK SPEED
 --============================================================
 
+local WalkSpeed = 16
+
+local function ApplyWalkSpeed()
+    local character = lp.Character
+    if not character then
+        return
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        return
+    end
+
+    humanoid.WalkSpeed = WalkSpeed
+end
+
 MainTab:CreateSlider({
-
     name = "Walk Speed",
-
     range = {
         0,
         300
     },
 
     increment = 1,
-
     value = 16,
-
-    suffix = "%",
+    suffix = " studs/s",
 
     callback = function(value)
-
-        local humanoid =
-            getHumanoid(getCharacter())
-
-        if humanoid then
-            humanoid.WalkSpeed = value
-        end
+        WalkSpeed = value
+        ApplyWalkSpeed()
     end
 })
+
+lp.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid", 5)
+
+    if humanoid then
+        humanoid.WalkSpeed = WalkSpeed
+    end
+end)
 
 --============================================================
 -- THEME
