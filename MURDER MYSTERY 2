@@ -265,7 +265,7 @@ local function TeleportToGunDrop()
     root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
 
     -- Small delay so the character reaches the gun
-    task.wait(0.1)
+    task.wait(0.01)
 
     -- Snap back to original position
     if root and root.Parent then
@@ -790,11 +790,11 @@ left:CreateToggle({
     description = "Works only when you are Murderer",
     value = false,
 
-    callback = function(Value)
+    callback = function(value)
 
-        getgenv().HBE = Value
+        getgenv().HBE = value
 
-        if Value then
+        if value then
             StartHitboxes()
             UpdateHitboxes()
         else
@@ -847,12 +847,12 @@ right:CreateSlider({
     suffix = " studs",
     value = 15,
 
-    callback = function(Value)
+    callback = function(value)
 
         HITBOX_SIZE = Vector3.new(
-            Value,
-            Value,
-            Value
+            value,
+            value,
+            value
         )
 
         if getgenv().HBE and IsMurderer() then
