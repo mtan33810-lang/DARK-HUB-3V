@@ -292,6 +292,56 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
+local GunDropESP = false
+local GunDropHighlight = nil
+
+local function UpdateGunDropESP()
+    if GunDropHighlight then
+        GunDropHighlight:Destroy()
+        GunDropHighlight = nil
+    end
+
+    if not GunDropESP then
+        return
+    end
+
+    local gunDrop = Workspace:FindFirstChild("GunDrop", true)
+
+    if not gunDrop then
+        return
+    end
+
+    GunDropHighlight = Instance.new("Highlight")
+    GunDropHighlight.Name = "GunDropESP"
+    GunDropHighlight.Adornee = gunDrop
+    GunDropHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    GunDropHighlight.FillColor = Color3.fromRGB(255, 220, 0)
+    GunDropHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    GunDropHighlight.FillTransparency = 0.25
+    GunDropHighlight.OutlineTransparency = 0
+    GunDropHighlight.Parent = gunDrop
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if obj.Name == "GunDrop" and GunDropESP then
+        task.wait()
+        UpdateGunDropESP()
+    end
+end)
+
+Workspace.DescendantRemoving:Connect(function(obj)
+    if obj.Name == "GunDrop" then
+        if GunDropHighlight then
+            GunDropHighlight:Destroy()
+            GunDropHighlight = nil
+        end
+    end
+end)
+
+--========================================================
+-- ESP TAB
+--========================================================
+
 ESPTab:CreateToggle({
     name = "Role ESP",
     default = false,
@@ -307,6 +357,16 @@ ESPTab:CreateToggle({
 
     callback = function(value)
         SheriffDeathTeleport = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    name = "Gun ESP",
+    default = false,
+
+    callback = function(value)
+        GunDropESP = value
+        UpdateGunDropESP()
     end,
 })
 
