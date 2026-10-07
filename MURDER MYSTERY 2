@@ -51,7 +51,7 @@ local ESPObjects = {}
 --========================================================
 
 local ESPTab = Window:CreateTab({
-    name = "ESP ",
+    name = "🪷 ESP ",
     icon = nil,
 })
 
@@ -321,7 +321,7 @@ end)
 
 ESPTab:CreateToggle({
     name = "Role ESP",
-    default = false,
+    value = false,
 
     callback = function(value)
         getgenv().MM2.RoleESP = value
@@ -387,7 +387,7 @@ FOVCircle.Visible = false
 
 local AimTab = Window:CreateTab({
     name = "🎯 Aimbot ",
-    icon = nil,
+    icon = 4483362458,
 })
 
 AimTab:CreateSection("AIM SETTINGS")
