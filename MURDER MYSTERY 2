@@ -226,15 +226,6 @@ ESPTab:CreateToggle({
 })
 
 ESPTab:CreateToggle({
-    name = "Gun Drop",
-    default = false,
-
-    callback = function(value)
-        SheriffDeathTeleport = value
-    end,
-})
-
-ESPTab:CreateToggle({
     name = "Gun ESP",
     default = false,
 
