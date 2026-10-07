@@ -29,6 +29,14 @@ elseif GameId == 994732206 then
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT'S"))()
 
+--==================================================
+-- MURDER MYSTERY 2
+--==================================================
+
+elseif GameId ==  then
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/MURDER%20MYSTERY%202"))()
+
 else
     warn(
         "DARK HUB: Unsupported game\n" ..
