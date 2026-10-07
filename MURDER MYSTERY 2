@@ -584,8 +584,8 @@ end
 
 getgenv().HBE = false
 
-local HITBOX_SIZE = Vector3.new(255, 255, 255)
-local HITBOX_COLOUR = Color3.fromRGB(255, 0, 0)
+local HITBOX_SIZE = Vector3.new(15, 15, 15)
+local HITBOX_COLOUR = Color3.fromRGB(255, 255, 255)
 
 --========================================================
 -- ROLE CHECK
@@ -845,7 +845,7 @@ right:CreateSlider({
     range = {2, 50},
     increment = 1,
     suffix = " studs",
-    currentValue = 15,
+    value = 15,
 
     callback = function(Value)
 
