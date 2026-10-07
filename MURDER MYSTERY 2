@@ -275,6 +275,34 @@ local function UpdateGunDropESP()
     GunDropHighlight.Parent = gunDrop
 end
 
+local function TeleportToGunDrop()
+    local character = lp.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local gunDrop = Workspace:FindFirstChild("GunDrop", true)
+    if not gunDrop then return end
+
+    local gunPart
+
+    if gunDrop:IsA("BasePart") then
+        gunPart = gunDrop
+    elseif gunDrop:IsA("Model") then
+        gunPart = gunDrop.PrimaryPart
+            or gunDrop:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    if not gunPart then return end
+
+    local oldCFrame = root.CFrame
+
+    root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
+
+    task.wait(0.1)
+
+    root.CFrame = oldCFrame
+end
+
 Workspace.DescendantAdded:Connect(function(obj)
     if obj.Name == "GunDrop" and GunDropESP then
         task.wait()
@@ -310,6 +338,7 @@ ESPTab:CreateToggle({
 
     callback = function(value)
         GunDropESP = value
+        UpdateGunDropESP()
 
         if value then
             task.spawn(function()
@@ -352,7 +381,7 @@ FOVCircle.Visible = false
 --========================================================
 
 local AimTab = Window:CreateTab({
-    name = "🎯 Aimbot",
+    name = "🎯 Aimbot ",
     icon = nil,
 })
 
@@ -881,6 +910,45 @@ right:CreateDropdown({
         Settings.AimTarget = nil
     end,
 })   
+
+--============================================================
+-- MAIN TAB
+--============================================================
+
+local MainTab = Window:CreateTab({
+    name = "Local Player ",
+    icon = nil,
+})
+
+--============================================================
+-- WALK SPEED
+--============================================================
+
+MainTab:CreateSlider({
+
+    name = "Walk Speed",
+
+    range = {
+        0,
+        300
+    },
+
+    increment = 1,
+
+    value = 16,
+
+    suffix = "%",
+
+    callback = function(Value)
+
+        local humanoid =
+            getHumanoid(getCharacter())
+
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end
+})
 
 --============================================================
 -- THEME
