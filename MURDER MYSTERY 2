@@ -939,13 +939,13 @@ MainTab:CreateSlider({
 
     suffix = "%",
 
-    callback = function(Value)
+    callback = function(value)
 
         local humanoid =
             getHumanoid(getCharacter())
 
         if humanoid then
-            humanoid.WalkSpeed = Value
+            humanoid.WalkSpeed = value
         end
     end
 })
