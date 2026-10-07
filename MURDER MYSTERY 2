@@ -535,7 +535,7 @@ local function GetAimTarget()
 end
 
 --========================================================
--- SETTINGS
+-- MURDERER-ONLY HITBOX
 --========================================================
 
 getgenv().HBE = false
@@ -544,58 +544,52 @@ local HITBOX_SIZE = Vector3.new(15, 15, 15)
 local HITBOX_COLOUR = Color3.fromRGB(255, 0, 0)
 
 --========================================================
--- GET CHARACTER PARENT
+-- ROLE CHECK
 --========================================================
 
-local function GetCharParent()
-    repeat task.wait() until lp.Character
-
-    for _, char in ipairs(workspace:GetDescendants()) do
-        if string.find(char.Name, lp.Name)
-            and char:FindFirstChild("Humanoid") then
-
-            return char.Parent
-        end
+local function GetLocalRole()
+    local character = lp.Character
+    if not character then
+        return "Unknown"
     end
 
-    return workspace
+    local backpack = lp:FindFirstChildOfClass("Backpack")
+
+    -- Knife = Murderer
+    if character:FindFirstChild("Knife")
+        or (backpack and backpack:FindFirstChild("Knife")) then
+
+        return "Murderer"
+    end
+
+    -- Gun = Sheriff
+    if character:FindFirstChild("Gun")
+        or (backpack and backpack:FindFirstChild("Gun")) then
+
+        return "Sheriff"
+    end
+
+    return "Innocent"
 end
 
-local CHAR_PARENT = GetCharParent()
-
---========================================================
--- HUMANOID ROOT PART SIZE PROTECTION
---========================================================
-
-pcall(function()
-    local mt = getrawmetatable(game)
-
-    setreadonly(mt, false)
-
-    local oldIndex = mt.__index
-
-    mt.__index = function(Self, Key)
-        if tostring(Self) == "HumanoidRootPart"
-            and tostring(Key) == "Size" then
-
-            return Vector3.new(2, 2, 1)
-        end
-
-        return oldIndex(Self, Key)
-    end
-
-    setreadonly(mt, true)
-end)
+local function IsMurderer()
+    return GetLocalRole() == "Murderer"
+end
 
 --========================================================
 -- RESTORE HITBOX
 --========================================================
 
 local function RestoreHitbox(char)
-    if not char then return end
+    if not char then
+        return
+    end
 
     local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+
+    if not root then
+        return
+    end
 
     root.Size = Vector3.new(2, 2, 1)
     root.Transparency = 1
@@ -607,15 +601,47 @@ end
 --========================================================
 
 local function ApplyHitbox(char)
-    if not char then return end
+    if not char then
+        return
+    end
 
     local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+
+    if not root then
+        return
+    end
 
     root.Size = HITBOX_SIZE
     root.Color = HITBOX_COLOUR
     root.CanCollide = false
     root.Transparency = 0.5
+end
+
+--========================================================
+-- UPDATE ALL HITBOXES
+--========================================================
+
+local function UpdateHitboxes()
+    -- Do absolutely nothing unless YOU are Murderer
+    if not IsMurderer() then
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+                RestoreHitbox(player.Character)
+            end
+        end
+
+        return
+    end
+
+    -- YOU ARE MURDERER
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= lp then
+            ApplyHitbox(player.Character)
+        end
+
+    end
 end
 
 --========================================================
@@ -625,31 +651,41 @@ end
 local HitboxConnection
 
 local function StartHitboxes()
+
     if HitboxConnection then
         HitboxConnection:Disconnect()
         HitboxConnection = nil
     end
 
-    HitboxConnection = RunService.RenderStepped:Connect(function()
+    HitboxConnection = RunService.Heartbeat:Connect(function()
+
         if not getgenv().HBE then
             return
         end
 
-        if not CHAR_PARENT or not CHAR_PARENT.Parent then
-            CHAR_PARENT = GetCharParent()
-        end
+        -- Sheriff / Innocent = restore hitboxes
+        if not IsMurderer() then
 
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= lp then
-
-                local char = CHAR_PARENT:FindFirstChild(player.Name)
-
-                if char then
-                    ApplyHitbox(char)
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= lp then
+                    RestoreHitbox(player.Character)
                 end
             end
+
+            return
         end
+
+        -- Murderer = apply hitboxes
+        for _, player in ipairs(Players:GetPlayers()) do
+
+            if player ~= lp then
+                ApplyHitbox(player.Character)
+            end
+
+        end
+
     end)
+
 end
 
 --========================================================
@@ -657,6 +693,7 @@ end
 --========================================================
 
 local function StopHitboxes()
+
     getgenv().HBE = false
 
     if HitboxConnection then
@@ -664,18 +701,14 @@ local function StopHitboxes()
         HitboxConnection = nil
     end
 
-    if CHAR_PARENT then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= lp then
+    for _, player in ipairs(Players:GetPlayers()) do
 
-                local char = CHAR_PARENT:FindFirstChild(player.Name)
-
-                if char then
-                    RestoreHitbox(char)
-                end
-            end
+        if player ~= lp then
+            RestoreHitbox(player.Character)
         end
+
     end
+
 end
 
 --========================================================
@@ -683,16 +716,17 @@ end
 --========================================================
 
 Players.PlayerAdded:Connect(function(player)
-    if getgenv().HBE then
 
-        player.CharacterAdded:Connect(function(char)
-            if getgenv().HBE then
-                task.wait(0.5)
-                ApplyHitbox(char)
-            end
-        end)
+    player.CharacterAdded:Connect(function(character)
 
-    end
+        task.wait(0.5)
+
+        if getgenv().HBE and IsMurderer() then
+            ApplyHitbox(character)
+        end
+
+    end)
+
 end)
 
 --========================================================
@@ -700,8 +734,8 @@ end)
 --========================================================
 
 AimTab:CreateToggle({
-    name = "Hitbox Expander",
-    description = "Expand other players' HumanoidRootPart hitboxes",
+    name = "Murderer Hitbox",
+    description = "Works only when you are Murderer",
     value = false,
 
     callback = function(Value)
@@ -710,6 +744,7 @@ AimTab:CreateToggle({
 
         if Value then
             StartHitboxes()
+            UpdateHitboxes()
         else
             StopHitboxes()
         end
@@ -735,6 +770,10 @@ AimTab:CreateSlider({
             Value,
             Value
         )
+
+        if getgenv().HBE and IsMurderer() then
+            UpdateHitboxes()
+        end
 
     end,
 })
