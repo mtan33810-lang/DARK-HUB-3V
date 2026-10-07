@@ -551,10 +551,18 @@ local function IsValidTarget(player)
 end
 
 --========================================================
--- GET AIM TARGET
+--========================================================
+-- GET MURDERER AIM TARGET
+-- MOBILE FRIENDLY
 --========================================================
 
 local function GetAimTarget()
+    Camera = Workspace.CurrentCamera
+
+    if not Camera then
+        return nil
+    end
+
     local viewport = Camera.ViewportSize
 
     local center = Vector2.new(
@@ -562,12 +570,16 @@ local function GetAimTarget()
         viewport.Y * 0.5
     )
 
-    local closestPlayer = nil
+    local closestMurderer = nil
     local closestDistance = Settings.FOV
 
-    for _, player in Players:GetPlayers() do
-        if player ~= lp and IsValidTarget(player) then
-        
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= lp
+            and GetPlayerRole(player) == "Murderer"
+            and IsValidTarget(player)
+        then
+
             local character = player.Character
 
             local targetPart =
@@ -575,25 +587,32 @@ local function GetAimTarget()
                 or character:FindFirstChild("HumanoidRootPart")
 
             if targetPart then
-                local screenPosition =
-                    Camera:WorldToViewportPoint(targetPart.Position)
 
-                local distance = (
-                    Vector2.new(
-                        screenPosition.X,
-                        screenPosition.Y
-                    ) - center
-                ).Magnitude
+                local screenPosition, onScreen =
+                    Camera:WorldToViewportPoint(
+                        targetPart.Position
+                    )
 
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestPlayer = player
+                if onScreen and screenPosition.Z > 0 then
+
+                    local distance =
+                        (
+                            Vector2.new(
+                                screenPosition.X,
+                                screenPosition.Y
+                            ) - center
+                        ).Magnitude
+
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestMurderer = player
+                    end
                 end
             end
         end
     end
 
-    return closestPlayer
+    return closestMurderer
 end
 
 --========================================================
@@ -623,7 +642,7 @@ FireButton.Size = UDim2.new(1, -20, 1, -20)
 FireButton.Position = UDim2.fromOffset(10, 10)
 FireButton.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
 FireButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FireButton.Text = "🔥 FIRE"
+FireButton.Text = "SHOOT"
 FireButton.TextSize = 22
 FireButton.Font = Enum.Font.GothamBold
 FireButton.BorderSizePixel = 0
@@ -706,11 +725,11 @@ end
 
 FireButton.Activated:Connect(function()
 
-    -- Refresh the target immediately before firing.
-    if not Settings.AimTarget
-        or not IsValidTarget(Settings.AimTarget) then
+    -- Always find the Murderer when FIRE is tapped
+    Settings.AimTarget = GetAimTarget()
 
-        Settings.AimTarget = GetAimTarget()
+    if not Settings.AimTarget then
+        return
     end
 
     FireAtAimTarget()
