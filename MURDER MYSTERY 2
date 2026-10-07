@@ -683,20 +683,44 @@ end
 -- UPDATE ALL HITBOXES
 --========================================================
 
-local function UpdateHitboxes()
-    -- Do absolutely nothing unless YOU are Murderer
-    if not IsMurderer() then
+    local function UpdateHitboxes()
 
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= lp then
+if not getgenv().HBE then
+    return
+end
+
+local myRole = GetLocalRole()
+
+--====================================================
+-- SHERIFF
+-- Only enlarge the Murderer
+--====================================================
+
+if myRole == "Sheriff" then
+
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= lp then
+
+            if GetPlayerRole(player) == "Murderer" then
+                ApplyHitbox(player.Character)
+            else
                 RestoreHitbox(player.Character)
             end
-        end
 
-        return
+        end
     end
 
-    -- YOU ARE MURDERER
+    return
+end
+
+--====================================================
+-- MURDERER
+-- Enlarge everyone except yourself
+--====================================================
+
+if myRole == "Murderer" then
+
     for _, player in ipairs(Players:GetPlayers()) do
 
         if player ~= lp then
@@ -704,6 +728,23 @@ local function UpdateHitboxes()
         end
 
     end
+
+    return
+end
+
+--====================================================
+-- INNOCENT / UNKNOWN
+-- Everyone normal
+--====================================================
+
+for _, player in ipairs(Players:GetPlayers()) do
+
+    if player ~= lp then
+        RestoreHitbox(player.Character)
+    end
+
+end
+
 end
 
 --========================================================
