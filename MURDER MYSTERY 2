@@ -8,9 +8,16 @@ local Rayfield = loadstring(game:HttpGet(
 
 local Window = Rayfield:CreateWindow({
     name = "🔪 DARK HUB | MURDER MYSTERY 2",
-    subtitle = "Rayfield Gen2",
+    subtitle = "by MaX",
     sidebarLayout = true,
     theme = "cobalt",
+
+    configuration = {
+        autoSave = true,
+        autoLoad = true,
+        fileName = "DarkHubConfig",
+        customFolder = "DARK HUB"
+    }
 })
 
 --========================================================
@@ -92,139 +99,6 @@ local function GetRoleColor(role)
 
     return Color3.fromRGB(255, 255, 255)
 end
-
---========================================================
--- SHERIFF DEATH TELEPORT
---========================================================
-
-local SheriffDeathTeleport = false
-local SheriffDeathBusy = false
-local LastSheriff = nil
-
-local function GetSheriff()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= lp and GetPlayerRole(player) == "Sheriff" then
-            return player
-        end
-    end
-
-    return nil
-end
-
-local function TeleportToSheriff()
-    if SheriffDeathBusy or not SheriffDeathTeleport then
-        return
-    end
-
-    local sheriff = GetSheriff()
-
-    if not sheriff or not sheriff.Character then
-        return
-    end
-
-    -- Find the Sheriff's actual Gun
-    local gun =
-        sheriff.Character:FindFirstChild("Gun")
-        or sheriff.Backpack:FindFirstChild("Gun")
-
-    if not gun then
-        return
-    end
-
-    -- Find a physical part to teleport to
-    local gunPart
-
-    if gun:IsA("BasePart") then
-        gunPart = gun
-    elseif gun:IsA("Model") then
-        gunPart =
-            gun.PrimaryPart
-            or gun:FindFirstChildWhichIsA("BasePart", true)
-    end
-
-    if not gunPart then
-        return
-    end
-
-    local myCharacter = lp.Character
-    local myRoot =
-        myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
-
-    if not myRoot then
-        return
-    end
-
-    SheriffDeathBusy = true
-
-    -- Save your position
-    local oldCFrame = myRoot.CFrame
-
-    -- Teleport directly to the gun
-    myRoot.CFrame =
-        gunPart.CFrame + Vector3.new(0, 3, 0)
-
-    -- Let the teleport register
-    task.wait(0.1)
-
-    -- Snap back
-    if myRoot and myRoot.Parent then
-        myRoot.CFrame = oldCFrame
-    end
-
-    task.wait(0.1)
-
-    SheriffDeathBusy = false
-end
-
---========================================================
--- DETECT SHERIFF DEATH
---========================================================
-
-local function WatchSheriff(player)
-
-    if player == lp then
-        return
-    end
-
-    local function WatchCharacter(character)
-
-        local humanoid =
-            character:WaitForChild("Humanoid", 5)
-
-        if not humanoid then
-            return
-        end
-
-        humanoid.Died:Connect(function()
-
-            if not SheriffDeathTeleport then
-                return
-            end
-
-            if GetPlayerRole(player) ~= "Sheriff" then
-                return
-            end
-
-            task.wait(0.05)
-
-            TeleportToSheriff()
-        end)
-    end
-
-    if player.Character then
-        WatchCharacter(player.Character)
-    end
-
-    player.CharacterAdded:Connect(WatchCharacter)
-end
-
-for _, player in ipairs(Players:GetPlayers()) do
-    WatchSheriff(player)
-end
-
-Players.PlayerAdded:Connect(function(player)
-    WatchSheriff(player)
-end)
 
 --========================================================
 -- ROLE ESP
@@ -402,7 +276,7 @@ FOVCircle.Visible = false
 --========================================================
 
 local AimTab = Window:CreateTab({
-    name = "Aimbot",
+    name = "🎯 Aimbot",
     icon = nil,
 })
 
@@ -931,6 +805,48 @@ right:CreateDropdown({
         Settings.AimTarget = nil
     end,
 })   
+
+--============================================================
+-- THEME
+--============================================================
+
+local SettingTab = Window:CreateTab({
+    name = "⚙️ Setting ",
+    icon = nil,
+})
+
+SettingTab:CreateSection({
+
+    name = "🎨 Theme"
+})
+
+SettingTab:CreateDropdown({
+
+    name = "Select Theme",
+
+    options = {
+        "default",
+        "cobalt",
+        "ember",
+        "amethyst",
+        "frost",
+        "rose"
+    },
+
+    currentOption = "ember",
+
+    callback = function(Theme)
+
+        Theme =
+            typeof(Theme) == "table"
+            and Theme[1]
+            or Theme
+
+        Window:ChangeTheme(Theme)
+
+    end
+})
+
 
 --========================================================
 -- STABLE AIM LOOP
