@@ -231,6 +231,12 @@ end
 local oldCFrame
 
 local function TeleportToGunDrop()
+
+    -- Only Innocents can teleport to the GunDrop
+    if GetPlayerRole(lp) ~= "Innocent" then
+        return
+    end
+
     if not GunDropESP then
         return
     end
