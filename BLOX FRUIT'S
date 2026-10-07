@@ -3727,8 +3727,15 @@ table.insert(
 )
 
 --========================================================
--- WALK ON WATER
+-- WALK ON WATER - FIXED
 --========================================================
+
+local WaterRayParams = RaycastParams.new()
+
+WaterRayParams.FilterType =
+    Enum.RaycastFilterType.Exclude
+
+WaterRayParams.IgnoreWater = false
 
 table.insert(
     PlayerModule._connections,
@@ -3753,61 +3760,106 @@ table.insert(
             return
         end
 
-        local state = humanoid:GetState()
+        -- Ignore your own character and the platform
+        local filter = {character}
 
-        if state == Enum.HumanoidStateType.Swimming then
+        if PlayerModule._platform then
+            table.insert(
+                filter,
+                PlayerModule._platform
+            )
+        end
 
-            if not PlayerModule._platform then
+        WaterRayParams.FilterDescendantsInstances =
+            filter
 
-                local platform = Instance.new("Part")
+        -- Look for Terrain water underneath/around player
+        local origin =
+            root.Position
+            + Vector3.new(0, 10, 0)
 
-                platform.Name =
-                    "DarkHub_WaterPlatform"
+        local direction =
+            Vector3.new(0, -80, 0)
 
-                platform.Size =
-                    Vector3.new(30, 1, 30)
+        local result =
+            workspace:Raycast(
+                origin,
+                direction,
+                WaterRayParams
+            )
 
-                platform.Anchored = true
-                platform.CanCollide = true
-                platform.Transparency = 1
+        local waterY
 
-                platform.Parent = workspace
+        if result
+            and result.Material
+                == Enum.Material.Water
+        then
 
-                PlayerModule._platform =
-                    platform
+            waterY = result.Position.Y
 
-                PlayerModule._waterY =
-                    root.Position.Y - 3
+        end
+
+        -- Not over water
+        if not waterY then
+
+            if PlayerModule._platform then
+                PlayerModule._platform:Destroy()
+                PlayerModule._platform = nil
             end
 
-            local platform =
-                PlayerModule._platform
+            return
+        end
 
-            platform.Position =
-                Vector3.new(
+        -- Create platform once
+        if not PlayerModule._platform then
+
+            local platform =
+                Instance.new("Part")
+
+            platform.Name =
+                "DarkHub_WaterPlatform"
+
+            platform.Size =
+                Vector3.new(40, 1, 40)
+
+            platform.Anchored = true
+            platform.CanCollide = true
+            platform.CanTouch = false
+            platform.CanQuery = false
+            platform.Transparency = 1
+
+            platform.Parent = workspace
+
+            PlayerModule._platform =
+                platform
+        end
+
+        local platform =
+            PlayerModule._platform
+
+        -- Keep platform directly under the player
+        platform.CFrame =
+            CFrame.new(
+                root.Position.X,
+                waterY - 0.5,
+                root.Position.Z
+            )
+
+        -- Keep player above water
+        local targetY =
+            waterY + 3
+
+        if root.Position.Y < targetY then
+
+            root.CFrame =
+                CFrame.new(
                     root.Position.X,
-                    PlayerModule._waterY,
+                    targetY,
                     root.Position.Z
                 )
 
-            if root.Position.Y <
-                PlayerModule._waterY + 2
-            then
-
-                root.CFrame =
-                    CFrame.new(
-                        root.Position.X,
-                        PlayerModule._waterY + 3,
-                        root.Position.Z
-                    )
-            end
-
-        elseif PlayerModule._platform then
-
-            PlayerModule._platform:Destroy()
-            PlayerModule._platform = nil
-
         end
+
     end)
 )
 
