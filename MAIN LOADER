@@ -27,7 +27,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-H
 
 elseif GameId == 994732206 then
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT'S"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mtan33810-lang/DARK-HUB-3V/refs/heads/main/BLOX%20FRUIT"))()
 
 --==================================================
 -- MURDER MYSTERY 2
