@@ -228,6 +228,8 @@ end
 -- TELEPORT TO GUN -> SNAP BACK
 --========================================================
 
+local oldCFrame
+
 local function TeleportToGunDrop()
     if not GunDropESP then
         return
@@ -239,18 +241,28 @@ local function TeleportToGunDrop()
 
     GunTeleporting = true
 
+    local character = lp.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        GunTeleporting = false
+        return
+    end
+
+    -- Save your starting position
+    oldCFrame = root.CFrame
+
     local reachedGun = false
 
     while GunDropESP and not reachedGun do
-        local character = lp.Character
-        local root = character and character:FindFirstChild("HumanoidRootPart")
+        character = lp.Character
+        root = character and character:FindFirstChild("HumanoidRootPart")
 
         if not root then
             task.wait(0.1)
             continue
         end
 
-        -- Find the same GunDrop used by Gun ESP
         local gunDrop = Workspace:FindFirstChild("GunDrop", true)
 
         if not gunDrop then
@@ -265,21 +277,21 @@ local function TeleportToGunDrop()
             continue
         end
 
-        -- Keep teleporting until we are actually at the gun
-        local targetCFrame =
-            gunPart.CFrame + Vector3.new(0, 3, 0)
+        root.CFrame = gunPart.CFrame + Vector3.new(0, 3, 0)
 
-        root.CFrame = targetCFrame
-
-        -- Check distance from the gun
-        local distance =
-            (root.Position - gunPart.Position).Magnitude
-
-        if distance <= 5 then
+        if (root.Position - gunPart.Position).Magnitude <= 5 then
             reachedGun = true
         end
 
         task.wait(0.05)
+    end
+
+    -- Stay at the gun briefly
+    task.wait(0.01)
+
+    -- Snap back to where you started
+    if oldCFrame and root and root.Parent then
+        root.CFrame = oldCFrame
     end
 
     GunTeleporting = false
