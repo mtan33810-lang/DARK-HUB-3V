@@ -1335,23 +1335,13 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 --//========================================================
---// TOUCH FLING
+--// FLING SYSTEM
 --// Other player touches you -> they get launched
 --//========================================================
 
-local FlingEnabled = true
+local FlingEnabled = false
 local FlingConnection
 local FlingDebounce = {}
-
-MainTab:CreateToggle({
-    name = "Fling",
-    flag = "FlingEnabled",
-    value = true,
-
-    callback = function(value)
-        FlingEnabled = value
-    end
-})
 
 local function SetupTouchFling(Character)
 
@@ -1404,14 +1394,12 @@ local function SetupTouchFling(Character)
             return
         end
 
-        -- Prevent repeated touch firing
         if FlingDebounce[OtherPlayer] then
             return
         end
 
         FlingDebounce[OtherPlayer] = true
 
-        -- Direction away from YOU
         local Direction =
             OtherRoot.Position - RootPart.Position
 
@@ -1421,7 +1409,6 @@ local function SetupTouchFling(Character)
             Direction = Direction.Unit
         end
 
-        -- Launch the player who touched you
         OtherRoot.AssemblyLinearVelocity =
             Direction * 500
             + Vector3.new(0, 250, 0)
@@ -1431,6 +1418,30 @@ local function SetupTouchFling(Character)
         end)
     end)
 end
+
+--//========================================================
+--// FLING TOGGLE
+--//========================================================
+
+MainTab:CreateToggle({
+    name = "Fling",
+    flag = "FlingEnabled",
+    value = false,
+
+    callback = function(Value)
+        FlingEnabled = Value
+
+        if not Value then
+            table.clear(FlingDebounce)
+        elseif lp.Character then
+            SetupTouchFling(lp.Character)
+        end
+    end
+})
+
+--//========================================================
+--// CHARACTER RESPAWN
+--//========================================================
 
 if lp.Character then
     SetupTouchFling(lp.Character)
@@ -1442,9 +1453,7 @@ lp.CharacterAdded:Connect(function(Character)
 
     task.wait(0.5)
 
-    if FlingEnabled then
-        SetupTouchFling(Character)
-    end
+    SetupTouchFling(Character)
 end)
 
 --============================================================
