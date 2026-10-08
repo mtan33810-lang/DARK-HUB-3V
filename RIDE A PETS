@@ -2965,44 +2965,12 @@ task.spawn(function()
 
 end)
 
---==================================================
--- AUTOMATIC TAB
---==================================================
-
-local AutomaticTab = Window:CreateTab({ name = "🪷 Automatic ", icon = nil })
-
-
-local MaxUpgradeEnabled = false
-
-AutomaticTab:CreateToggle({
-    name = "🍀 Upgrade Luck",
-    flag = "MaxUpgrade",
-    value = false,
-
-    callback = function(value)
-        MaxUpgradeEnabled = value
-    end
-})
-
---// Max Upgrade Loop
-task.spawn(function()
-    while true do
-        task.wait(10)
-
-        if MaxUpgradeEnabled then
-            local Event = game:GetService("ReplicatedStorage")
-                .Remotes.Game.Plot.Upgrades
-
-            Event:FireServer("Max")
-        end
-    end
-end)
-
 --//========================================================
---// AUTO HATCH - READY EGGS ON MY PLOT
+--// AUTO HATCH READY EGGS
 --//========================================================
 
 local AutoReadyEgg = false
+local AutoHatchRunning = false
 
 AutomaticTab:CreateToggle({
     name = "🥚 Auto Hatch Ready Eggs",
@@ -3015,18 +2983,16 @@ AutomaticTab:CreateToggle({
 })
 
 --========================================================
--- GET EGG PROMPT
+-- FIND READY EGG PROMPT
 --========================================================
 
-local function FindReadyPrompt(Egg)
+local function FindReadyEggPrompt(Egg)
 
     if not Egg or not Egg.Parent then
         return nil
     end
 
-    for _, Object in ipairs(
-        Egg:GetDescendants()
-    ) do
+    for _, Object in ipairs(Egg:GetDescendants()) do
 
         if Object:IsA("ProximityPrompt")
             and Object.Enabled
@@ -3034,26 +3000,14 @@ local function FindReadyPrompt(Egg)
 
             local ActionText =
                 string.lower(
-                    tostring(
-                        Object.ActionText or ""
-                    )
+                    tostring(Object.ActionText or "")
                 )
 
-            if ActionText:find(
-                "hatch",
-                1,
-                true
-            )
-            or ActionText:find(
-                "open",
-                1,
-                true
-            )
-            or ActionText:find(
-                "pick",
-                1,
-                true
-            )
+            -- Only accept prompts that indicate
+            -- the egg is ready to interact with.
+            if ActionText:find("hatch", 1, true)
+                or ActionText:find("open", 1, true)
+                or ActionText:find("pick", 1, true)
             then
                 return Object
             end
@@ -3064,55 +3018,18 @@ local function FindReadyPrompt(Egg)
 end
 
 --========================================================
--- GET ROOT
+-- GET EGG POSITION
 --========================================================
 
-local function GetRoot()
+local function GetEggPosition(Egg)
 
-    local Character =
-        Player.Character
-
-    if not Character then
+    if not Egg or not Egg.Parent then
         return nil
     end
 
-    return Character:FindFirstChild(
-        "HumanoidRootPart"
-    )
-end
-
---========================================================
--- HATCH READY EGG
---========================================================
-
-local function HatchEgg(Egg, Prompt)
-
-    if not Egg
-        or not Egg.Parent
-        or not Prompt
-        or not Prompt.Parent
-        or not Prompt.Enabled
-    then
-        return false
+    if Egg:IsA("BasePart") then
+        return Egg.Position
     end
-
-    -- Make sure the prompt still belongs
-    -- to the egg we're processing.
-    if not Prompt:IsDescendantOf(Egg) then
-        return false
-    end
-
-    --====================================================
-    -- TELEPORT TO EGG
-    --====================================================
-
-    local HRP = GetRoot()
-
-    if not HRP then
-        return false
-    end
-
-    local EggPosition
 
     if Egg:IsA("Model") then
 
@@ -3122,38 +3039,128 @@ local function HatchEgg(Egg, Prompt)
             end)
 
         if Success then
-            EggPosition = Pivot.Position
-        end
-
-    elseif Egg:IsA("BasePart") then
-
-        EggPosition = Egg.Position
-
-    end
-
-    if not EggPosition then
-
-        local Part =
-            Egg:FindFirstChildWhichIsA(
-                "BasePart",
-                true
-            )
-
-        if Part then
-            EggPosition = Part.Position
+            return Pivot.Position
         end
     end
 
-    if not EggPosition then
+    local Part =
+        Egg:FindFirstChildWhichIsA(
+            "BasePart",
+            true
+        )
+
+    if Part then
+        return Part.Position
+    end
+
+    return nil
+end
+
+--========================================================
+-- GET PROMPT POSITION
+--========================================================
+
+local function GetPromptPosition(Prompt)
+
+    if not Prompt or not Prompt.Parent then
+        return nil
+    end
+
+    local Parent = Prompt.Parent
+
+    -- Prompt inside Attachment
+    if Parent:IsA("Attachment") then
+        return Parent.WorldPosition
+    end
+
+    -- Prompt directly inside Part
+    if Parent:IsA("BasePart") then
+        return Parent.Position
+    end
+
+    -- Search upward for a BasePart
+    local Part =
+        Prompt:FindFirstAncestorWhichIsA(
+            "BasePart"
+        )
+
+    if Part then
+        return Part.Position
+    end
+
+    return nil
+end
+
+--========================================================
+-- HATCH ONE READY EGG
+--========================================================
+
+local function HatchReadyEgg(Egg, Prompt)
+
+    if not AutoReadyEgg then
         return false
     end
 
-    HRP.CFrame =
-        CFrame.new(
-            EggPosition
-            + Vector3.new(0, 3, 0)
+    if not Egg or not Egg.Parent then
+        return false
+    end
+
+    if not Prompt or not Prompt.Parent then
+        return false
+    end
+
+    --====================================================
+    -- GET CHARACTER
+    --====================================================
+
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local HRP =
+        Character:FindFirstChild(
+            "HumanoidRootPart"
         )
 
+    if not HRP then
+        return false
+    end
+
+    --====================================================
+    -- GET PROMPT POSITION
+    --====================================================
+
+    local PromptPosition =
+        GetPromptPosition(Prompt)
+
+    if not PromptPosition then
+
+        PromptPosition =
+            GetEggPosition(Egg)
+
+    end
+
+    if not PromptPosition then
+        return false
+    end
+
+    --====================================================
+    -- TELEPORT DIRECTLY TO READY EGG
+    --====================================================
+
+    HRP.CFrame =
+        CFrame.new(
+            PromptPosition
+            + Vector3.new(0, 2, 0)
+        )
+
+    HRP.AssemblyLinearVelocity =
+        Vector3.zero
+
+    HRP.AssemblyAngularVelocity =
+        Vector3.zero
+
+    -- Give the game time to register position
     task.wait(0.2)
 
     if not AutoReadyEgg then
@@ -3161,157 +3168,217 @@ local function HatchEgg(Egg, Prompt)
     end
 
     --====================================================
-    -- FIRE PROMPT
-    --====================================================
-    -- This is the important change.
-    -- The old InputHoldBegin() depends on
-    -- the normal interaction distance.
-    -- fireproximityprompt() is what your existing
-    -- RIDE A PETS pickup system already uses.
+    -- REFRESH PROMPT
     --====================================================
 
-    if typeof(
-        fireproximityprompt
-    ) ~= "function"
+    local FreshPrompt =
+        FindReadyEggPrompt(Egg)
+
+    if FreshPrompt then
+        Prompt = FreshPrompt
+    end
+
+    if not Prompt
+        or not Prompt.Parent
+        or not Prompt.Enabled
     then
-        warn(
-            "[AUTO HATCH] fireproximityprompt is unavailable."
-        )
-
         return false
     end
 
-    local Success, Error =
-        pcall(function()
+    --====================================================
+    -- HATCH
+    --====================================================
 
-            fireproximityprompt(
-                Prompt
+    if typeof(fireproximityprompt) == "function" then
+
+        local Success, ErrorMessage =
+            pcall(function()
+
+                fireproximityprompt(
+                    Prompt
+                )
+
+            end)
+
+        if not Success then
+
+            warn(
+                "[AUTO HATCH] Hatch failed:",
+                ErrorMessage
             )
 
-        end)
+            return false
+        end
 
-    if not Success then
+    else
 
-        warn(
-            "[AUTO HATCH] Hatch failed:",
-            Error
+        -- Fallback for environments where
+        -- fireproximityprompt is unavailable.
+
+        local HoldTime =
+            math.max(
+                Prompt.HoldDuration,
+                0.1
+            )
+
+        Prompt:InputHoldBegin()
+
+        task.wait(
+            HoldTime + 0.15
         )
 
-        return false
+        Prompt:InputHoldEnd()
+
     end
 
+    -- Give server time to remove/update egg
     task.wait(0.8)
 
     return true
 end
 
 --========================================================
--- MAIN LOOP
+-- FIND READY EGGS ONLY ON MY PLOT
+--========================================================
+
+local function FindReadyEggsOnMyPlot()
+
+    local MyPlot =
+        FindMyPlot()
+
+    if not MyPlot then
+        return {}
+    end
+
+    local ReadyEggs = {}
+    local FoundEggs = {}
+
+    for _, Object in ipairs(
+        MyPlot:GetDescendants()
+    ) do
+
+        if not AutoReadyEgg then
+            break
+        end
+
+        local Current = Object
+
+        while Current
+            and Current ~= MyPlot
+        do
+
+            local Name =
+                tostring(Current.Name)
+
+            if ValidEggNames[Name] then
+
+                -- Prevent the same egg from
+                -- being checked multiple times.
+                if not FoundEggs[Current] then
+
+                    FoundEggs[Current] = true
+
+                    local Prompt =
+                        FindReadyEggPrompt(
+                            Current
+                        )
+
+                    if Prompt then
+
+                        table.insert(
+                            ReadyEggs,
+                            {
+                                Egg = Current,
+                                Prompt = Prompt
+                            }
+                        )
+
+                    end
+                end
+
+                break
+            end
+
+            Current =
+                Current.Parent
+        end
+    end
+
+    return ReadyEggs
+end
+
+--========================================================
+-- AUTO HATCH LOOP
 --========================================================
 
 task.spawn(function()
 
     while true do
 
-        task.wait(0.2)
+        task.wait(0.25)
 
         if not AutoReadyEgg then
+            AutoHatchRunning = false
             continue
         end
 
-        --================================================
-        -- MY PLOT ONLY
-        --================================================
-
-        local MyPlot =
-            FindMyPlot()
-
-        if not MyPlot then
-            task.wait(1)
+        if AutoHatchRunning then
             continue
         end
 
-        --================================================
-        -- FIND UNIQUE EGGS
-        --================================================
+        AutoHatchRunning = true
 
-        local FoundEggs = {}
-        local CheckedEggs = {}
+        local Success, ErrorMessage =
+            pcall(function()
 
-        for _, Object in ipairs(
-            MyPlot:GetDescendants()
-        ) do
+                -- ONLY SCAN YOUR OWN PLOT
+                local ReadyEggs =
+                    FindReadyEggsOnMyPlot()
 
-            if not AutoReadyEgg then
-                break
-            end
+                for _, Data in ipairs(
+                    ReadyEggs
+                ) do
 
-            local Egg =
-                GetEggObject(Object)
+                    if not AutoReadyEgg then
+                        break
+                    end
 
-            if Egg
-                and not CheckedEggs[Egg]
-            then
+                    local Egg =
+                        Data.Egg
 
-                CheckedEggs[Egg] = true
+                    local Prompt =
+                        Data.Prompt
 
-                if Egg:IsDescendantOf(
-                    MyPlot
-                )
-                then
+                    if Egg
+                        and Egg.Parent
+                        and Prompt
+                        and Prompt.Parent
+                    then
 
-                    table.insert(
-                        FoundEggs,
-                        Egg
-                    )
+                        HatchReadyEgg(
+                            Egg,
+                            Prompt
+                        )
 
+                        -- Small delay before
+                        -- checking for the next egg.
+                        task.wait(0.3)
+
+                    end
                 end
-            end
-        end
 
-        --================================================
-        -- CHECK EGGS
-        --================================================
+            end)
 
-        for _, Egg in ipairs(
-            FoundEggs
-        ) do
+        if not Success then
 
-            if not AutoReadyEgg then
-                break
-            end
-
-            if not Egg
-                or not Egg.Parent
-            then
-                continue
-            end
-
-            --================================================
-            -- READY CHECK
-            --================================================
-
-            local Prompt =
-                FindReadyPrompt(Egg)
-
-            -- No ready prompt = wait for egg
-            if not Prompt then
-                continue
-            end
-
-            --================================================
-            -- HATCH
-            --================================================
-
-            HatchEgg(
-                Egg,
-                Prompt
+            warn(
+                "[AUTO HATCH] Error:",
+                ErrorMessage
             )
 
-            -- Give the server time to
-            -- remove/update the egg.
-            task.wait(0.5)
         end
+
+        AutoHatchRunning = false
     end
 end)
 
