@@ -1263,6 +1263,34 @@ lp.CharacterAdded:Connect(function(character)
     end
 end)
 
+--==================================================
+-- INFINITE JUMP
+--==================================================
+
+local infiniteJump = false
+local infinitejump = HomeTab:CreateToggle({
+    name = "Infinite Jump",
+    flag = "infinitejump",
+    value = false,
+    callback = function(Value)
+        infiniteJump = Value
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if not infiniteJump then
+        return
+    end
+
+    local Humanoid = getHumanoid()
+
+    if Humanoid then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.Jumping
+        )
+    end
+end)
+
 --============================================================
 -- ANTI FLING 
 --============================================================
