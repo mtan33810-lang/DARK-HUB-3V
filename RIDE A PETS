@@ -2999,7 +2999,7 @@ task.spawn(function()
 end)
 
 --//========================================================
---// AUTO HATCH 
+--// AUTO HATCH - READY EGGS ON MY PLOT
 --//========================================================
 
 local AutoReadyEgg = false
@@ -3015,40 +3015,7 @@ AutomaticTab:CreateToggle({
 })
 
 --========================================================
--- GET ACTUAL PROMPT POSITION
---========================================================
-
-local function GetPromptPosition(Prompt)
-
-    if not Prompt or not Prompt.Parent then
-        return nil
-    end
-
-    local Parent = Prompt.Parent
-
-    -- Prompt is inside an Attachment
-    if Parent:IsA("Attachment") then
-        return Parent.WorldPosition
-    end
-
-    -- Prompt is directly inside a Part
-    if Parent:IsA("BasePart") then
-        return Parent.Position
-    end
-
-    -- Find the nearest BasePart
-    local Part =
-        Prompt:FindFirstAncestorWhichIsA("BasePart")
-
-    if Part then
-        return Part.Position
-    end
-
-    return nil
-end
-
---========================================================
--- FIND READY PROMPT
+-- GET EGG PROMPT
 --========================================================
 
 local function FindReadyPrompt(Egg)
@@ -3072,7 +3039,6 @@ local function FindReadyPrompt(Egg)
                     )
                 )
 
-            -- Ready hatch / interaction prompt
             if ActionText:find(
                 "hatch",
                 1,
@@ -3116,6 +3082,130 @@ local function GetRoot()
 end
 
 --========================================================
+-- HATCH READY EGG
+--========================================================
+
+local function HatchEgg(Egg, Prompt)
+
+    if not Egg
+        or not Egg.Parent
+        or not Prompt
+        or not Prompt.Parent
+        or not Prompt.Enabled
+    then
+        return false
+    end
+
+    -- Make sure the prompt still belongs
+    -- to the egg we're processing.
+    if not Prompt:IsDescendantOf(Egg) then
+        return false
+    end
+
+    --====================================================
+    -- TELEPORT TO EGG
+    --====================================================
+
+    local HRP = GetRoot()
+
+    if not HRP then
+        return false
+    end
+
+    local EggPosition
+
+    if Egg:IsA("Model") then
+
+        local Success, Pivot =
+            pcall(function()
+                return Egg:GetPivot()
+            end)
+
+        if Success then
+            EggPosition = Pivot.Position
+        end
+
+    elseif Egg:IsA("BasePart") then
+
+        EggPosition = Egg.Position
+
+    end
+
+    if not EggPosition then
+
+        local Part =
+            Egg:FindFirstChildWhichIsA(
+                "BasePart",
+                true
+            )
+
+        if Part then
+            EggPosition = Part.Position
+        end
+    end
+
+    if not EggPosition then
+        return false
+    end
+
+    HRP.CFrame =
+        CFrame.new(
+            EggPosition
+            + Vector3.new(0, 3, 0)
+        )
+
+    task.wait(0.2)
+
+    if not AutoReadyEgg then
+        return false
+    end
+
+    --====================================================
+    -- FIRE PROMPT
+    --====================================================
+    -- This is the important change.
+    -- The old InputHoldBegin() depends on
+    -- the normal interaction distance.
+    -- fireproximityprompt() is what your existing
+    -- RIDE A PETS pickup system already uses.
+    --====================================================
+
+    if typeof(
+        fireproximityprompt
+    ) ~= "function"
+    then
+        warn(
+            "[AUTO HATCH] fireproximityprompt is unavailable."
+        )
+
+        return false
+    end
+
+    local Success, Error =
+        pcall(function()
+
+            fireproximityprompt(
+                Prompt
+            )
+
+        end)
+
+    if not Success then
+
+        warn(
+            "[AUTO HATCH] Hatch failed:",
+            Error
+        )
+
+        return false
+    end
+
+    task.wait(0.8)
+
+    return true
+end
+
+--========================================================
 -- MAIN LOOP
 --========================================================
 
@@ -3130,7 +3220,7 @@ task.spawn(function()
         end
 
         --================================================
-        -- FIND ONLY MY PLOT
+        -- MY PLOT ONLY
         --================================================
 
         local MyPlot =
@@ -3165,8 +3255,6 @@ task.spawn(function()
 
                 CheckedEggs[Egg] = true
 
-                -- Make sure this egg is
-                -- actually inside MY plot.
                 if Egg:IsDescendantOf(
                     MyPlot
                 )
@@ -3176,12 +3264,13 @@ task.spawn(function()
                         FoundEggs,
                         Egg
                     )
+
                 end
             end
         end
 
         --================================================
-        -- CHECK EACH EGG
+        -- CHECK EGGS
         --================================================
 
         for _, Egg in ipairs(
@@ -3199,92 +3288,28 @@ task.spawn(function()
             end
 
             --================================================
-            -- CHECK IF EGG IS READY
+            -- READY CHECK
             --================================================
 
             local Prompt =
                 FindReadyPrompt(Egg)
 
-            -- No enabled ready prompt =
-            -- egg is not ready yet.
+            -- No ready prompt = wait for egg
             if not Prompt then
                 continue
             end
 
             --================================================
-            -- GET ACTUAL PROMPT POSITION
+            -- HATCH
             --================================================
 
-            local PromptPosition =
-                GetPromptPosition(
-                    Prompt
-                )
-
-            if not PromptPosition then
-                continue
-            end
-
-            --================================================
-            -- GET CHARACTER
-            --================================================
-
-            local HRP =
-                GetRoot()
-
-            if not HRP then
-                continue
-            end
-
-            --================================================
-            -- TELEPORT TO THE PROMPT
-            --================================================
-
-            HRP.CFrame =
-                CFrame.new(
-                    PromptPosition
-                    + Vector3.new(0, 2, 0)
-                )
-
-            -- Let the game register
-            -- the new position.
-            task.wait(0.25)
-
-            if not AutoReadyEgg then
-                break
-            end
-
-            --================================================
-            -- RECHECK PROMPT
-            --================================================
-
-            if not Prompt.Parent
-                or not Prompt.Enabled
-            then
-                continue
-            end
-
-            --================================================
-            -- LONG PRESS
-            --================================================
-
-            local HoldTime =
-                math.max(
-                    Prompt.HoldDuration,
-                    0.1
-                )
-
-            Prompt:InputHoldBegin()
-
-            task.wait(
-                HoldTime + 0.15
+            HatchEgg(
+                Egg,
+                Prompt
             )
 
-            Prompt:InputHoldEnd()
-
-            --================================================
-            -- WAIT FOR HATCH RESULT
-            --================================================
-
+            -- Give the server time to
+            -- remove/update the egg.
             task.wait(0.5)
         end
     end
