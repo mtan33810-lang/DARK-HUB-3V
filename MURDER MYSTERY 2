@@ -29,6 +29,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
 
 local lp = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -1371,6 +1372,54 @@ task.spawn(function()
             end
         end
     end
+end)
+
+local AntiAFK = true
+local AntiAFKConnection
+
+MainTab:CreateToggle({
+    name = "🛡️ Anti-AFK",
+    flag = "AntiAFK",
+    value = true,
+    callback = function(value)
+        AntiAFK = value
+
+        if AntiAFKConnection then
+            AntiAFKConnection:Disconnect()
+            AntiAFKConnection = nil
+        end
+
+        if AntiAFK then
+            AntiAFKConnection = Player.Idled:Connect(function()
+                if not AntiAFK then
+                    return
+                end
+
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(
+                    Vector2.new(
+                        math.random(100, 900),
+                        math.random(100, 600)
+                    )
+                )
+            end)
+        end
+    end
+})
+
+-- Automatically enable Anti-AFK
+AntiAFKConnection = Player.Idled:Connect(function()
+    if not AntiAFK then
+        return
+    end
+
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(
+        Vector2.new(
+            math.random(100, 900),
+            math.random(100, 600)
+        )
+    )
 end)
 
 --============================================================
