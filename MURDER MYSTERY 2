@@ -1336,9 +1336,12 @@ end)
 
 --//========================================================
 --// TOUCH FLING
+--// Other player touches you -> they get launched
 --//========================================================
 
 local FlingEnabled = true
+local FlingConnection
+local FlingDebounce = {}
 
 MainTab:CreateToggle({
     name = "Fling",
@@ -1350,52 +1353,82 @@ MainTab:CreateToggle({
     end
 })
 
-local TouchConnection
-
 local function SetupTouchFling(Character)
-    if TouchConnection then
-        TouchConnection:Disconnect()
-        TouchConnection = nil
+
+    if FlingConnection then
+        FlingConnection:Disconnect()
+        FlingConnection = nil
     end
 
-    local RootPart = Character:WaitForChild("HumanoidRootPart", 5)
+    local RootPart = Character:WaitForChild(
+        "HumanoidRootPart",
+        10
+    )
+
     if not RootPart then
         return
     end
 
-    TouchConnection = RootPart.Touched:Connect(function(Hit)
+    FlingConnection = RootPart.Touched:Connect(function(Hit)
+
         if not FlingEnabled then
             return
         end
 
-        local OtherCharacter = Hit:FindFirstAncestorOfClass("Model")
-        if not OtherCharacter or OtherCharacter == Character then
+        local OtherCharacter =
+            Hit:FindFirstAncestorOfClass("Model")
+
+        if not OtherCharacter
+            or OtherCharacter == Character then
             return
         end
 
-        local OtherRoot = OtherCharacter:FindFirstChild("HumanoidRootPart")
-        local OtherHumanoid = OtherCharacter:FindFirstChildOfClass("Humanoid")
+        local OtherPlayer =
+            Players:GetPlayerFromCharacter(OtherCharacter)
+
+        if not OtherPlayer then
+            return
+        end
+
+        local OtherRoot =
+            OtherCharacter:FindFirstChild("HumanoidRootPart")
+
+        local OtherHumanoid =
+            OtherCharacter:FindFirstChildOfClass("Humanoid")
 
         if not OtherRoot or not OtherHumanoid then
             return
         end
 
-        -- Don't fling yourself
-        if OtherCharacter == lp.Character then
+        if OtherHumanoid.Health <= 0 then
             return
         end
 
-        -- Push the player away from you
-        local Direction = OtherRoot.Position - RootPart.Position
+        -- Prevent repeated touch firing
+        if FlingDebounce[OtherPlayer] then
+            return
+        end
+
+        FlingDebounce[OtherPlayer] = true
+
+        -- Direction away from YOU
+        local Direction =
+            OtherRoot.Position - RootPart.Position
 
         if Direction.Magnitude < 0.1 then
-            Direction = Vector3.new(0, 1, 0)
+            Direction = Vector3.new(0, 0, -1)
         else
             Direction = Direction.Unit
         end
 
+        -- Launch the player who touched you
         OtherRoot.AssemblyLinearVelocity =
-            Direction * 10000 + Vector3.new(0, 10000, 0)
+            Direction * 500
+            + Vector3.new(0, 250, 0)
+
+        task.delay(0.5, function()
+            FlingDebounce[OtherPlayer] = nil
+        end)
     end)
 end
 
@@ -1404,7 +1437,14 @@ if lp.Character then
 end
 
 lp.CharacterAdded:Connect(function(Character)
-    SetupTouchFling(Character)
+
+    table.clear(FlingDebounce)
+
+    task.wait(0.5)
+
+    if FlingEnabled then
+        SetupTouchFling(Character)
+    end
 end)
 
 --============================================================
