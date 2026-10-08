@@ -2966,6 +2966,39 @@ task.spawn(function()
 end)
 
 --==================================================
+-- AUTOMATIC TAB
+--==================================================
+
+local AutomaticTab = Window:CreateTab({ name = "Automatic", icon = nil })
+
+
+local MaxUpgradeEnabled = false
+
+AutomaticTab:CreateToggle({
+    name = "Upgrade Luck",
+    flag = "MaxUpgrade",
+    value = false,
+
+    callback = function(value)
+        MaxUpgradeEnabled = value
+    end
+})
+
+--// Max Upgrade Loop
+task.spawn(function()
+    while true do
+        task.wait(10)
+
+        if MaxUpgradeEnabled then
+            local Event = game:GetService("ReplicatedStorage")
+                .Remotes.Game.Plot.Upgrades
+
+            Event:FireServer("Max")
+        end
+    end
+end)
+
+--==================================================
 -- SETTING TAB
 --==================================================
 
