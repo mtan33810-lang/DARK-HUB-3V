@@ -1363,17 +1363,11 @@ Players.PlayerAdded:Connect(function(player)
     end)
 end)
 
-
-
 --//========================================================
---// SETTINGS
+--// FLING
 --//========================================================
 
-Environment.Settings = {
-    FlingTouchToggle = false,
-}
-
---// Prevent Multiple Instances
+-- Prevent Multiple Instances
 pcall(function()
     if getgenv().Fling and getgenv().Fling.Functions then
         getgenv().Fling.Functions:Exit()
@@ -1382,6 +1376,11 @@ end)
 
 getgenv().Fling = {}
 local Environment = getgenv().Fling
+
+-- Settings MUST be created after Environment
+Environment.Settings = {
+    FlingTouchToggle = false,
+}
 
 --//========================================================
 --// VARIABLES
@@ -1431,6 +1430,7 @@ ServiceConnections.TypingEndedConnection =
 
 ServiceConnections.FlingConnection =
     RunService.Heartbeat:Connect(function()
+
         if Destroyed then
             return
         end
@@ -1497,6 +1497,7 @@ function Environment.Functions:SetFling(state)
 end
 
 function Environment.Functions:Exit()
+
     if Destroyed then
         return
     end
@@ -1525,6 +1526,7 @@ end
 MainTab:CreateToggle({
     name = "Fling",
     flag = "FlingEnabled",
+    value = false,
 
     callback = function(value)
         Environment.Functions:SetFling(value)
