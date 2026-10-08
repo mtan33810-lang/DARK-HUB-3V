@@ -2998,6 +2998,217 @@ task.spawn(function()
     end
 end)
 
+--//========================================================
+--// AUTO HATCH 
+--//========================================================
+
+local AutoReadyEgg = false
+
+AutomaticTab:CreateToggle({
+    name = "🥚 Auto Hatch Ready Eggs",
+    flag = "AutoReadyEgg",
+    value = false,
+
+    callback = function(Value)
+        AutoReadyEgg = Value
+    end
+})
+
+--========================================================
+-- FIND READY/HATCH PROMPT
+--========================================================
+
+local function FindReadyEggPrompt(Egg)
+
+    if not Egg or not Egg.Parent then
+        return nil
+    end
+
+    for _, Object in ipairs(Egg:GetDescendants()) do
+
+        if Object:IsA("ProximityPrompt")
+            and Object.Enabled
+        then
+
+            local ActionText =
+                string.lower(
+                    tostring(Object.ActionText or "")
+                )
+
+            -- Only accept prompts that indicate
+            -- the egg can actually be hatched.
+            if ActionText:find("hatch", 1, true)
+                or ActionText:find("open", 1, true)
+                or ActionText:find("pick", 1, true)
+            then
+                return Object
+            end
+        end
+    end
+
+    return nil
+end
+
+--========================================================
+-- GET EGG POSITION
+--========================================================
+
+local function GetEggPosition(Egg)
+
+    if not Egg or not Egg.Parent then
+        return nil
+    end
+
+    if Egg:IsA("BasePart") then
+        return Egg.Position
+    end
+
+    if Egg:IsA("Model") then
+
+        local Success, Pivot =
+            pcall(function()
+                return Egg:GetPivot()
+            end)
+
+        if Success then
+            return Pivot.Position
+        end
+    end
+
+    local Part =
+        Egg:FindFirstChildWhichIsA(
+            "BasePart",
+            true
+        )
+
+    if Part then
+        return Part.Position
+    end
+
+    return nil
+end
+
+--========================================================
+-- MAIN LOOP
+--========================================================
+
+task.spawn(function()
+
+    while true do
+
+        task.wait(0.2)
+
+        if not AutoReadyEgg then
+            continue
+        end
+
+        -- ONLY YOUR PLOT
+        local MyPlot = FindMyPlot()
+
+        if not MyPlot then
+            task.wait(1)
+            continue
+        end
+
+        -- Scan only your plot
+        for _, Object in ipairs(
+            MyPlot:GetDescendants()
+        ) do
+
+            if not AutoReadyEgg then
+                break
+            end
+
+            -- Find actual egg object
+            local Egg = nil
+
+            local Current = Object
+
+            while Current
+                and Current ~= MyPlot
+            do
+
+                local Name =
+                    tostring(Current.Name)
+
+                if ValidEggNames[Name] then
+                    Egg = Current
+                    break
+                end
+
+                Current = Current.Parent
+            end
+
+            if Egg then
+
+                -- Make sure this is actually
+                -- a ready egg.
+                local Prompt =
+                    FindReadyEggPrompt(Egg)
+
+                if Prompt then
+
+                    local Character =
+                        Player.Character
+
+                    local HRP =
+                        Character
+                        and Character:FindFirstChild(
+                            "HumanoidRootPart"
+                        )
+
+                    if HRP then
+
+                        local Position =
+                            GetEggPosition(Egg)
+
+                        if Position then
+
+                            --================================================
+                            -- TELEPORT TO READY EGG
+                            --================================================
+
+                            HRP.CFrame =
+                                CFrame.new(
+                                    Position
+                                    + Vector3.new(0, 5, 0)
+                                )
+
+                            task.wait(0.2)
+
+                            if not AutoReadyEgg then
+                                break
+                            end
+
+                            --================================================
+                            -- LONG PRESS
+                            --================================================
+
+                            local HoldTime =
+                                math.max(
+                                    Prompt.HoldDuration,
+                                    0.1
+                                )
+
+                            Prompt:InputHoldBegin()
+
+                            task.wait(
+                                HoldTime + 0.1
+                            )
+
+                            Prompt:InputHoldEnd()
+
+                            -- Give the server time
+                            -- to remove/update the egg.
+                            task.wait(0.3)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
 --==================================================
 -- SETTING TAB
 --==================================================
