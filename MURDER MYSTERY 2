@@ -194,7 +194,7 @@ local function CreateRoleName(player, role)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "RoleNameESP"
     billboard.Adornee = head
-    billboard.Size = UDim2.fromOffset(140, 30)
+    billboard.Size = UDim2.fromOffset(90, 20)
     billboard.StudsOffset = Vector3.new(0, 2.8, 0)
     billboard.AlwaysOnTop = true
     billboard.ResetOnSpawn = false
@@ -211,7 +211,7 @@ local function CreateRoleName(player, role)
     if role == "Sheriff" then
         label.TextColor3 = Color3.fromRGB(80, 150, 255)
     else
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextColor3 = Color3.fromRGB(0, 255, 0)
     end
 
     label.Parent = billboard
