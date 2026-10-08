@@ -1339,7 +1339,7 @@ end)
 
 local FlingEnabled = true 
 
-LocalPlayerTab:CreateToggle({
+MainTab:CreateToggle({
     name = "Fling",
     flag = "FlingEnabled",
     value = true,
