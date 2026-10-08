@@ -659,6 +659,27 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 ButtonCorner.Parent = FireButton
 
+--========================================================
+-- AIM PREDICTION 
+--========================================================
+
+local function GetAutoPredictedPosition(targetPart, origin)
+    if not targetPart or not origin then
+        return nil
+    end
+
+    local targetPosition = targetPart.Position
+    local velocity = targetPart.AssemblyLinearVelocity
+    local distance = (targetPosition - origin).Magnitude
+
+    local predictionTime = math.clamp(
+        distance / 1000,
+        0.03,
+        0.20
+    )
+
+    return targetPosition + (velocity * predictionTime)
+end
 
 --========================================================
 -- FIRE FUNCTION
@@ -696,7 +717,15 @@ local function FireAtAimTarget()
 
     -- Make the shot point from the player toward the target.
     local origin = root.Position
-    local targetPosition = targetPart.Position
+
+    local targetPosition = GetAutoPredictedPosition(
+        targetPart,
+        origin
+    )
+
+    if not targetPosition then
+        return
+    end
 
     local shotCFrame = CFrame.lookAt(
         origin,
