@@ -2969,13 +2969,13 @@ end)
 -- AUTOMATIC TAB
 --==================================================
 
-local AutomaticTab = Window:CreateTab({ name = "Automatic", icon = nil })
+local AutomaticTab = Window:CreateTab({ name = "🪷 Automatic ", icon = nil })
 
 
 local MaxUpgradeEnabled = false
 
 AutomaticTab:CreateToggle({
-    name = "Upgrade Luck",
+    name = "🍀 Upgrade Luck",
     flag = "MaxUpgrade",
     value = false,
 
