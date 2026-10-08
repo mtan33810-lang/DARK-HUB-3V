@@ -1335,10 +1335,10 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 --//========================================================
---// FLING TOGGLE
+--// TOUCH FLING
 --//========================================================
 
-local FlingEnabled = true 
+local FlingEnabled = true
 
 MainTab:CreateToggle({
     name = "Fling",
@@ -1350,28 +1350,61 @@ MainTab:CreateToggle({
     end
 })
 
---// Fling Loop
-task.spawn(function()
-    while task.wait() do
-        if FlingEnabled then
-            local Character = lp.Character
-            local RootPart = Character
-                and Character:FindFirstChild("HumanoidRootPart")
+local TouchConnection
 
-            if RootPart then
-                local Velocity = RootPart.AssemblyLinearVelocity
-
-                RootPart.AssemblyLinearVelocity =
-                    Velocity * 10000 + Vector3.new(0, 10000, 0)
-
-                task.wait()
-
-                if RootPart and RootPart.Parent then
-                    RootPart.AssemblyLinearVelocity = Velocity
-                end
-            end
-        end
+local function SetupTouchFling(Character)
+    if TouchConnection then
+        TouchConnection:Disconnect()
+        TouchConnection = nil
     end
+
+    local RootPart = Character:WaitForChild("HumanoidRootPart", 5)
+    if not RootPart then
+        return
+    end
+
+    TouchConnection = RootPart.Touched:Connect(function(Hit)
+        if not FlingEnabled then
+            return
+        end
+
+        local OtherCharacter = Hit:FindFirstAncestorOfClass("Model")
+        if not OtherCharacter or OtherCharacter == Character then
+            return
+        end
+
+        local OtherRoot = OtherCharacter:FindFirstChild("HumanoidRootPart")
+        local OtherHumanoid = OtherCharacter:FindFirstChildOfClass("Humanoid")
+
+        if not OtherRoot or not OtherHumanoid then
+            return
+        end
+
+        -- Don't fling yourself
+        if OtherCharacter == lp.Character then
+            return
+        end
+
+        -- Push the player away from you
+        local Direction = OtherRoot.Position - RootPart.Position
+
+        if Direction.Magnitude < 0.1 then
+            Direction = Vector3.new(0, 1, 0)
+        else
+            Direction = Direction.Unit
+        end
+
+        OtherRoot.AssemblyLinearVelocity =
+            Direction * 10000 + Vector3.new(0, 10000, 0)
+    end)
+end
+
+if lp.Character then
+    SetupTouchFling(lp.Character)
+end
+
+lp.CharacterAdded:Connect(function(Character)
+    SetupTouchFling(Character)
 end)
 
 --============================================================
