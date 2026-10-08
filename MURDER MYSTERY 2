@@ -1263,9 +1263,9 @@ lp.CharacterAdded:Connect(function(character)
     end
 end)
 
---==================================================
+--============================================================
 -- INFINITE JUMP
---==================================================
+--============================================================
 
 local infiniteJump = false
 
@@ -1273,6 +1273,7 @@ MainTab:CreateToggle({
     name = "Infinite Jump",
     flag = "infinitejump",
     value = false,
+
     callback = function(value)
         infiniteJump = value
     end
@@ -1283,13 +1284,17 @@ UserInputService.JumpRequest:Connect(function()
         return
     end
 
-    local Humanoid = getHumanoid()
-
-    if Humanoid then
-        Humanoid:ChangeState(
-            Enum.HumanoidStateType.Jumping
-        )
+    local character = lp.Character
+    if not character then
+        return
     end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        return
+    end
+
+    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 end)
 
 --============================================================
