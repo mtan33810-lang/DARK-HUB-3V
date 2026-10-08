@@ -2614,40 +2614,40 @@ TeleportsTab:CreateToggle({
             and HRP
         then
             HRP.CFrame = TargetCFrame
-            task.wait(3)
+            task.wait(1.5)
         end
     end
 
-    --==============================================
-    -- FORWARD PATH
-    -- 1 → 2 → 3 → 4
-    --==============================================
+            --==============================================
+            -- FORWARD PATH
+            -- 1 → 2 → 3 → 4
+            --==============================================
 
-    TweenToLocation(Location1)
+            TweenToLocation(Location1)
 
-    if not AutoEggPickup then
-        continue
+            if not AutoEggPickup then
+                continue
+            end
+
+            TweenToLocation(Location2)
+
+            if not AutoEggPickup then
+                continue
+            end
+
+            TweenToLocation(Location3)
+
+            if not AutoEggPickup then
+                continue
+            end
+
+            TweenToLocation(Location4)
+
+            if not AutoEggPickup then
+                continue
+         end
+
     end
-
-    TweenToLocation(Location2)
-
-    if not AutoEggPickup then
-        continue
-    end
-
-    TweenToLocation(Location3)
-
-    if not AutoEggPickup then
-        continue
-    end
-
-    TweenToLocation(Location4)
-
-    if not AutoEggPickup then
-        continue
-    end
-
-end
 
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
@@ -2833,7 +2833,7 @@ end
                 HRP.CFrame =
                     TargetCFrame
 
-                task.wait(3)
+                task.wait(1.5)
             end
         end
 
