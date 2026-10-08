@@ -1,10 +1,6 @@
 --==================================================
--- ARSENAL / RIVALS TEST ENVIRONMENT
+-- ARSENAL 
 --==================================================
-
---============================================================
--- RAYFIELD
---============================================================
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
@@ -355,7 +351,7 @@ local function isSameTeam(player)
     end
 
     --========================================================
-    -- TEAM CHECK #1B: Team Attribute
+    -- TEAM CHECK #2: Team Attribute
     --========================================================
 
     local myTeam = LocalPlayer:GetAttribute("Team")
@@ -368,7 +364,7 @@ local function isSameTeam(player)
     end
 
     --========================================================
-    -- TEAM CHECK #2: TeammateLabel
+    -- TEAM CHECK #3: TeammateLabel
     --========================================================
 
     local character = player.Character
@@ -380,7 +376,7 @@ local function isSameTeam(player)
     end
 
     --========================================================
-    -- TEAM CHECK #3: GREEN HIGHLIGHT
+    -- TEAM CHECK #4: GREEN HIGHLIGHT
     --========================================================
 
     if character then
