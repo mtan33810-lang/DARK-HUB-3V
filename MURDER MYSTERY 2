@@ -126,7 +126,13 @@ local function UpdatePlayerESP(plr)
         highlight.Name = "RoleESP"
         highlight.Adornee = character
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        highlight.FillTransparency = 0.45
+        local myRole = GetPlayerRole(lp)
+
+        if myRole == "Murderer" then
+            highlight.FillTransparency = 0.22
+        else
+            highlight.FillTransparency = 0.45
+        end
         highlight.OutlineTransparency = 0
 
         ESPObjects[plr] = highlight
