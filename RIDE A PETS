@@ -3164,46 +3164,101 @@ task.spawn(function()
 
                         if Position then
 
-                            --================================================
-                            -- TELEPORT TO READY EGG
-                            --================================================
+                            
+                            --//========================================================
+--// TELEPORT TO ACTUAL PROMPT + HATCH
+--//========================================================
 
-                            HRP.CFrame =
-                                CFrame.new(
-                                    Position
-                                    + Vector3.new(0, 5, 0)
-                                )
+local function GetPromptPosition(Prompt)
+    if not Prompt or not Prompt.Parent then
+        return nil
+    end
 
-                            task.wait(0.2)
+    local Parent = Prompt.Parent
 
-                            if not AutoReadyEgg then
-                                break
-                            end
+    -- Prompt inside an Attachment
+    if Parent:IsA("Attachment") then
+        return Parent.WorldPosition
+    end
 
-                            --================================================
-                            -- LONG PRESS
-                            --================================================
+    -- Prompt directly inside a Part
+    if Parent:IsA("BasePart") then
+        return Parent.Position
+    end
 
-                            local HoldTime =
-                                math.max(
-                                    Prompt.HoldDuration,
-                                    0.1
-                                )
+    -- Search upward for the nearest Part
+    local Part =
+        Prompt:FindFirstAncestorWhichIsA("BasePart")
 
-                            Prompt:InputHoldBegin()
+    if Part then
+        return Part.Position
+    end
 
-                            task.wait(
-                                HoldTime + 0.1
-                            )
+    return nil
+end
 
-                            Prompt:InputHoldEnd()
+--========================================================
+-- FIND PROMPT POSITION
+--========================================================
 
-                            -- Give the server time
-                            -- to remove/update the egg.
-                            task.wait(0.3)
-                        end
-                    end
-                end
+local PromptPosition =
+    GetPromptPosition(Prompt)
+
+if PromptPosition then
+
+    local Character =
+        Player.Character
+
+    local HRP =
+        Character
+        and Character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if HRP then
+
+        -- Put the player slightly above
+        -- the actual prompt location.
+        local TargetPosition =
+            PromptPosition
+            + Vector3.new(0, 2, 0)
+
+        HRP.CFrame =
+            CFrame.new(TargetPosition)
+
+        -- Give the game time to register
+        -- the new character position.
+        task.wait(0.2)
+
+        if not AutoReadyEgg then
+            break
+        end
+
+        -- Check prompt again
+        if Prompt.Parent
+            and Prompt.Enabled
+        then
+
+            -- Use the REAL hold duration
+            local HoldTime =
+                math.max(
+                    Prompt.HoldDuration,
+                    0.1
+                )
+
+            Prompt:InputHoldBegin()
+
+            task.wait(
+                HoldTime + 0.15
+            )
+
+            Prompt:InputHoldEnd()
+
+            -- Wait for the egg to update/remove
+            task.wait(0.4)
+        end
+    end
+end
             end
         end
     end
