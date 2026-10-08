@@ -1354,7 +1354,7 @@ MainTab:CreateToggle({
 task.spawn(function()
     while task.wait() do
         if FlingEnabled then
-            local Character = LocalPlayer.Character
+            local Character = lp.Character
             local RootPart = Character
                 and Character:FindFirstChild("HumanoidRootPart")
 
@@ -1374,53 +1374,52 @@ task.spawn(function()
     end
 end)
 
+--============================================================
+-- ANTI-AFK
+--============================================================
+
 local AntiAFK = true
 local AntiAFKConnection
+
+local function StartAntiAFK()
+    if AntiAFKConnection then
+        AntiAFKConnection:Disconnect()
+        AntiAFKConnection = nil
+    end
+
+    if not AntiAFK then
+        return
+    end
+
+    AntiAFKConnection = lp.Idled:Connect(function()
+        if not AntiAFK then
+            return
+        end
+
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(
+                Vector2.new(
+                    math.random(100, 900),
+                    math.random(100, 600)
+                )
+            )
+        end)
+    end)
+end
 
 MainTab:CreateToggle({
     name = "🛡️ Anti-AFK",
     flag = "AntiAFK",
     value = true,
+
     callback = function(value)
         AntiAFK = value
-
-        if AntiAFKConnection then
-            AntiAFKConnection:Disconnect()
-            AntiAFKConnection = nil
-        end
-
-        if AntiAFK then
-            AntiAFKConnection = Player.Idled:Connect(function()
-                if not AntiAFK then
-                    return
-                end
-
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(
-                    Vector2.new(
-                        math.random(100, 900),
-                        math.random(100, 600)
-                    )
-                )
-            end)
-        end
+        StartAntiAFK()
     end
 })
 
--- Automatically enable Anti-AFK
-AntiAFKConnection = Player.Idled:Connect(function()
-    if not AntiAFK then
-        return
-    end
-
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(
-        Vector2.new(
-            math.random(100, 900),
-            math.random(100, 600)
-        )
-    )
-end)
+StartAntiAFK()
 
 --============================================================
 -- THEME
