@@ -1268,12 +1268,13 @@ end)
 --==================================================
 
 local infiniteJump = false
-local infinitejump = HomeTab:CreateToggle({
+
+MainTab:CreateToggle({
     name = "Infinite Jump",
     flag = "infinitejump",
     value = false,
-    callback = function(Value)
-        infiniteJump = Value
+    callback = function(value)
+        infiniteJump = value
     end
 })
 
