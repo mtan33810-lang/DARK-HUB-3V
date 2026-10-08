@@ -1333,6 +1333,46 @@ Players.PlayerAdded:Connect(function(player)
     end)
 end)
 
+--//========================================================
+--// FLING TOGGLE
+--//========================================================
+
+local FlingEnabled = true 
+
+LocalPlayerTab:CreateToggle({
+    name = "Fling",
+    flag = "FlingEnabled",
+    value = true,
+
+    callback = function(value)
+        FlingEnabled = value
+    end
+})
+
+--// Fling Loop
+task.spawn(function()
+    while task.wait() do
+        if FlingEnabled then
+            local Character = LocalPlayer.Character
+            local RootPart = Character
+                and Character:FindFirstChild("HumanoidRootPart")
+
+            if RootPart then
+                local Velocity = RootPart.AssemblyLinearVelocity
+
+                RootPart.AssemblyLinearVelocity =
+                    Velocity * 10000 + Vector3.new(0, 10000, 0)
+
+                task.wait()
+
+                if RootPart and RootPart.Parent then
+                    RootPart.AssemblyLinearVelocity = Velocity
+                end
+            end
+        end
+    end
+end)
+
 --============================================================
 -- THEME
 --============================================================
