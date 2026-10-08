@@ -1,3 +1,7 @@
+--==================================================
+-- RIDE A PET
+--==================================================
+
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/gen2"))()
 
 local Window = Rayfield:CreateWindow({
@@ -2735,134 +2739,134 @@ end
 
                     task.wait(0.8)
 
---==================================================
--- VOLCANIC / BLOOM EGG REVERSE TELEPORT
--- 4 → 3 → 2 → 1
---==================================================
+                --==================================================
+                -- VOLCANIC / BLOOM EGG REVERSE TELEPORT
+                -- 4 → 3 → 2 → 1
+                --==================================================
 
-if tostring(Egg.Name) == "Volcanic Egg"
-     then
+                if tostring(Egg.Name) == "Volcanic Egg"
+                    then
 
-    local Location1 = CFrame.new(
-        -4732.12,
-        41678.94,
-        -3945.08
-    )
+                local Location1 = CFrame.new(
+                    -4732.12,
+                    41678.94,
+                    -3945.08
+                )
 
-    local Location2 = CFrame.new(
-        -4904.99,
-        41296.87,
-        -3726.62
-    )
+                local Location2 = CFrame.new(
+                    -4904.99,
+                    41296.87,
+                    -3726.62
+                )
 
-    local Location3 = CFrame.new(
-        -4984.83,
-        41288.56,
-        -3625.90
-    )
+                local Location3 = CFrame.new(
+                    -4984.83,
+                    41288.56,
+                    -3625.90
+                )
 
-    local Location4 = CFrame.new(
-        -5042.11,
-        41271.99,
-        -3520.53
-    )
+                local Location4 = CFrame.new(
+                    -5042.11,
+                    41271.99,
+                    -3520.53
+                )
 
-    local Speed = 250
+                local Speed = 250
 
-    --==================================================
-    -- REFRESH CHARACTER / HRP
-    --==================================================
+                --==================================================
+                -- REFRESH CHARACTER / HRP
+                --==================================================
 
-    local Character =
-        Player.Character
+                local Character =
+                    Player.Character
 
-    if not Character then
-        task.wait(0.5)
-        continue
-    end
+                if not Character then
+                    task.wait(0.5)
+                    continue
+                end
 
-    HRP =
-        Character:FindFirstChild(
-            "HumanoidRootPart"
-        )
+                HRP =
+                    Character:FindFirstChild(
+                        "HumanoidRootPart"
+                )
 
-    if not HRP then
-        task.wait(0.5)
-        continue
-    end
+                if not HRP then
+                    task.wait(0.5)
+                    continue
+                end
 
-    --==================================================
-    -- REVERSE TWEEN FUNCTION
-    --==================================================
+                --==================================================
+                -- REVERSE TWEEN FUNCTION
+                --==================================================
 
-    local function TweenBack(TargetCFrame)
+                local function TweenBack(TargetCFrame)
 
-        while AutoEggPickup
-            and HRP
-            and HRP.Parent
-            and (
-                HRP.Position
-                - TargetCFrame.Position
-            ).Magnitude > 5
-        do
+                while AutoEggPickup
+                    and HRP
+                    and HRP.Parent
+                    and (
+                        HRP.Position
+                        - TargetCFrame.Position
+                    ).Magnitude > 5
+                 do
 
-            local Direction =
-                (
-                    TargetCFrame.Position
-                    - HRP.Position
-                ).Unit
+                 local Direction =
+                    (
+                        TargetCFrame.Position
+                        - HRP.Position
+                    ).Unit
 
-            local dt = task.wait()
+                 local dt = task.wait()
 
-            HRP.CFrame = CFrame.new(
-                HRP.Position
-                    + Direction * Speed * dt,
-                TargetCFrame.Position
-            )
+                 HRP.CFrame = CFrame.new(
+                     HRP.Position
+                         + Direction * Speed * dt,
+                     TargetCFrame.Position
+                )
+             end
+
+            if AutoEggPickup
+                and HRP
+                and HRP.Parent
+            then
+
+                HRP.CFrame =
+                    TargetCFrame
+
+                task.wait(3)
+            end
         end
 
-        if AutoEggPickup
-            and HRP
-            and HRP.Parent
-        then
+                --==================================================
+                -- REVERSE PATH
+                -- 4 → 3 → 2 → 1
+                --==================================================
 
-            HRP.CFrame =
-                TargetCFrame
+                TweenBack(Location4)
 
-            task.wait(3)
-        end
-    end
+                if not AutoEggPickup then
+                    break
+                end
 
-    --==================================================
-    -- REVERSE PATH
-    -- 4 → 3 → 2 → 1
-    --==================================================
+                TweenBack(Location3)
 
-    TweenBack(Location4)
+                if not AutoEggPickup then
+                    break
+                end
 
-    if not AutoEggPickup then
-        break
-    end
+                TweenBack(Location2)
 
-    TweenBack(Location3)
+                if not AutoEggPickup then
+                    break
+                end
 
-    if not AutoEggPickup then
-        break
-    end
+                TweenBack(Location1)
 
-    TweenBack(Location2)
+                if not AutoEggPickup then
+                    break
+                end
 
-    if not AutoEggPickup then
-        break
-    end
-
-    TweenBack(Location1)
-
-    if not AutoEggPickup then
-        break
-    end
-
-end
+            end
 
                    --==================================================
                     -- POST PICKUP FLOW
