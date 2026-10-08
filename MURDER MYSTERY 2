@@ -391,6 +391,7 @@ ESPTab:CreateToggle({
 local Settings = {
     Aimbot = false,
     FireButton = false,
+    FireButtonLocked = false,
     ShowFOV = true,
 
     FOV = 120,
@@ -803,6 +804,10 @@ end
 
 FireFrame.InputBegan:Connect(function(input)
 
+    if Settings.FireButtonLocked then
+        return
+    end
+
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
 
@@ -1078,6 +1083,21 @@ left:CreateToggle({
 --========================================================
 -- FIRE BUTTON 
 --========================================================
+
+left:CreateToggle({
+    name = "🔒 Lock Fire Button",
+    value = false,
+
+    callback = function(value)
+        Settings.FireButtonLocked = value
+
+        if value then
+            FireButton.AutoButtonColor = false
+        else
+            FireButton.AutoButtonColor = true
+        end
+    end,
+})
 
 left:CreateToggle({
     name = "Fire Button",
