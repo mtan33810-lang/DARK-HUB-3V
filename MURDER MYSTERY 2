@@ -103,75 +103,189 @@ end
 
 --========================================================
 -- ROLE ESP
+--
+-- YOU = MURDERER
+--   -> Other players get role names above their heads
+--
+-- YOU = SHERIFF / INNOCENT
+--   -> Other players get Highlights
+--
+-- YOU are NEVER ESP'd
 --========================================================
 
-local function UpdatePlayerESP(plr)
-    if plr == lp then
+local RoleESPObjects = {}
+local RoleNameObjects = {}
+
+local function ClearRoleESP()
+    for player, object in pairs(RoleESPObjects) do
+        if object then
+            object:Destroy()
+        end
+        RoleESPObjects[player] = nil
+    end
+
+    for player, object in pairs(RoleNameObjects) do
+        if object then
+            object:Destroy()
+        end
+        RoleNameObjects[player] = nil
+    end
+end
+
+local function CreateHighlight(player)
+    if player == lp then
         return
     end
 
-    local character = plr.Character
-
+    local character = player.Character
     if not character then
         return
     end
 
-    local highlight = ESPObjects[plr]
+    if RoleESPObjects[player] then
+        RoleESPObjects[player]:Destroy()
+    end
 
-    if not highlight or highlight.Parent ~= character then
-        if highlight then
-            highlight:Destroy()
-        end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "RoleESP"
+    highlight.Adornee = character
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.FillTransparency = 0.65
+    highlight.OutlineTransparency = 0
 
-        highlight = Instance.new("Highlight")
-        highlight.Name = "RoleESP"
-        highlight.Adornee = character
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        local myRole = GetPlayerRole(lp)
+    local role = GetPlayerRole(player)
 
-        if myRole == "Murderer" then
-            highlight.FillTransparency = 0.22
-        else
-            highlight.FillTransparency = 0.45
-        end
-        highlight.OutlineTransparency = 0
+    if role == "Murderer" then
+        highlight.FillColor = Color3.fromRGB(255, 50, 50)
+        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
 
-        ESPObjects[plr] = highlight
+    elseif role == "Sheriff" then
+        highlight.FillColor = Color3.fromRGB(50, 130, 255)
+        highlight.OutlineColor = Color3.fromRGB(0, 100, 255)
+
+    else
+        highlight.FillColor = Color3.fromRGB(50, 255, 100)
+        highlight.OutlineColor = Color3.fromRGB(0, 255, 50)
     end
 
     highlight.Parent = character
+    RoleESPObjects[player] = highlight
+end
 
-    if not getgenv().MM2.RoleESP then
-        highlight.Enabled = false
+local function CreateRoleName(player, role)
+    if player == lp then
         return
     end
 
-    local role = GetPlayerRole(plr)
-    local color = GetRoleColor(role)
+    local character = player.Character
+    if not character then
+        return
+    end
 
-    highlight.FillColor = color
-    highlight.OutlineColor = color
-    highlight.Enabled = true
+    local head = character:FindFirstChild("Head")
+    if not head then
+        return
+    end
+
+    if RoleNameObjects[player] then
+        RoleNameObjects[player]:Destroy()
+    end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "RoleNameESP"
+    billboard.Adornee = head
+    billboard.Size = UDim2.fromOffset(140, 30)
+    billboard.StudsOffset = Vector3.new(0, 2.8, 0)
+    billboard.AlwaysOnTop = true
+    billboard.ResetOnSpawn = false
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.Text = role
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0
+    label.TextStrokeColor3 = Color3.new(0, 0, 0)
+
+    if role == "Sheriff" then
+        label.TextColor3 = Color3.fromRGB(80, 150, 255)
+    else
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+
+    label.Parent = billboard
+    billboard.Parent = character
+
+    RoleNameObjects[player] = billboard
 end
 
-task.spawn(function()
-    while true do
-        task.wait(0.25)
+local function UpdateRoleESP()
+    ClearRoleESP()
 
-        for _, plr in Players:GetPlayers() do
-            if plr ~= lp then
-                UpdatePlayerESP(plr)
+    local myRole = GetPlayerRole(lp)
+
+    --========================================
+    -- MURDERER = ROLE NAMES
+    --========================================
+    if myRole == "Murderer" then
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+                local role = GetPlayerRole(player)
+
+                if role == "Sheriff" then
+                    CreateRoleName(player, "Sheriff")
+                else
+                    CreateRoleName(player, "Innocent")
+                end
+            end
+        end
+
+    --========================================
+    -- SHERIFF / INNOCENT = HIGHLIGHTS
+    --========================================
+    else
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= lp then
+                CreateHighlight(player)
             end
         end
     end
-end)
+end
 
-Players.PlayerRemoving:Connect(function(plr)
-    if ESPObjects[plr] then
-        ESPObjects[plr]:Destroy()
-        ESPObjects[plr] = nil
+Players.PlayerRemoving:Connect(function(player)
+    if RoleESPObjects[player] then
+        RoleESPObjects[player]:Destroy()
+        RoleESPObjects[player] = nil
+    end
+
+    if RoleNameObjects[player] then
+        RoleNameObjects[player]:Destroy()
+        RoleNameObjects[player] = nil
     end
 end)
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        UpdateRoleESP()
+    end)
+end)
+
+lp.CharacterAdded:Connect(function()
+    task.wait(1)
+    UpdateRoleESP()
+end)
+
+task.spawn(function()
+    while task.wait(0.75) do
+        UpdateRoleESP()
+    end
+end)
+
+UpdateRoleESP()
 
 --========================================================
 -- GUN ESP + AUTO TELEPORT / SNAP BACK
