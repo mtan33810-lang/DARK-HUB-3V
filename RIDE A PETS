@@ -2548,48 +2548,48 @@ TeleportsTab:CreateToggle({
                 end
 
              --==================================================
--- VOLCANIC / BLOOM EGG FORWARD TELEPORT
--- 1 → 2 → 3 → 4
---==================================================
+             -- VOLCANIC / BLOOM EGG FORWARD TELEPORT
+             -- 1 → 2 → 3 → 4
+             --==================================================
 
-if tostring(Egg.Name) == "Volcanic Egg"
-then
+             if tostring(Egg.Name) == "Volcanic Egg"
+                 then
 
-    local Location1 = CFrame.new(
-        -4732.12,
-        41678.94,
-        -3945.08
-    )
+             local Location1 = CFrame.new(
+                 -4732.12,
+                 41678.94,
+                 -3945.08
+             )
 
-    local Location2 = CFrame.new(
-        -4904.99,
-        41296.87,
-        -3726.62
-    )
+             local Location2 = CFrame.new(
+                 -4904.99,
+                 41296.87,
+                 -3726.62
+             )
 
-    local Location3 = CFrame.new(
-        -4984.83,
-        41288.56,
-        -3625.90
-    )
+             local Location3 = CFrame.new(
+                 -4984.83,
+                 41288.56,
+                 -3625.90
+             )
 
-    local Location4 = CFrame.new(
-        -5042.11,
-        41271.99,
-        -3520.53
-    )
+             local Location4 = CFrame.new(
+                 -5042.11,
+                 41271.99,
+                 -3520.53
+             )
 
-    local Speed = 250
+             local Speed = 250
 
-    local function TweenToLocation(TargetCFrame)
+             local function TweenToLocation(TargetCFrame)
 
-        while AutoEggPickup
-            and HRP
-            and (
-                HRP.Position
-                - TargetCFrame.Position
-            ).Magnitude > 5
-        do
+                 while AutoEggPickup
+                     and HRP
+                     and (
+                         HRP.Position
+                         - TargetCFrame.Position
+                         ).Magnitude > 5
+                     do
 
             local Direction =
                 (
@@ -2741,8 +2741,7 @@ end
 --==================================================
 
 if tostring(Egg.Name) == "Volcanic Egg"
-    or tostring(Egg.Name) == "Bloom Egg"
-then
+     then
 
     local Location1 = CFrame.new(
         -4732.12,
