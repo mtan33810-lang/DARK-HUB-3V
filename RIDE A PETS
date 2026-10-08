@@ -3015,16 +3015,51 @@ AutomaticTab:CreateToggle({
 })
 
 --========================================================
--- FIND READY/HATCH PROMPT
+-- GET ACTUAL PROMPT POSITION
 --========================================================
 
-local function FindReadyEggPrompt(Egg)
+local function GetPromptPosition(Prompt)
+
+    if not Prompt or not Prompt.Parent then
+        return nil
+    end
+
+    local Parent = Prompt.Parent
+
+    -- Prompt is inside an Attachment
+    if Parent:IsA("Attachment") then
+        return Parent.WorldPosition
+    end
+
+    -- Prompt is directly inside a Part
+    if Parent:IsA("BasePart") then
+        return Parent.Position
+    end
+
+    -- Find the nearest BasePart
+    local Part =
+        Prompt:FindFirstAncestorWhichIsA("BasePart")
+
+    if Part then
+        return Part.Position
+    end
+
+    return nil
+end
+
+--========================================================
+-- FIND READY PROMPT
+--========================================================
+
+local function FindReadyPrompt(Egg)
 
     if not Egg or not Egg.Parent then
         return nil
     end
 
-    for _, Object in ipairs(Egg:GetDescendants()) do
+    for _, Object in ipairs(
+        Egg:GetDescendants()
+    ) do
 
         if Object:IsA("ProximityPrompt")
             and Object.Enabled
@@ -3032,14 +3067,27 @@ local function FindReadyEggPrompt(Egg)
 
             local ActionText =
                 string.lower(
-                    tostring(Object.ActionText or "")
+                    tostring(
+                        Object.ActionText or ""
+                    )
                 )
 
-            -- Only accept prompts that indicate
-            -- the egg can actually be hatched.
-            if ActionText:find("hatch", 1, true)
-                or ActionText:find("open", 1, true)
-                or ActionText:find("pick", 1, true)
+            -- Ready hatch / interaction prompt
+            if ActionText:find(
+                "hatch",
+                1,
+                true
+            )
+            or ActionText:find(
+                "open",
+                1,
+                true
+            )
+            or ActionText:find(
+                "pick",
+                1,
+                true
+            )
             then
                 return Object
             end
@@ -3050,42 +3098,21 @@ local function FindReadyEggPrompt(Egg)
 end
 
 --========================================================
--- GET EGG POSITION
+-- GET ROOT
 --========================================================
 
-local function GetEggPosition(Egg)
+local function GetRoot()
 
-    if not Egg or not Egg.Parent then
+    local Character =
+        Player.Character
+
+    if not Character then
         return nil
     end
 
-    if Egg:IsA("BasePart") then
-        return Egg.Position
-    end
-
-    if Egg:IsA("Model") then
-
-        local Success, Pivot =
-            pcall(function()
-                return Egg:GetPivot()
-            end)
-
-        if Success then
-            return Pivot.Position
-        end
-    end
-
-    local Part =
-        Egg:FindFirstChildWhichIsA(
-            "BasePart",
-            true
-        )
-
-    if Part then
-        return Part.Position
-    end
-
-    return nil
+    return Character:FindFirstChild(
+        "HumanoidRootPart"
+    )
 end
 
 --========================================================
@@ -3102,15 +3129,25 @@ task.spawn(function()
             continue
         end
 
-        -- ONLY YOUR PLOT
-        local MyPlot = FindMyPlot()
+        --================================================
+        -- FIND ONLY MY PLOT
+        --================================================
+
+        local MyPlot =
+            FindMyPlot()
 
         if not MyPlot then
             task.wait(1)
             continue
         end
 
-        -- Scan only your plot
+        --================================================
+        -- FIND UNIQUE EGGS
+        --================================================
+
+        local FoundEggs = {}
+        local CheckedEggs = {}
+
         for _, Object in ipairs(
             MyPlot:GetDescendants()
         ) do
@@ -3119,150 +3156,136 @@ task.spawn(function()
                 break
             end
 
-            -- Find actual egg object
-            local Egg = nil
+            local Egg =
+                GetEggObject(Object)
 
-            local Current = Object
+            if Egg
+                and not CheckedEggs[Egg]
+            then
 
-            while Current
-                and Current ~= MyPlot
-            do
+                CheckedEggs[Egg] = true
 
-                local Name =
-                    tostring(Current.Name)
+                -- Make sure this egg is
+                -- actually inside MY plot.
+                if Egg:IsDescendantOf(
+                    MyPlot
+                )
+                then
 
-                if ValidEggNames[Name] then
-                    Egg = Current
-                    break
-                end
-
-                Current = Current.Parent
-            end
-
-            if Egg then
-
-                -- Make sure this is actually
-                -- a ready egg.
-                local Prompt =
-                    FindReadyEggPrompt(Egg)
-
-                if Prompt then
-
-                    local Character =
-                        Player.Character
-
-                    local HRP =
-                        Character
-                        and Character:FindFirstChild(
-                            "HumanoidRootPart"
-                        )
-
-                    if HRP then
-
-                        local Position =
-                            GetEggPosition(Egg)
-
-                        if Position then
-
-                            
-                            --//========================================================
-                            --// TELEPORT TO ACTUAL PROMPT + HATCH
-                            --//========================================================
-
-                            local function GetPromptPosition(Prompt)
-                                if not Prompt or not Prompt.Parent then
-                                    return nil
-                                end
-
-                                local Parent = Prompt.Parent
-
-                                -- Prompt inside an Attachment
-                                if Parent:IsA("Attachment") then
-                                    return Parent.WorldPosition
-                                end
-
-                                -- Prompt directly inside a Part
-                                if Parent:IsA("BasePart") then
-                                    return Parent.Position
-                                end
-
-                                -- Search upward for the nearest Part
-                                local Part =
-                                    Prompt:FindFirstAncestorWhichIsA("BasePart")
-
-                                if Part then
-                                    return Part.Position
-                                end
-
-                                return nil
-                            end
-
-                            --========================================================
-                            -- FIND PROMPT POSITION
-                            --========================================================
-
-                            local PromptPosition =
-                                 GetPromptPosition(Prompt)
-
-                            if PromptPosition then
-
-                                 local Character =
-                                     Player.Character
-
-                                 local HRP =
-                                     Character
-                                     and Character:FindFirstChild(
-                                         "HumanoidRootPart"
-                                     )
-
-                            if HRP then
-
-                                -- Put the player slightly above
-                                -- the actual prompt location.
-                                local TargetPosition =
-                                    PromptPosition
-                                    + Vector3.new(0, 2, 0)
-
-                                 HRP.CFrame =
-                                     CFrame.new(TargetPosition)
-
-                                  -- Give the game time to register
-                                  -- the new character position.
-                                  task.wait(0.2)
-
-                                   if not AutoReadyEgg then
-                                       break
-                                   end
-
-                                   -- Check prompt again
-                                   if Prompt.Parent
-                                       and Prompt.Enabled
-                                   then
-
-                                   -- Use the REAL hold duration
-                                   local HoldTime =
-                                       math.max(
-                                           Prompt.HoldDuration,
-                                           0.1
-                                       )
-
-                                    Prompt:InputHoldBegin()
-
-                                    task.wait(
-                                        HoldTime + 0.15
-                                    )
-
-                                    Prompt:InputHoldEnd()
-
-                                    -- Wait for the egg to update/remove
-                                    task.wait(0.4)
-                                    end
-                                end
-                            end
-                        end
-                    end
+                    table.insert(
+                        FoundEggs,
+                        Egg
+                    )
                 end
             end
+        end
+
+        --================================================
+        -- CHECK EACH EGG
+        --================================================
+
+        for _, Egg in ipairs(
+            FoundEggs
+        ) do
+
+            if not AutoReadyEgg then
+                break
+            end
+
+            if not Egg
+                or not Egg.Parent
+            then
+                continue
+            end
+
+            --================================================
+            -- CHECK IF EGG IS READY
+            --================================================
+
+            local Prompt =
+                FindReadyPrompt(Egg)
+
+            -- No enabled ready prompt =
+            -- egg is not ready yet.
+            if not Prompt then
+                continue
+            end
+
+            --================================================
+            -- GET ACTUAL PROMPT POSITION
+            --================================================
+
+            local PromptPosition =
+                GetPromptPosition(
+                    Prompt
+                )
+
+            if not PromptPosition then
+                continue
+            end
+
+            --================================================
+            -- GET CHARACTER
+            --================================================
+
+            local HRP =
+                GetRoot()
+
+            if not HRP then
+                continue
+            end
+
+            --================================================
+            -- TELEPORT TO THE PROMPT
+            --================================================
+
+            HRP.CFrame =
+                CFrame.new(
+                    PromptPosition
+                    + Vector3.new(0, 2, 0)
+                )
+
+            -- Let the game register
+            -- the new position.
+            task.wait(0.25)
+
+            if not AutoReadyEgg then
+                break
+            end
+
+            --================================================
+            -- RECHECK PROMPT
+            --================================================
+
+            if not Prompt.Parent
+                or not Prompt.Enabled
+            then
+                continue
+            end
+
+            --================================================
+            -- LONG PRESS
+            --================================================
+
+            local HoldTime =
+                math.max(
+                    Prompt.HoldDuration,
+                    0.1
+                )
+
+            Prompt:InputHoldBegin()
+
+            task.wait(
+                HoldTime + 0.15
+            )
+
+            Prompt:InputHoldEnd()
+
+            --================================================
+            -- WAIT FOR HATCH RESULT
+            --================================================
+
+            task.wait(0.5)
         end
     end
 end)
