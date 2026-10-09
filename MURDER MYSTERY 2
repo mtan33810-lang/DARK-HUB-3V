@@ -1473,6 +1473,7 @@ local FlingTab = Window:CreateTab({
 
 local LocalPlayer = Players.LocalPlayer
 
+
 local function IsInGame(player)
     local character = player.Character
     local humanoid = character
@@ -1480,23 +1481,11 @@ local function IsInGame(player)
     local root = character
         and character:FindFirstChild("HumanoidRootPart")
 
-    if not humanoid or not root or humanoid.Health <= 0 then
-        return false
-    end
-
-    -- Require an active map to be loaded.
-    local map = workspace:FindFirstChild("Map")
-    if not map then
-        return false
-    end
-
-    -- Exclude characters inside the lobby.
-    local lobby = workspace:FindFirstChild("Lobby")
-    if lobby and character:IsDescendantOf(lobby) then
-        return false
-    end
-
-    return true
+    return character ~= nil
+        and character:IsDescendantOf(workspace)
+        and humanoid ~= nil
+        and humanoid.Health > 0
+        and root ~= nil
 end
 
 local function GetRolePlayer(role)
