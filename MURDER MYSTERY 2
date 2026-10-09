@@ -1200,7 +1200,7 @@ left:CreateToggle({
 --========================================================
 
 left:CreateToggle({
-    name = "🔒 Lock Fire Button",
+    name = "🔒 Lock Shoot Button",
     value = false,
 
     callback = function(value)
@@ -1215,7 +1215,7 @@ left:CreateToggle({
 })
 
 left:CreateToggle({
-    name = "Fire Button",
+    name = "Shoot Button",
     description = "Show or hide the mobile Fire button",
     value = false,
 
@@ -1465,6 +1465,81 @@ StartAntiAFK()
 local FlingTab = Window:CreateTab({
     name = "Fling ",
     icon = 4483362458,
+})
+
+--============================================================
+-- TELEPORT TO ROLE
+--============================================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function GetRolePlayer(role)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local character = player.Character
+            local backpack = player:FindFirstChild("Backpack")
+
+            local function HasTool(toolName)
+                return (character and character:FindFirstChild(toolName))
+                    or (backpack and backpack:FindFirstChild(toolName))
+            end
+
+            if role == "Murderer" and HasTool("Knife") then
+                return player
+            elseif role == "Sheriff" and HasTool("Gun") then
+                return player
+            elseif role == "Innocent"
+                and not HasTool("Knife")
+                and not HasTool("Gun")
+                and character
+                and character:FindFirstChild("Humanoid")
+                and character.Humanoid.Health > 0 then
+                return player
+            end
+        end
+    end
+
+    return nil
+end
+
+local function TeleportToRole(role)
+    local target = GetRolePlayer(role)
+    if not target then
+        warn("Could not find a player with role: " .. role)
+        return
+    end
+
+    local character = LocalPlayer.Character
+    local targetCharacter = target.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetCharacter
+        and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+    if root and targetRoot then
+        root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+    end
+end
+
+FlingTab:CreateButton({
+    name = "🔪 Teleport to Murderer",
+    callback = function()
+        TeleportToRole("Murderer")
+    end
+})
+
+FlingTab:CreateButton({
+    name = "🔫 Teleport to Sheriff",
+    callback = function()
+        TeleportToRole("Sheriff")
+    end
+})
+
+FlingTab:CreateButton({
+    name = "👤 Teleport to Innocent",
+    callback = function()
+        TeleportToRole("Innocent")
+    end
 })
 
 --============================================================
