@@ -1521,11 +1521,13 @@ local function TeleportToRole(role)
     local character = LocalPlayer.Character
     local root = character
         and character:FindFirstChild("HumanoidRootPart")
+
     local targetRoot = target.Character
         and target.Character:FindFirstChild("HumanoidRootPart")
 
     if root and targetRoot and IsInGame(LocalPlayer) then
-        root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+        -- Teleport to the target's exact position
+        root.CFrame = targetRoot.CFrame
     end
 end
 
