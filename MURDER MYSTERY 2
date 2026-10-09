@@ -1412,6 +1412,62 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 --============================================================
+-- ANTI-AFK
+--============================================================
+
+local AntiAFK = true
+local AntiAFKConnection
+
+local function StartAntiAFK()
+    if AntiAFKConnection then
+        AntiAFKConnection:Disconnect()
+        AntiAFKConnection = nil
+    end
+
+    if not AntiAFK then
+        return
+    end
+
+    AntiAFKConnection = lp.Idled:Connect(function()
+        if not AntiAFK then
+            return
+        end
+
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(
+                Vector2.new(
+                    math.random(100, 900),
+                    math.random(100, 600)
+                )
+            )
+        end)
+    end)
+end
+
+MainTab:CreateToggle({
+    name = "🛡️ Anti-AFK",
+    flag = "AntiAFK",
+    value = true,
+
+    callback = function(value)
+        AntiAFK = value
+        StartAntiAFK()
+    end
+})
+
+StartAntiAFK()
+
+--============================================================
+-- FLING TAB
+--============================================================
+
+local FlingTab = Window:CreateTab({
+    name = "Local Player ",
+    icon = 4483362458,
+})
+
+--============================================================
 -- ANTI FLING 
 --============================================================
 
@@ -1451,7 +1507,7 @@ local function UpdateAntiCollision()
     end
 end
 
-MainTab:CreateToggle({
+FlingTab:CreateToggle({
     name = "Anti Fling ",
     description = "Disable collisions with other players",
     value = false,
@@ -1642,7 +1698,7 @@ end
 --// FLING TOGGLE
 --//========================================================
 
-MainTab:CreateToggle({
+FlingTab:CreateToggle({
     name = "Fling",
     flag = "FlingEnabled",
     value = false,
@@ -1651,53 +1707,6 @@ MainTab:CreateToggle({
         Environment.Functions:SetFling(value)
     end
 })
-
---============================================================
--- ANTI-AFK
---============================================================
-
-local AntiAFK = true
-local AntiAFKConnection
-
-local function StartAntiAFK()
-    if AntiAFKConnection then
-        AntiAFKConnection:Disconnect()
-        AntiAFKConnection = nil
-    end
-
-    if not AntiAFK then
-        return
-    end
-
-    AntiAFKConnection = lp.Idled:Connect(function()
-        if not AntiAFK then
-            return
-        end
-
-        pcall(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(
-                Vector2.new(
-                    math.random(100, 900),
-                    math.random(100, 600)
-                )
-            )
-        end)
-    end)
-end
-
-MainTab:CreateToggle({
-    name = "🛡️ Anti-AFK",
-    flag = "AntiAFK",
-    value = true,
-
-    callback = function(value)
-        AntiAFK = value
-        StartAntiAFK()
-    end
-})
-
-StartAntiAFK()
 
 --============================================================
 -- THEME
