@@ -414,7 +414,7 @@ local function TeleportToGunDrop()
     end
 
     -- Stay at the gun briefly
-    task.wait(0.01)
+    task.wait(0.001)
 
     -- Snap back to where you started
     if oldCFrame and root and root.Parent then
@@ -1463,7 +1463,7 @@ StartAntiAFK()
 --============================================================
 
 local FlingTab = Window:CreateTab({
-    name = "Local Player ",
+    name = "Fling ",
     icon = 4483362458,
 })
 
