@@ -1471,12 +1471,37 @@ local FlingTab = Window:CreateTab({
 -- TELEPORT TO ROLE
 --============================================================
 
-local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+local function IsInGame(player)
+    local character = player.Character
+    local humanoid = character
+        and character:FindFirstChildOfClass("Humanoid")
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
+
+    if not humanoid or not root or humanoid.Health <= 0 then
+        return false
+    end
+
+    -- Require an active map to be loaded.
+    local map = workspace:FindFirstChild("Map")
+    if not map then
+        return false
+    end
+
+    -- Exclude characters inside the lobby.
+    local lobby = workspace:FindFirstChild("Lobby")
+    if lobby and character:IsDescendantOf(lobby) then
+        return false
+    end
+
+    return true
+end
 
 local function GetRolePlayer(role)
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player ~= LocalPlayer and IsInGame(player) then
             local character = player.Character
             local backpack = player:FindFirstChild("Backpack")
 
@@ -1491,10 +1516,7 @@ local function GetRolePlayer(role)
                 return player
             elseif role == "Innocent"
                 and not HasTool("Knife")
-                and not HasTool("Gun")
-                and character
-                and character:FindFirstChild("Humanoid")
-                and character.Humanoid.Health > 0 then
+                and not HasTool("Gun") then
                 return player
             end
         end
@@ -1505,18 +1527,19 @@ end
 
 local function TeleportToRole(role)
     local target = GetRolePlayer(role)
+
     if not target then
-        warn("Could not find a player with role: " .. role)
+        warn("No in-game player found for role: " .. role)
         return
     end
 
     local character = LocalPlayer.Character
-    local targetCharacter = target.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    local targetRoot = targetCharacter
-        and targetCharacter:FindFirstChild("HumanoidRootPart")
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = target.Character
+        and target.Character:FindFirstChild("HumanoidRootPart")
 
-    if root and targetRoot then
+    if root and targetRoot and IsInGame(LocalPlayer) then
         root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
     end
 end
