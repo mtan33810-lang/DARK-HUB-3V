@@ -1503,10 +1503,6 @@ local function GetRolePlayer(role)
                 return player
             elseif role == "Sheriff" and HasTool("Gun") then
                 return player
-            elseif role == "Innocent"
-                and not HasTool("Knife")
-                and not HasTool("Gun") then
-                return player
             end
         end
     end
@@ -1544,13 +1540,6 @@ FlingTab:CreateButton({
     name = "🔫 Teleport to Sheriff",
     callback = function()
         TeleportToRole("Sheriff")
-    end
-})
-
-FlingTab:CreateButton({
-    name = "👤 Teleport to Innocent",
-    callback = function()
-        TeleportToRole("Innocent")
     end
 })
 
