@@ -629,7 +629,7 @@ local function TweenToSavedPosition()
         return false
     end
 
-    return TweenTeleport(SAVED_POSITION)
+    return TweenToCustomPosition(SAVED_POSITION)
 end
 
 --==================================================
@@ -1033,51 +1033,63 @@ local function RunAfterEggPickup(Egg)
 
 
             
-            --==================================================
-            -- BLACKLISTED EGG: SKIP VOLCANO
-            --==================================================
-            if IsBlacklistedEgg(Egg) then
+            
+--==================================================
+-- EGG FLOW: VOLCANO + SAVED POSITION
+--==================================================
 
-                if SavedPositionTween then
+-- Blacklisted eggs skip Volcano.
+if IsBlacklistedEgg(Egg) then
+    print("[EGG FLOW] Blacklisted egg - skipping Volcano")
 
-                -- Center Drop ON: go to saved position and drop
-                TweenToSavedPosition()
-                task.wait(0.5)
+    if SavedPositionTween then
+        -- Volcano OFF + Saved ON behavior
+        TweenToSavedPosition()
+        task.wait(0.5)
+        DropEgg()
+    else
+        -- Volcano OFF + Saved OFF behavior
+        TweenToMyPlot()
+    end
 
-                DropEgg()
+    return
+end
 
-                return
-            end
+-- Volcano ON: visit Volcano first.
+if VolcanoDipTween then
+    print("[EGG FLOW] Going to Volcano")
+    TweenToVolcanoDip()
+    task.wait(VolcanoPostDelay)
+end
 
-            -- Center Drop OFF: go to custom drop position
-            local Character = Player.Character
-                or Player.CharacterAdded:Wait()
+-- Saved Position ON: tween there and drop.
+if SavedPositionTween then
+    print("[EGG FLOW] Tweening to Saved Position")
 
-            local Root = Character:WaitForChild("HumanoidRootPart")
+    local Arrived = TweenToSavedPosition()
 
-            TweenToCustomPosition(
-                CFrame.new(81.75, 40315.66, 894.93)
-            )
-            task.wait(0.5)
+    if not Arrived then
+        warn("[EGG FLOW] Saved Position tween failed")
+        return
+    end
 
-            -- Drop the egg at the custom position
-            local Dropped = DropEgg()
+    task.wait(0.5)
 
-            if not Dropped then
-                warn("[EGG FLOW] Failed to drop blacklisted egg")
-                return
-            end
+    local Dropped = DropEgg()
 
-            -- Pick up the dropped egg again, then go to the plot
-            local PickedUp = PickUpEggAgain()
+    if not Dropped then
+        warn("[EGG FLOW] Failed to drop egg")
+        return
+    end
 
-            if not PickedUp then
-                return
-            end
+    print("[EGG FLOW] Finished: Saved Position → Drop")
+    return
+end
 
-            TweenToMyPlot()
-                return
-            end
+-- Saved Position OFF: go directly to My Plot.
+print("[EGG FLOW] Tweening to My Plot")
+TweenToMyPlot()
+
 
 
             --==================================================
