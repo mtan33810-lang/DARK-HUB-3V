@@ -3032,52 +3032,65 @@ end)
 
 local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 
+EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
 
 --==================================================
 -- 🍬 AUTO CANDY FARM
 --==================================================
 
 local CandyFarmEnabled = false
+
 local CandyDestination = CFrame.new(
     -45841.91,
     40371.20,
     -20123.44
 )
 
+-- All candy rarities
+local CandyNames = {
+    ["Common Candy"] = true,
+    ["Uncommon Candy"] = true,
+    ["Rare Candy"] = true,
+    ["Epic Candy"] = true,
+    ["Legendary Candy"] = true,
+    ["Mythic Candy"] = true,
+    ["Divine Candy"] = true,
+    ["Ethereal Candy"] = true
+}
+
+--==================================================
+-- FIND CANDY ON THE MAP
+--==================================================
+
 local function FindCandy()
     for _, Object in ipairs(workspace:GetDescendants()) do
-        if string.find(
-            string.lower(Object.Name),
-            "candy",
-            1,
-            true
-        ) then
+        if not CandyFarmEnabled then
+            return nil
+        end
+
+        if CandyNames[Object.Name] then
             local Prompt = Object:FindFirstChildWhichIsA(
                 "ProximityPrompt",
                 true
             )
 
             if Prompt and Prompt.Enabled then
-                local Part = Prompt.Parent
+                local Part
 
-                if Part and Part:IsA("BasePart") then
-                    return Object, Prompt, Part
-                end
-
-                if Object:IsA("BasePart") then
-                    return Object, Prompt, Object
-                end
-
-                if Object:IsA("Model") then
-                    local RootPart = Object.PrimaryPart
+                if Prompt.Parent:IsA("BasePart") then
+                    Part = Prompt.Parent
+                elseif Object:IsA("BasePart") then
+                    Part = Object
+                elseif Object:IsA("Model") then
+                    Part = Object.PrimaryPart
                         or Object:FindFirstChildWhichIsA(
                             "BasePart",
                             true
                         )
+                end
 
-                    if RootPart then
-                        return Object, Prompt, RootPart
-                    end
+                if Part then
+                    return Object, Prompt, Part
                 end
             end
         end
@@ -3085,6 +3098,10 @@ local function FindCandy()
 
     return nil
 end
+
+--==================================================
+-- RAYFIELD GEN 2 TOGGLE
+--==================================================
 
 EventTab:CreateToggle({
     name = "🍬 Auto Candy Farm",
@@ -3100,6 +3117,8 @@ EventTab:CreateToggle({
 
         task.spawn(function()
             while CandyFarmEnabled do
+
+                -- Find a candy
                 local Candy, Prompt, Part = FindCandy()
 
                 if not Candy or not Prompt or not Part then
@@ -3107,6 +3126,7 @@ EventTab:CreateToggle({
                     continue
                 end
 
+                -- Get character
                 local Character = Player.Character
                     or Player.CharacterAdded:Wait()
 
@@ -3114,20 +3134,9 @@ EventTab:CreateToggle({
                     "HumanoidRootPart"
                 )
 
-                -- Teleport to candy
+                -- 1. Teleport to candy
                 Root.CFrame = Part.CFrame
                     + Vector3.new(0, 3, 0)
-
-                task.wait(0.3)
-
-                if not CandyFarmEnabled then
-                    break
-                end
-
-                -- Attempt pickup using the prompt
-                local Success = pcall(function()
-                    fireproximityprompt(Prompt)
-                end)
 
                 task.wait(0.5)
 
@@ -3135,9 +3144,34 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Teleport to the requested destination
+                -- 2. Attempt candy pickup
+                local PickupOK = pcall(function()
+                    fireproximityprompt(Prompt)
+                end)
+
+                if not PickupOK then
+                    task.wait(1)
+                    continue
+                end
+
+                -- Give the game time to register pickup
+                task.wait(0.7)
+
+                if not CandyFarmEnabled then
+                    break
+                end
+
+                -- 3. Teleport to destination
+                Character = Player.Character
+                    or Player.CharacterAdded:Wait()
+
+                Root = Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
                 Root.CFrame = CandyDestination
 
+                -- Wait before searching again
                 task.wait(1)
             end
         end)
