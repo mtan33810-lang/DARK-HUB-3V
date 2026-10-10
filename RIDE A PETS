@@ -995,28 +995,49 @@ local function RunAfterEggPickup(Egg)
             end
 
 
+            
             --==================================================
-            -- BLACKLISTED EGG
+            -- BLACKLISTED EGG: SKIP VOLCANO
             --==================================================
-
             if IsBlacklistedEgg(Egg) then
 
                 if SavedPositionTween then
 
-                    TweenToSavedPosition()
+                -- Center Drop ON: go to saved position and drop
+                TweenToSavedPosition()
+                task.wait(0.5)
 
-                    task.wait(0.5)
+                DropEgg()
 
-                    if DropEgg() then
-                        task.wait(EggDropPostDelay)
-                    end
+                return
+            end
 
-                else
+            -- Center Drop OFF: go to custom drop position
+            local Character = Player.Character
+                or Player.CharacterAdded:Wait()
 
-                    TweenToMyPlot()
+            local Root = Character:WaitForChild("HumanoidRootPart")
 
-                end
+            Root.CFrame = CFrame.new(81.75, 40315.66, 894.93)
 
+            task.wait(0.5)
+
+            -- Drop the egg at the custom position
+            local Dropped = DropEgg()
+
+            if not Dropped then
+                warn("[EGG FLOW] Failed to drop blacklisted egg")
+                return
+            end
+
+            -- Pick up the dropped egg again, then go to the plot
+            local PickedUp = PickUpEggAgain()
+
+            if not PickedUp then
+                return
+            end
+
+            TweenToMyPlot()
                 return
             end
 
