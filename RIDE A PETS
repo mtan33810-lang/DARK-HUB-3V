@@ -3047,55 +3047,61 @@ local CandyDestination = CFrame.new(
     -20123.44
 )
 
-local CandyNames = {
-    ["Common Candy"] = true,
-    ["Uncommon Candy"] = true,
-    ["Rare Candy"] = true,
-    ["Epic Candy"] = true,
-    ["Legendary Candy"] = true,
-    ["Mythic Candy"] = true,
-    ["Divine Candy"] = true,
-    ["Ethereal Candy"] = true
-}
+--==================================================
+-- FIND A CANDY IN HALLOWEENCANDY
+--==================================================
 
---==================================================
--- FIND CANDY
---==================================================
+local function GetCandyPart(Object)
+    if Object:IsA("BasePart") then
+        return Object
+    elseif Object:IsA("Model") then
+        return Object.PrimaryPart
+            or Object:FindFirstChildWhichIsA(
+                "BasePart",
+                true
+            )
+    end
+
+    return nil
+end
 
 local function FindCandy()
-    for _, Object in ipairs(workspace:GetDescendants()) do
+    local CandyFolder = workspace:FindFirstChild(
+        "HalloweenCandy"
+    )
+
+    if not CandyFolder then
+        warn("[Candy Farm] HalloweenCandy folder not found")
+        return nil
+    end
+
+    for _, Object in ipairs(CandyFolder:GetDescendants()) do
         if not CandyFarmEnabled then
             return nil
         end
 
-        if CandyNames[Object.Name] then
-            local Part
-
-            if Object:IsA("BasePart") then
-                Part = Object
-            elseif Object:IsA("Model") then
-                Part = Object.PrimaryPart
-                    or Object:FindFirstChildWhichIsA(
-                        "BasePart",
-                        true
-                    )
-            end
+        -- Match every name starting with "Candy"
+        if string.match(Object.Name, "^Candy") then
+            local Part = GetCandyPart(Object)
 
             if Part then
-                local Prompt = Object:FindFirstChildWhichIsA(
-                    "ProximityPrompt",
-                    true
-                )
+                local Prompt =
+                    Object:FindFirstChildWhichIsA(
+                        "ProximityPrompt",
+                        true
+                    )
 
-                print("[Candy Farm] Found:", Object:GetFullName())
-                print("[Candy Farm] Position:", Part.Position)
+                print(
+                    "[Candy Farm] Found:",
+                    Object:GetFullName()
+                )
 
                 return Object, Prompt, Part
             end
         end
     end
 
-    warn("[Candy Farm] No matching candy parts found.")
+    warn("[Candy Farm] No candy objects found")
     return nil
 end
 
@@ -3132,12 +3138,12 @@ EventTab:CreateToggle({
                     "HumanoidRootPart"
                 )
 
-                -- 1. Teleport to candy
+                -- 1. Teleport to the candy
                 Root.CFrame = Part.CFrame
-                    + Vector3.new(0, 3, 0)
+                    + Vector3.new(0, 2, 0)
 
                 print("[Candy Farm] Teleported to candy")
-                task.wait(0.5)
+                task.wait(1)
 
                 if not CandyFarmEnabled then
                     break
@@ -3145,18 +3151,18 @@ EventTab:CreateToggle({
 
                 -- 2. Attempt pickup if a prompt exists
                 if Prompt and Prompt.Enabled then
-                    local Success, ErrorMessage = pcall(function()
+                    local OK, Err = pcall(function()
                         fireproximityprompt(Prompt)
                     end)
 
-                    if not Success then
-                        warn("[Candy Farm] Pickup error:", ErrorMessage)
+                    if not OK then
+                        warn("[Candy Farm] Pickup error:", Err)
                     end
                 else
                     warn("[Candy Farm] No ProximityPrompt found")
                 end
 
-                task.wait(0.7)
+                task.wait(1)
 
                 if not CandyFarmEnabled then
                     break
@@ -3178,6 +3184,7 @@ EventTab:CreateToggle({
         end)
     end
 })
+
 
 --==================================================
 -- AUTOMATIC TAB
