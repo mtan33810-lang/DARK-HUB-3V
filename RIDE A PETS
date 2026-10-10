@@ -1944,8 +1944,8 @@ local EggRarity = {
     ["Blackhole Egg"] = "Ethereal",
     ["Solaris Egg"] = "Ethereal",
     ["Cherub Egg"] = "Ethereal",
-    ["Volcanic Egg"] = "Ethereal"
-    ["Halloween Egg"] = "Ethereal"
+    ["Volcanic Egg"] = "Ethereal",
+    ["Halloween Egg"] = "Ethereal",
 }
 
 --==================================================
