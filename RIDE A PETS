@@ -576,24 +576,13 @@ end
 --==================================================
 
 local function TweenToSavedPosition()
-
-    if not SavedPositionTween then
+    if not SAVED_POSITION then
+        warn("[TWEEN] Saved position is not set!")
         return false
     end
 
-    local Character =
-        Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
-
-    Root.CFrame =
-        SAVED_POSITION
-
-    return true
+    return TweenTeleport(SAVED_POSITION)
 end
-
 
 --==================================================
 -- INSTANT TELEPORT TO VOLCANO + DIP
