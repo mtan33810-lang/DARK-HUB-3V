@@ -3032,6 +3032,118 @@ end)
 
 local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 
+
+--==================================================
+-- 🍬 AUTO CANDY FARM
+--==================================================
+
+local CandyFarmEnabled = false
+local CandyDestination = CFrame.new(
+    -45841.91,
+    40371.20,
+    -20123.44
+)
+
+local function FindCandy()
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if string.find(
+            string.lower(Object.Name),
+            "candy",
+            1,
+            true
+        ) then
+            local Prompt = Object:FindFirstChildWhichIsA(
+                "ProximityPrompt",
+                true
+            )
+
+            if Prompt and Prompt.Enabled then
+                local Part = Prompt.Parent
+
+                if Part and Part:IsA("BasePart") then
+                    return Object, Prompt, Part
+                end
+
+                if Object:IsA("BasePart") then
+                    return Object, Prompt, Object
+                end
+
+                if Object:IsA("Model") then
+                    local RootPart = Object.PrimaryPart
+                        or Object:FindFirstChildWhichIsA(
+                            "BasePart",
+                            true
+                        )
+
+                    if RootPart then
+                        return Object, Prompt, RootPart
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+EventTab:CreateToggle({
+    name = "🍬 Auto Candy Farm",
+    flag = "AutoCandyFarm",
+    value = false,
+
+    callback = function(Value)
+        CandyFarmEnabled = Value
+
+        if not Value then
+            return
+        end
+
+        task.spawn(function()
+            while CandyFarmEnabled do
+                local Candy, Prompt, Part = FindCandy()
+
+                if not Candy or not Prompt or not Part then
+                    task.wait(1)
+                    continue
+                end
+
+                local Character = Player.Character
+                    or Player.CharacterAdded:Wait()
+
+                local Root = Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
+                -- Teleport to candy
+                Root.CFrame = Part.CFrame
+                    + Vector3.new(0, 3, 0)
+
+                task.wait(0.3)
+
+                if not CandyFarmEnabled then
+                    break
+                end
+
+                -- Attempt pickup using the prompt
+                local Success = pcall(function()
+                    fireproximityprompt(Prompt)
+                end)
+
+                task.wait(0.5)
+
+                if not CandyFarmEnabled then
+                    break
+                end
+
+                -- Teleport to the requested destination
+                Root.CFrame = CandyDestination
+
+                task.wait(1)
+            end
+        end)
+    end
+})
+
 --==================================================
 -- AUTOMATIC TAB
 --==================================================
