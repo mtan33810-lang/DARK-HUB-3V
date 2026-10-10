@@ -3019,6 +3019,7 @@ task.spawn(function()
     end
 end)
 
+
 --==================================================
 -- SETTING TAB
 --==================================================
@@ -3142,6 +3143,35 @@ SettingTab:CreateButton({
     name = "🧹 Remove Other Player Plots",
     callback = function()
         RemoveOtherPlayerPlots()
+    end
+})
+
+--==================================================
+-- REMOVE TREES
+--==================================================
+
+SettingTab:CreateButton({
+    name = "🌳 Remove Trees",
+
+    callback = function()
+        local RemovedCount = 0
+
+        for _, Object in ipairs(workspace:GetDescendants()) do
+            if Object:IsA("Model")
+                or Object:IsA("BasePart") then
+
+                local Name = string.lower(Object.Name)
+
+                if string.find(Name, "tree", 1, true)
+                    and not Object:IsDescendantOf(Player.Character or workspace.Terrain) then
+
+                    Object:Destroy()
+                    RemovedCount += 1
+                end
+            end
+        end
+
+        print("[REMOVE TREES] Removed:", RemovedCount)
     end
 })
 
