@@ -1029,13 +1029,10 @@ local function RunAfterEggPickup(Egg)
                 task.wait(1)
 
                 return true
-            end
+            end            
 
-
-            
-            
 --==================================================
--- EGG FLOW: VOLCANO + SAVED POSITION
+-- EGG FLOW: NO CUSTOM POSITION
 --==================================================
 
 -- Blacklisted eggs skip Volcano.
@@ -1043,32 +1040,30 @@ if IsBlacklistedEgg(Egg) then
     print("[EGG FLOW] Blacklisted egg - skipping Volcano")
 
     if SavedPositionTween then
-        -- Volcano OFF + Saved ON behavior
         TweenToSavedPosition()
         task.wait(0.5)
         DropEgg()
     else
-        -- Volcano OFF + Saved OFF behavior
         TweenToMyPlot()
     end
 
     return
 end
 
--- Volcano ON: visit Volcano first.
+-- Volcano ON: go to Volcano first.
 if VolcanoDipTween then
     print("[EGG FLOW] Going to Volcano")
     TweenToVolcanoDip()
     task.wait(VolcanoPostDelay)
 end
 
--- Saved Position ON: tween there and drop.
+-- Saved Position ON: go there and drop.
 if SavedPositionTween then
-    print("[EGG FLOW] Tweening to Saved Position")
+    print("[EGG FLOW] Going to Saved Position")
 
     local Arrived = TweenToSavedPosition()
 
-    if not Arrived then
+    if Arrived == false then
         warn("[EGG FLOW] Saved Position tween failed")
         return
     end
@@ -1077,8 +1072,8 @@ if SavedPositionTween then
 
     local Dropped = DropEgg()
 
-    if not Dropped then
-        warn("[EGG FLOW] Failed to drop egg")
+    if Dropped == false then
+        warn("[EGG FLOW] Drop failed")
         return
     end
 
@@ -1086,11 +1081,9 @@ if SavedPositionTween then
     return
 end
 
--- Saved Position OFF: go directly to My Plot.
-print("[EGG FLOW] Tweening to My Plot")
+-- Saved Position OFF: go to My Plot.
+print("[EGG FLOW] Going to My Plot")
 TweenToMyPlot()
-
-
 
             --==================================================
             -- 1. VOLCANO ON + SAVED ON
@@ -1163,10 +1156,6 @@ TweenToMyPlot()
                         "HumanoidRootPart"
                     )
 
-                
-                TweenToCustomPosition(
-                    CFrame.new(81.75, 40315.66, 894.93)
-                )
 
                 task.wait(0.5)
 
@@ -1257,9 +1246,6 @@ TweenToMyPlot()
 
             -- Custom position
             
-            TweenToCustomPosition(
-                CFrame.new(81.75, 40315.66, 894.93)
-            )
 
             task.wait(0.5)
 
