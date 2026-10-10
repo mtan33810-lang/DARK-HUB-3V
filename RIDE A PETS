@@ -3033,7 +3033,7 @@ local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 -- AUTOMATIC TAB
 --==================================================
 
-local AutomaticTab = Window:CreateTab({ name = "Automatic ", icon = 93364949241311 })
+local AutomaticTab = Window:CreateTab({ name = "Automatic ", icon = 4483362458 })
 
 
 local MaxUpgradeEnabled = false
