@@ -322,6 +322,32 @@ local VOLCANO_POSITION = CFrame.new(
     -3452.42
 )
 
+
+--==================================================
+-- TWEEN TO CUSTOM POSITION
+--==================================================
+
+local function TweenToCustomPosition(TargetCFrame)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    local Distance = (Root.Position - TargetCFrame.Position).Magnitude
+    local Duration = math.max(Distance / 150, 0.1)
+
+    local Tween = TweenService:Create(
+        Root,
+        TweenInfo.new(Duration, Enum.EasingStyle.Linear),
+        { CFrame = TargetCFrame }
+    )
+
+    Tween:Play()
+
+    return Tween.Completed:Wait()
+        == Enum.PlaybackState.Completed
+end
+
 --==================================================
 -- FLOW SETTINGS
 --==================================================
@@ -1007,7 +1033,9 @@ local function RunAfterEggPickup(Egg)
 
             local Root = Character:WaitForChild("HumanoidRootPart")
 
-            Root.CFrame = CFrame.new(81.75, 40315.66, 894.93)
+            TweenToCustomPosition(
+                CFrame.new(81.75, 40315.66, 894.93)
+            )
 
             task.wait(0.5)
 
