@@ -343,7 +343,7 @@ local function TweenToCustomPosition(TargetCFrame)
     ).Magnitude
 
     -- Adjust speed here
-    local Speed = 300
+    local Speed = 350
     local Duration = math.max(Distance / Speed, 0.1)
 
     local Tween = TweenService:Create(
@@ -3022,6 +3022,12 @@ task.spawn(function()
     ScanEggs()
 
 end)
+
+--==================================================
+-- EVENT TAB
+--==================================================
+
+local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 
 --==================================================
 -- AUTOMATIC TAB
