@@ -3047,104 +3047,46 @@ local CandyDestination = CFrame.new(
     -20123.44
 )
 
---==================================================
--- FIND CANDY PART
---==================================================
-
 local function GetCandyPart(Object)
     if Object:IsA("BasePart") then
         return Object
     elseif Object:IsA("Model") then
         return Object.PrimaryPart
-            or Object:FindFirstChildWhichIsA(
-                "BasePart",
-                true
-            )
+            or Object:FindFirstChildWhichIsA("BasePart", true)
     end
-
     return nil
 end
 
---==================================================
--- FIND PICK UP PROMPT
---==================================================
-
-local function GetCandyPrompt(Object)
-    return Object:FindFirstChildWhichIsA(
-        "ProximityPrompt",
-        true
-    )
-end
-
---==================================================
--- HOLD PICK UP PROMPT
---==================================================
-
-local function PickUpCandy(Prompt)
-    if not Prompt
-        or not Prompt:IsA("ProximityPrompt")
-        or not Prompt.Enabled then
-
-        warn("[Candy Farm] Pick Up prompt unavailable")
-        return false
-    end
-
-    print("[Candy Farm] Holding:", Prompt.Name)
-
-    local Success, ErrorMessage = pcall(function()
-        Prompt:InputHoldBegin()
-
-        task.wait(Prompt.HoldDuration + 0.3)
-
-        Prompt:InputHoldEnd()
-    end)
-
-    if not Success then
-        warn("[Candy Farm] Prompt failed:", ErrorMessage)
-        return false
-    end
-
-    return true
-end
-
---==================================================
--- FIND CANDY
---==================================================
-
 local function FindCandy()
-    local CandyFolder =
-        workspace:FindFirstChild("HalloweenCandy")
+    local Folder = workspace:FindFirstChild("HalloweenCandy")
 
-    if not CandyFolder then
+    if not Folder then
         warn("[Candy Farm] HalloweenCandy folder not found")
         return nil
     end
 
-    for _, Object in ipairs(CandyFolder:GetDescendants()) do
+    for _, Object in ipairs(Folder:GetDescendants()) do
         if not CandyFarmEnabled then
             return nil
         end
 
         if string.match(Object.Name, "^Candy") then
             local Part = GetCandyPart(Object)
+            local Prompt = Object:FindFirstChildWhichIsA(
+                "ProximityPrompt", true
+            )
 
-            if Part then
-                local Prompt = GetCandyPrompt(Object)
-
-                if Prompt then
-                    print("[Candy Farm] Found:", Object:GetFullName())
-                    return Object, Prompt, Part, CandyFolder
-                end
+            if Part and Prompt then
+                return Object, Prompt, Part, Folder
             end
         end
     end
 
-    warn("[Candy Farm] No candy with a Pick Up prompt found")
     return nil
 end
 
 --==================================================
--- 🍬 AUTO CANDY FARM TOGGLE
+-- 🍬 TOGGLE
 --==================================================
 
 EventTab:CreateToggle({
@@ -3162,15 +3104,14 @@ EventTab:CreateToggle({
 
         task.spawn(function()
             while CandyFarmEnabled do
-                local Candy, Prompt, Part, CandyFolder =
-                    FindCandy()
+                local Candy, Prompt, Part, Folder = FindCandy()
 
-                if not Candy or not Prompt or not Part then
+                if not Candy then
+                    warn("[Candy Farm] No candy with prompt found")
                     task.wait(1)
                     continue
                 end
 
-                -- Get character
                 local Character = Player.Character
                     or Player.CharacterAdded:Wait()
 
@@ -3179,40 +3120,63 @@ EventTab:CreateToggle({
                 )
 
                 -- 1. Teleport to candy
-                Root.CFrame = Part.CFrame
-                    + Vector3.new(0, 2, 0)
-
+                Root.CFrame = Part.CFrame + Vector3.new(0, 2, 0)
                 task.wait(0.5)
 
                 if not CandyFarmEnabled then
                     break
                 end
 
-                -- 2. Watch for candy disappearing
+                -- 2. Check the Pick Up prompt
+                if Prompt.Enabled then
+                    print("[Candy Farm] Pick Up prompt detected")
+                    print("[Candy Farm] HoldDuration:",
+                        Prompt.HoldDuration)
+                    print("[Candy Farm] MaxActivationDistance:",
+                        Prompt.MaxActivationDistance)
+
+                    local PromptPart = Prompt.Parent
+
+                    if PromptPart and PromptPart:IsA("Attachment") then
+                        PromptPart = PromptPart.Parent
+                    end
+
+                    if Root and PromptPart
+                        and PromptPart:IsA("BasePart") then
+
+                        local Distance =
+                            (Root.Position - PromptPart.Position).Magnitude
+
+                        print("[Candy Farm] Distance:", Distance)
+
+                        if Distance <= Prompt.MaxActivationDistance then
+                            print("[Candy Farm] Within activation range")
+                        else
+                            warn("[Candy Farm] Too far from prompt")
+                        end
+                    end
+                else
+                    warn("[Candy Farm] Prompt is disabled")
+                end
+
+                -- 3. Watch for collection
                 local Collected = false
 
-                local Connection =
-                    Candy.AncestryChanged:Connect(function()
-                        if not Candy:IsDescendantOf(CandyFolder) then
-                            Collected = true
-                        end
-                    end)
+                local Connection = Candy.AncestryChanged:Connect(function()
+                    if not Candy:IsDescendantOf(Folder) then
+                        Collected = true
+                    end
+                end)
 
-                -- 3. Hold Pick Up
-                PickUpCandy(Prompt)
-
-                -- 4. Wait for collection confirmation
+                -- 4. Wait for actual collection
                 local StartTime = os.clock()
-                local Timeout = math.max(
-                    5,
-                    Prompt.HoldDuration + 3
-                )
+                local Timeout = 15
 
                 while CandyFarmEnabled
                     and not Collected
                     and os.clock() - StartTime < Timeout do
 
-                    if not Candy:IsDescendantOf(CandyFolder) then
+                    if not Candy:IsDescendantOf(Folder) then
                         Collected = true
                         break
                     end
@@ -3226,30 +3190,20 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- 5. Teleport only after candy disappears
+                -- 5. Teleport only after collection
                 if Collected then
                     Character = Player.Character
+                    Root = Character
+                        and Character:FindFirstChild("HumanoidRootPart")
 
-                    if Character then
-                        Root = Character:FindFirstChild(
-                            "HumanoidRootPart"
-                        )
-
-                        if Root then
-                            Root.CFrame = CandyDestination
-                        end
+                    if Root then
+                        Root.CFrame = CandyDestination
                     end
 
-                    print(
-                        "[Candy Farm] Candy collected; destination reached"
-                    )
-
+                    print("[Candy Farm] Candy collected!")
                     task.wait(1)
                 else
-                    warn(
-                        "[Candy Farm] Candy still exists; pickup not confirmed"
-                    )
-
+                    warn("[Candy Farm] Pickup not confirmed")
                     task.wait(1)
                 end
             end
