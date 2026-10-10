@@ -3217,19 +3217,17 @@ callback = function(Value)
             
 -- Attempt pickup
 if Prompt and Prompt:IsA("ProximityPrompt") and Prompt.Enabled then
-    print("[Candy Farm] Attempting pickup:", Prompt:GetFullName())
+    print("[Candy Farm] Triggering pickup")
 
     local Success, ErrorMessage = pcall(function()
-        Prompt:InputHoldBegin()
-        task.wait(Prompt.HoldDuration + 0.2)
-        Prompt:InputHoldEnd()
+        fireproximityprompt(Prompt, Prompt.HoldDuration)
     end)
 
     if not Success then
-        warn("[Candy Farm] Pickup interaction failed:", ErrorMessage)
+        warn("[Candy Farm] Pickup error:", ErrorMessage)
     end
 else
-    warn("[Candy Farm] No enabled ProximityPrompt found")
+    warn("[Candy Farm] Prompt missing or disabled")
 end
 
 
