@@ -1467,42 +1467,31 @@ local FlingTab = Window:CreateTab({
     icon = 4483362458,
 })
 
---============================================================
--- TELEPORT TO ROLE
---============================================================
+--//========================================================
+--// TELEPORT + FOLLOW ROLE FOR 2 SECONDS
+--// Save position -> Follow -> Return -> Stop
+--//========================================================
 
-local LocalPlayer = Players.LocalPlayer
-
-
-local function IsInGame(player)
-    local character = player.Character
-    local humanoid = character
-        and character:FindFirstChildOfClass("Humanoid")
-    local root = character
-        and character:FindFirstChild("HumanoidRootPart")
-
-    return character ~= nil
-        and character:IsDescendantOf(workspace)
-        and humanoid ~= nil
-        and humanoid.Health > 0
-        and root ~= nil
-end
+local FOLLOW_DURATION = 2
+local FollowRunning = false
 
 local function GetRolePlayer(role)
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and IsInGame(player) then
+        if player ~= lp then
             local character = player.Character
             local backpack = player:FindFirstChild("Backpack")
 
-            local function HasTool(toolName)
-                return (character and character:FindFirstChild(toolName))
-                    or (backpack and backpack:FindFirstChild(toolName))
-            end
+            if character then
+                local function HasTool(toolName)
+                    return character:FindFirstChild(toolName)
+                        or (backpack and backpack:FindFirstChild(toolName))
+                end
 
-            if role == "Murderer" and HasTool("Knife") then
-                return player
-            elseif role == "Sheriff" and HasTool("Gun") then
-                return player
+                if role == "Murderer" and HasTool("Knife") then
+                    return player
+                elseif role == "Sheriff" and HasTool("Gun") then
+                    return player
+                end
             end
         end
     end
@@ -1510,38 +1499,93 @@ local function GetRolePlayer(role)
     return nil
 end
 
-local function TeleportToRole(role)
-    local target = GetRolePlayer(role)
-
-    if not target then
-        warn("No in-game player found for role: " .. role)
+local function TeleportFollowRole(role)
+    if FollowRunning then
         return
     end
 
-    local character = LocalPlayer.Character
-    local root = character
-        and character:FindFirstChild("HumanoidRootPart")
+    local target = GetRolePlayer(role)
 
-    local targetRoot = target.Character
-        and target.Character:FindFirstChild("HumanoidRootPart")
-
-    if root and targetRoot and IsInGame(LocalPlayer) then
-        -- Teleport to the target's exact position
-        root.CFrame = targetRoot.CFrame
+    if not target then
+        return
     end
+
+    local myCharacter = lp.Character
+    local myRoot = myCharacter
+        and myCharacter:FindFirstChild("HumanoidRootPart")
+
+    local targetCharacter = target.Character
+    local targetRoot = targetCharacter
+        and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+    if not myRoot or not targetRoot then
+        return
+    end
+
+    -- Save original position
+    local originalCFrame = myRoot.CFrame
+
+    FollowRunning = true
+
+    -- Teleport to the selected role
+    myRoot.CFrame = targetRoot.CFrame
+
+    local startTime = os.clock()
+
+    -- Follow the target for 2 seconds
+    while os.clock() - startTime < FOLLOW_DURATION do
+        if not target.Parent then
+            break
+        end
+
+        myCharacter = lp.Character
+        myRoot = myCharacter
+            and myCharacter:FindFirstChild("HumanoidRootPart")
+
+        targetCharacter = target.Character
+        targetRoot = targetCharacter
+            and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+        if not myRoot or not targetRoot then
+            break
+        end
+
+        -- Keep following the target's latest position
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+
+        RunService.Heartbeat:Wait()
+    end
+
+    -- Return to the saved position
+    myCharacter = lp.Character
+    myRoot = myCharacter
+        and myCharacter:FindFirstChild("HumanoidRootPart")
+
+    if myRoot then
+        myRoot.CFrame = originalCFrame
+    end
+
+    -- Stop until activated again
+    FollowRunning = false
 end
 
-FlingTab:CreateButton({
-    name = "🔪 Teleport to Murderer",
+--// BUTTONS
+
+TeleportTab:CreateButton({
+    name = "🔪 Fling Murderer ",
     callback = function()
-        TeleportToRole("Murderer")
+        task.spawn(function()
+            TeleportFollowRole("Murderer")
+        end)
     end
 })
 
-FlingTab:CreateButton({
-    name = "🔫 Teleport to Sheriff",
+TeleportTab:CreateButton({
+    name = "🔫 Fling Sheriff ",
     callback = function()
-        TeleportToRole("Sheriff")
+        task.spawn(function()
+            TeleportFollowRole("Sheriff")
+        end)
     end
 })
 
