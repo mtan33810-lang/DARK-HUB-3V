@@ -37,17 +37,6 @@ local Camera = workspace.CurrentCamera
 local wallCheckParams = RaycastParams.new()
 wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
 
-local function GetPredictedPosition(targetPart)
-    if not targetPart then
-        return nil
-    end
-
-    local predictionTime = 0.08
-
-    return targetPart.Position
-        + targetPart.AssemblyLinearVelocity * predictionTime
-end
-
 --========================================================
 -- GLOBAL SETTINGS
 --========================================================
@@ -1951,14 +1940,10 @@ RunService:BindToRenderStep(
         end
 
         -- Smooth camera movement
-        local predictedPosition = GetPredictedPosition(targetPart)
-
-        if predictedPosition then
-            local targetCFrame = CFrame.lookAt(
-                Camera.CFrame.Position,
-                predictedPosition
-            )
-        end
+        local targetCFrame = CFrame.lookAt(
+            Camera.CFrame.Position,
+            targetPart.Position
+        )
 
         local lerpFactor = math.clamp(
             Settings.Smoothness * (deltaTime * 60),
