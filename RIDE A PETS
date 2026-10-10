@@ -1366,7 +1366,7 @@ local ESPEggOptions = {
     "Blackhole Egg",
     "Solaris Egg",
     "Cherub Egg",
-    "Volcanic Egg"
+    "Volcanic Egg",
     "Halloween Egg"
 }
 
