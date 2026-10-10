@@ -2990,13 +2990,14 @@ end)
 -- AUTOMATIC TAB
 --==================================================
 
-local AutomaticTab = Window:CreateTab({ name = "ðŸª· Automatic ", icon = nil })
+local AutomaticTab = Window:CreateTab({ name = "Automatic ", icon = 93364949241311 })
 
 
 local MaxUpgradeEnabled = false
 
 AutomaticTab:CreateToggle({
     name = "🍀 Upgrade Luck",
+    description = Max luck every 60 second,
     flag = "MaxUpgrade",
     value = false,
 
@@ -3008,7 +3009,7 @@ AutomaticTab:CreateToggle({
 --// Max Upgrade Loop
 task.spawn(function()
     while true do
-        task.wait(10)
+        task.wait(60)
 
         if MaxUpgradeEnabled then
             local Event = game:GetService("ReplicatedStorage")
