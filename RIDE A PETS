@@ -2997,7 +2997,7 @@ local MaxUpgradeEnabled = false
 
 AutomaticTab:CreateToggle({
     name = "🍀 Upgrade Luck",
-    description = Max luck every 60 second,
+    description = "Max luck every 60 second",
     flag = "MaxUpgrade",
     value = false,
 
