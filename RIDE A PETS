@@ -1130,12 +1130,11 @@ local function RunAfterEggPickup(Egg)
                         "HumanoidRootPart"
                     )
 
-                Root.CFrame =
-                    CFrame.new(
-                        81.75,
-                        40315.66,
-                        894.93
-                    )
+                
+                TweenToCustomPosition(
+                    CFrame.new(81.75, 40315.66, 894.93)
+                )
+
 
                 task.wait(0.5)
 
@@ -1225,12 +1224,11 @@ local function RunAfterEggPickup(Egg)
                 )
 
             -- Custom position
-            Root.CFrame =
-                CFrame.new(
-                    81.75,
-                    40315.66,
-                    894.93
-                )
+            
+            TweenToCustomPosition(
+                CFrame.new(81.75, 40315.66, 894.93)
+            )
+
 
             task.wait(0.5)
 
