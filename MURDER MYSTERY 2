@@ -1571,7 +1571,7 @@ end
 
 --// BUTTONS
 
-TeleportTab:CreateButton({
+FlingTab:CreateButton({
     name = "🔪 Fling Murderer ",
     callback = function()
         task.spawn(function()
@@ -1580,7 +1580,7 @@ TeleportTab:CreateButton({
     end
 })
 
-TeleportTab:CreateButton({
+FlingTab:CreateButton({
     name = "🔫 Fling Sheriff ",
     callback = function()
         task.spawn(function()
@@ -1588,77 +1588,6 @@ TeleportTab:CreateButton({
         end)
     end
 })
-
---============================================================
--- ANTI FLING 
---============================================================
-
-local CollisionDisabled = false
-local OriginalCollision = {}
-
-local function SetOtherPlayerCollision(player, disabled)
-    if player == lp or not player.Character then
-        return
-    end
-
-    for _, part in ipairs(player.Character:GetDescendants()) do
-        if part:IsA("BasePart") then
-
-            if disabled then
-                if OriginalCollision[part] == nil then
-                    OriginalCollision[part] = part.CanCollide
-                end
-
-                part.CanCollide = false
-
-            else
-                if OriginalCollision[part] ~= nil then
-                    part.CanCollide = OriginalCollision[part]
-                    OriginalCollision[part] = nil
-                end
-            end
-        end
-    end
-end
-
-local function UpdateAntiCollision()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= lp then
-            SetOtherPlayerCollision(player, CollisionDisabled)
-        end
-    end
-end
-
-FlingTab:CreateToggle({
-    name = "Anti Fling ",
-    description = "Disable collisions with other players",
-    value = false,
-
-    callback = function(value)
-        CollisionDisabled = value
-
-        if not value then
-            -- Restore original collision
-            UpdateAntiCollision()
-        end
-    end
-})
-
-RunService.Stepped:Connect(function()
-    if CollisionDisabled then
-        UpdateAntiCollision()
-    end
-end)
-
--- Handle players respawning
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        if CollisionDisabled then
-            task.wait(0.2)
-            SetOtherPlayerCollision(player, true)
-        end
-    end)
-end)
 
 --//========================================================
 --// FLING
@@ -1829,6 +1758,77 @@ FlingTab:CreateToggle({
         Environment.Functions:SetFling(value)
     end
 })
+
+--============================================================
+-- ANTI FLING 
+--============================================================
+
+local CollisionDisabled = false
+local OriginalCollision = {}
+
+local function SetOtherPlayerCollision(player, disabled)
+    if player == lp or not player.Character then
+        return
+    end
+
+    for _, part in ipairs(player.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+
+            if disabled then
+                if OriginalCollision[part] == nil then
+                    OriginalCollision[part] = part.CanCollide
+                end
+
+                part.CanCollide = false
+
+            else
+                if OriginalCollision[part] ~= nil then
+                    part.CanCollide = OriginalCollision[part]
+                    OriginalCollision[part] = nil
+                end
+            end
+        end
+    end
+end
+
+local function UpdateAntiCollision()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= lp then
+            SetOtherPlayerCollision(player, CollisionDisabled)
+        end
+    end
+end
+
+FlingTab:CreateToggle({
+    name = "Anti Fling ",
+    description = "Disable collisions with other players",
+    value = false,
+
+    callback = function(value)
+        CollisionDisabled = value
+
+        if not value then
+            -- Restore original collision
+            UpdateAntiCollision()
+        end
+    end
+})
+
+RunService.Stepped:Connect(function()
+    if CollisionDisabled then
+        UpdateAntiCollision()
+    end
+end)
+
+-- Handle players respawning
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if CollisionDisabled then
+            task.wait(0.2)
+            SetOtherPlayerCollision(player, true)
+        end
+    end)
+end)
 
 --============================================================
 -- THEME
