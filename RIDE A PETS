@@ -1367,6 +1367,7 @@ local ESPEggOptions = {
     "Solaris Egg",
     "Cherub Egg",
     "Volcanic Egg"
+    "Halloween Egg"
 }
 
 local EggESPSelectionDropdown
@@ -1899,7 +1900,8 @@ local ValidEggNames = {
     ["Blackhole Egg"] = true,
     ["Solaris Egg"] = true,
     ["Cherub Egg"] = true,
-    ["Volcanic Egg"] = true
+    ["Volcanic Egg"] = true,
+    ["Halloween Egg"] = true
 }
 
 --==================================================
@@ -1943,6 +1945,7 @@ local EggRarity = {
     ["Solaris Egg"] = "Ethereal",
     ["Cherub Egg"] = "Ethereal",
     ["Volcanic Egg"] = "Ethereal"
+    ["Halloween Egg"] = "Ethereal"
 }
 
 --==================================================
