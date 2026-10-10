@@ -322,6 +322,9 @@ local VOLCANO_POSITION = CFrame.new(
     -3452.42
 )
 
+--==================================================
+-- TWEEN TELEPORT 
+--==================================================
 
 -- Smooth Custom Position Tween
 local ActiveCustomTween = nil
@@ -343,7 +346,7 @@ local function TweenToCustomPosition(TargetCFrame)
     ).Magnitude
 
     -- Adjust speed here
-    local Speed = 350
+    local Speed = 400
     local Duration = math.max(Distance / Speed, 0.1)
 
     local Tween = TweenService:Create(
