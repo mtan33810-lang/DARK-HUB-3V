@@ -1468,13 +1468,24 @@ local FlingTab = Window:CreateTab({
 })
 
 --//========================================================
---// TELEPORT + FOLLOW ROLE FOR 2 SECONDS
---// Save position -> Follow -> Return -> Stop
+--// TWEEN FOLLOW + FLING DETECTION + SNAP BACK
+--// Rayfield Gen 2
 --//========================================================
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local lp = Players.LocalPlayer
+
+--// SETTINGS
 local FOLLOW_DURATION = 2
+local TWEEN_SPEED = 100
+local FLING_VELOCITY_THRESHOLD = 80
+
 local FollowRunning = false
 
+--// FIND MURDERER / SHERIFF
 local function GetRolePlayer(role)
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= lp then
@@ -1499,80 +1510,156 @@ local function GetRolePlayer(role)
     return nil
 end
 
+--// TWEEN FOLLOW + SNAP BACK
 local function TeleportFollowRole(role)
     if FollowRunning then
         return
     end
 
     local target = GetRolePlayer(role)
-
     if not target then
         return
     end
 
-    local myCharacter = lp.Character
-    local myRoot = myCharacter
-        and myCharacter:FindFirstChild("HumanoidRootPart")
+    local character = lp.Character
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
 
     local targetCharacter = target.Character
     local targetRoot = targetCharacter
         and targetCharacter:FindFirstChild("HumanoidRootPart")
 
-    if not myRoot or not targetRoot then
+    if not root or not targetRoot then
         return
     end
 
     -- Save original position
-    local originalCFrame = myRoot.CFrame
-
+    local originalCFrame = root.CFrame
     FollowRunning = true
 
-    -- Teleport to the selected role
-    myRoot.CFrame = targetRoot.CFrame
+    local finished = false
+    local activeTween
 
-    local startTime = os.clock()
-
-    -- Follow the target for 2 seconds
-    while os.clock() - startTime < FOLLOW_DURATION do
-        if not target.Parent then
-            break
+    local function SnapBack()
+        if finished then
+            return
         end
 
-        myCharacter = lp.Character
-        myRoot = myCharacter
-            and myCharacter:FindFirstChild("HumanoidRootPart")
+        finished = true
 
-        targetCharacter = target.Character
-        targetRoot = targetCharacter
-            and targetCharacter:FindFirstChild("HumanoidRootPart")
-
-        if not myRoot or not targetRoot then
-            break
+        if activeTween then
+            activeTween:Cancel()
+            activeTween = nil
         end
 
-        -- Keep following the target's latest position
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+        local currentCharacter = lp.Character
+        local currentRoot = currentCharacter
+            and currentCharacter:FindFirstChild("HumanoidRootPart")
 
-        RunService.Heartbeat:Wait()
+        if currentRoot then
+            currentRoot.CFrame = originalCFrame
+        end
+
+        FollowRunning = false
     end
 
-    -- Return to the saved position
-    myCharacter = lp.Character
-    myRoot = myCharacter
-        and myCharacter:FindFirstChild("HumanoidRootPart")
+    local success, err = pcall(function()
+        local startTime = os.clock()
 
-    if myRoot then
-        myRoot.CFrame = originalCFrame
-    end
+        while os.clock() - startTime < FOLLOW_DURATION do
+            if not target.Parent then
+                break
+            end
 
-    -- Stop until activated again
-    FollowRunning = false
+            character = lp.Character
+            root = character
+                and character:FindFirstChild("HumanoidRootPart")
+
+            targetCharacter = target.Character
+            targetRoot = targetCharacter
+                and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+            if not root or not targetRoot then
+                break
+            end
+
+            -- Detect possible fling
+            if targetRoot.AssemblyLinearVelocity.Magnitude
+                >= FLING_VELOCITY_THRESHOLD then
+                SnapBack()
+                return
+            end
+
+            -- Stay slightly behind the target
+            
+            local destination = targetRoot.CFrame
+
+            local distance =
+                (root.Position - destination.Position).Magnitude
+
+            if distance > 1 then
+                local duration = math.max(
+                    distance / TWEEN_SPEED,
+                    0.05
+                )
+
+                activeTween = TweenService:Create(
+                    root,
+                    TweenInfo.new(
+                        duration,
+                        Enum.EasingStyle.Linear,
+                        Enum.EasingDirection.Out
+                    ),
+                    { CFrame = destination }
+                )
+
+                activeTween:Play()
+
+                -- Monitor target while tweening
+                local tweenStart = os.clock()
+
+                while os.clock() - tweenStart < duration do
+                    if not target.Parent then
+                        activeTween:Cancel()
+                        break
+                    end
+
+                    targetCharacter = target.Character
+                    targetRoot = targetCharacter
+                        and targetCharacter:FindFirstChild("HumanoidRootPart")
+
+                    if not targetRoot then
+                        activeTween:Cancel()
+                        break
+                    end
+
+                    if targetRoot.AssemblyLinearVelocity.Magnitude
+                        >= FLING_VELOCITY_THRESHOLD then
+                        SnapBack()
+                        return
+                    end
+
+                    if os.clock() - startTime >= FOLLOW_DURATION then
+                        activeTween:Cancel()
+                        break
+                    end
+
+                    RunService.Heartbeat:Wait()
+                end
+
+                activeTween = nil
+            else
+                RunService.Heartbeat:Wait()
+            end
+        end
+    end)
+
+    -- Always restore position when the operation ends
+    SnapBack()
 end
 
---// BUTTONS
-
 FlingTab:CreateButton({
-    name = "🔪 Fling Murderer ",
+    name = "🔪 Tween Follow Murderer",
     callback = function()
         task.spawn(function()
             TeleportFollowRole("Murderer")
@@ -1581,7 +1668,7 @@ FlingTab:CreateButton({
 })
 
 FlingTab:CreateButton({
-    name = "🔫 Fling Sheriff ",
+    name = "🔫 Tween Follow Sheriff",
     callback = function()
         task.spawn(function()
             TeleportFollowRole("Sheriff")
