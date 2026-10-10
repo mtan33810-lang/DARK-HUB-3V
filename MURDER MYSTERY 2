@@ -1468,41 +1468,35 @@ local FlingTab = Window:CreateTab({
 })
 
 --//========================================================
---// TWEEN FOLLOW + FLING DETECTION + SNAP BACK
---// Rayfield Gen 2
+--// TELEPORT TO MURDERER / SHERIFF 
 --//========================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local lp = Players.LocalPlayer
 
---// SETTINGS
 local FOLLOW_DURATION = 2
-local TWEEN_SPEED = 100
 local FLING_VELOCITY_THRESHOLD = 80
 
 local FollowRunning = false
 
---// FIND MURDERER / SHERIFF
+-- FIND MURDERER / SHERIFF
 local function GetRolePlayer(role)
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= lp then
             local character = player.Character
             local backpack = player:FindFirstChild("Backpack")
 
-            if character then
-                local function HasTool(toolName)
-                    return character:FindFirstChild(toolName)
-                        or (backpack and backpack:FindFirstChild(toolName))
-                end
+            local function HasTool(toolName)
+                return (character and character:FindFirstChild(toolName))
+                    or (backpack and backpack:FindFirstChild(toolName))
+            end
 
-                if role == "Murderer" and HasTool("Knife") then
-                    return player
-                elseif role == "Sheriff" and HasTool("Gun") then
-                    return player
-                end
+            if role == "Murderer" and HasTool("Knife") then
+                return player
+            elseif role == "Sheriff" and HasTool("Gun") then
+                return player
             end
         end
     end
@@ -1510,7 +1504,7 @@ local function GetRolePlayer(role)
     return nil
 end
 
---// TWEEN FOLLOW + SNAP BACK
+-- TELEPORT AND FOLLOW - NO RETURN
 local function TeleportFollowRole(role)
     if FollowRunning then
         return
@@ -1518,6 +1512,7 @@ local function TeleportFollowRole(role)
 
     local target = GetRolePlayer(role)
     if not target then
+        warn(role .. " not found")
         return
     end
 
@@ -1533,40 +1528,12 @@ local function TeleportFollowRole(role)
         return
     end
 
-    -- Save original position
-    local originalCFrame = root.CFrame
     FollowRunning = true
 
-    local finished = false
-    local activeTween
-
-    local function SnapBack()
-        if finished then
-            return
-        end
-
-        finished = true
-
-        if activeTween then
-            activeTween:Cancel()
-            activeTween = nil
-        end
-
-        local currentCharacter = lp.Character
-        local currentRoot = currentCharacter
-            and currentCharacter:FindFirstChild("HumanoidRootPart")
-
-        if currentRoot then
-            currentRoot.CFrame = originalCFrame
-        end
-
-        FollowRunning = false
-    end
-
     local success, err = pcall(function()
-        local startTime = os.clock()
+        local endTime = os.clock() + FOLLOW_DURATION
 
-        while os.clock() - startTime < FOLLOW_DURATION do
+        while os.clock() < endTime do
             if not target.Parent then
                 break
             end
@@ -1583,83 +1550,29 @@ local function TeleportFollowRole(role)
                 break
             end
 
-            -- Detect possible fling
+            -- Stop following if the target is flung
             if targetRoot.AssemblyLinearVelocity.Magnitude
                 >= FLING_VELOCITY_THRESHOLD then
-                SnapBack()
-                return
+                break
             end
 
-            -- Stay slightly behind the target
-            
-            local destination = targetRoot.CFrame
+            -- Match the target's current position
+            root.CFrame = targetRoot.CFrame
 
-            local distance =
-                (root.Position - destination.Position).Magnitude
-
-            if distance > 1 then
-                local duration = math.max(
-                    distance / TWEEN_SPEED,
-                    0.05
-                )
-
-                activeTween = TweenService:Create(
-                    root,
-                    TweenInfo.new(
-                        duration,
-                        Enum.EasingStyle.Linear,
-                        Enum.EasingDirection.Out
-                    ),
-                    { CFrame = destination }
-                )
-
-                activeTween:Play()
-
-                -- Monitor target while tweening
-                local tweenStart = os.clock()
-
-                while os.clock() - tweenStart < duration do
-                    if not target.Parent then
-                        activeTween:Cancel()
-                        break
-                    end
-
-                    targetCharacter = target.Character
-                    targetRoot = targetCharacter
-                        and targetCharacter:FindFirstChild("HumanoidRootPart")
-
-                    if not targetRoot then
-                        activeTween:Cancel()
-                        break
-                    end
-
-                    if targetRoot.AssemblyLinearVelocity.Magnitude
-                        >= FLING_VELOCITY_THRESHOLD then
-                        SnapBack()
-                        return
-                    end
-
-                    if os.clock() - startTime >= FOLLOW_DURATION then
-                        activeTween:Cancel()
-                        break
-                    end
-
-                    RunService.Heartbeat:Wait()
-                end
-
-                activeTween = nil
-            else
-                RunService.Heartbeat:Wait()
-            end
+            RunService.Heartbeat:Wait()
         end
     end)
 
-    -- Always restore position when the operation ends
-    SnapBack()
+    FollowRunning = false
+
+    if not success then
+        warn("Teleport follow error:", err)
+    end
 end
 
+-- RAYFIELD BUTTONS
 FlingTab:CreateButton({
-    name = "🔪 Tween Follow Murderer",
+    name = "🔪 Teleport to Murderer",
     callback = function()
         task.spawn(function()
             TeleportFollowRole("Murderer")
@@ -1668,7 +1581,7 @@ FlingTab:CreateButton({
 })
 
 FlingTab:CreateButton({
-    name = "🔫 Tween Follow Sheriff",
+    name = "🔫 Teleport to Sheriff",
     callback = function()
         task.spawn(function()
             TeleportFollowRole("Sheriff")
