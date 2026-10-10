@@ -322,6 +322,54 @@ local VOLCANO_POSITION = CFrame.new(
     -3452.42
 )
 
+
+-- Smooth Custom Position Tween
+local ActiveCustomTween = nil
+
+local function TweenToCustomPosition(TargetCFrame)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    -- Stop the previous custom-position tween
+    if ActiveCustomTween then
+        ActiveCustomTween:Cancel()
+        ActiveCustomTween = nil
+    end
+
+    local Distance = (
+        Root.Position - TargetCFrame.Position
+    ).Magnitude
+
+    -- Adjust speed here
+    local Speed = 80
+    local Duration = math.max(Distance / Speed, 0.1)
+
+    local Tween = TweenService:Create(
+        Root,
+        TweenInfo.new(
+            Duration,
+            Enum.EasingStyle.Sine,
+            Enum.EasingDirection.InOut
+        ),
+        {
+            CFrame = TargetCFrame
+        }
+    )
+
+    ActiveCustomTween = Tween
+    Tween:Play()
+
+    local Result = Tween.Completed:Wait()
+
+    if ActiveCustomTween == Tween then
+        ActiveCustomTween = nil
+    end
+
+    return Result == Enum.PlaybackState.Completed
+end
+
 --==================================================
 -- FLOW SETTINGS
 --==================================================
@@ -1007,8 +1055,9 @@ local function RunAfterEggPickup(Egg)
 
             local Root = Character:WaitForChild("HumanoidRootPart")
 
-            Root.CFrame = CFrame.new(81.75, 40315.66, 894.93)
-
+            TweenToCustomPosition(
+                CFrame.new(81.75, 40315.66, 894.93)
+            )
             task.wait(0.5)
 
             -- Drop the egg at the custom position
@@ -1103,8 +1152,9 @@ local function RunAfterEggPickup(Egg)
                     )
 
                 
-                Root.CFrame = CFrame.new(81.75, 40315.66, 894.93)
-
+                TweenToCustomPosition(
+                    CFrame.new(81.75, 40315.66, 894.93)
+                )
 
                 task.wait(0.5)
 
@@ -1195,8 +1245,9 @@ local function RunAfterEggPickup(Egg)
 
             -- Custom position
             
-            Root.CFrame = CFrame.new(81.75, 40315.66, 894.93)
-
+            TweenToCustomPosition(
+                CFrame.new(81.75, 40315.66, 894.93)
+            )
 
             task.wait(0.5)
 
