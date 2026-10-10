@@ -3105,9 +3105,18 @@ local function FindCandy()
     return nil
 end
 
+
 --==================================================
--- AUTO CANDY FARM TOGGLE
+-- 🍬 AUTO CANDY FARM TOGGLE
 --==================================================
+
+local CandyFarmEnabled = false
+
+local CandyDestination = CFrame.new(
+    -45841.91,
+    40371.20,
+    -20123.44
+)
 
 EventTab:CreateToggle({
     name = "🍬 Auto Candy Farm",
@@ -3124,13 +3133,58 @@ EventTab:CreateToggle({
 
         task.spawn(function()
             while CandyFarmEnabled do
-                local Candy, Prompt, Part = FindCandy()
+
+                -- Find candy folder
+                local CandyFolder =
+                    workspace:FindFirstChild("HalloweenCandy")
+
+                local Candy, Prompt, Part
+
+                if CandyFolder then
+                    for _, Object in ipairs(
+                        CandyFolder:GetDescendants()
+                    ) do
+                        if not CandyFarmEnabled then
+                            break
+                        end
+
+                        if string.match(Object.Name, "^Candy") then
+                            local CandidatePart
+
+                            if Object:IsA("BasePart") then
+                                CandidatePart = Object
+                            elseif Object:IsA("Model") then
+                                CandidatePart =
+                                    Object.PrimaryPart
+                                    or Object:FindFirstChildWhichIsA(
+                                        "BasePart",
+                                        true
+                                    )
+                            end
+
+                            if CandidatePart then
+                                Candy = Object
+                                Part = CandidatePart
+
+                                Prompt =
+                                    Object:FindFirstChildWhichIsA(
+                                        "ProximityPrompt",
+                                        true
+                                    )
+
+                                break
+                            end
+                        end
+                    end
+                end
 
                 if not Candy or not Part then
+                    warn("[Candy Farm] No candy found")
                     task.wait(1)
                     continue
                 end
 
+                -- Get character
                 local Character = Player.Character
                     or Player.CharacterAdded:Wait()
 
@@ -3138,53 +3192,93 @@ EventTab:CreateToggle({
                     "HumanoidRootPart"
                 )
 
-                -- 1. Teleport to the candy
+                -- 1. Teleport to candy
                 Root.CFrame = Part.CFrame
                     + Vector3.new(0, 2, 0)
 
-                print("[Candy Farm] Teleported to candy")
-                task.wait(1)
+                task.wait(0.5)
 
                 if not CandyFarmEnabled then
                     break
                 end
 
-                -- 2. Attempt pickup if a prompt exists
-                if Prompt and Prompt.Enabled then
-                    local OK, Err = pcall(function()
-                        fireproximityprompt(Prompt)
+                -- 2. Monitor collection
+                local Collected = false
+
+                local Connection =
+                    Candy.AncestryChanged:Connect(function()
+                        if not Candy:IsDescendantOf(
+                            CandyFolder
+                        ) then
+                            Collected = true
+                        end
                     end)
 
-                    if not OK then
-                        warn("[Candy Farm] Pickup error:", Err)
-                    end
+                -- Attempt pickup
+                if Prompt and Prompt.Enabled then
+                    pcall(function()
+                        fireproximityprompt(Prompt)
+                    end)
                 else
-                    warn("[Candy Farm] No ProximityPrompt found")
+                    warn(
+                        "[Candy Farm] No ProximityPrompt found"
+                    )
                 end
 
-                task.wait(1)
+                -- Wait for collection
+                local StartTime = os.clock()
+                local Timeout = 15
+
+                while CandyFarmEnabled
+                    and not Collected
+                    and os.clock() - StartTime < Timeout do
+
+                    if not Candy:IsDescendantOf(CandyFolder) then
+                        Collected = true
+                        break
+                    end
+
+                    task.wait(0.2)
+                end
+
+                Connection:Disconnect()
 
                 if not CandyFarmEnabled then
                     break
                 end
 
-                -- 3. Teleport to destination
-                Character = Player.Character
-                    or Player.CharacterAdded:Wait()
+                if not Collected then
+                    warn(
+                        "[Candy Farm] Collection not detected; " ..
+                        "not teleporting yet"
+                    )
+                    task.wait(1)
+                    continue
+                end
 
-                Root = Character:WaitForChild(
-                    "HumanoidRootPart"
+                -- 3. Teleport only after collection
+                Character = Player.Character
+
+                if Character then
+                    Root = Character:FindFirstChild(
+                        "HumanoidRootPart"
+                    )
+
+                    if Root then
+                        Root.CFrame = CandyDestination
+                    end
+                end
+
+                print(
+                    "[Candy Farm] Candy collected; " ..
+                    "teleported to destination"
                 )
 
-                Root.CFrame = CandyDestination
-
-                print("[Candy Farm] Teleported to destination")
                 task.wait(1)
             end
         end)
     end
 })
-
 
 --==================================================
 -- AUTOMATIC TAB
