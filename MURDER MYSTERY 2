@@ -781,27 +781,40 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 ButtonCorner.Parent = FireButton
 
+
 --========================================================
--- AIM PREDICTION 
+-- AIM PREDICTION — STUDIO TEST PROJECT
 --========================================================
+
+local PROJECTILE_SPEED = 250 -- studs per second
+local MAX_PREDICTION_TIME = 0.25
 
 local function GetAutoPredictedPosition(targetPart, origin)
     if not targetPart or not origin then
         return nil
     end
 
+    if not targetPart:IsA("BasePart") then
+        return nil
+    end
+
     local targetPosition = targetPart.Position
-    local velocity = targetPart.AssemblyLinearVelocity
+    local targetVelocity = targetPart.AssemblyLinearVelocity
     local distance = (targetPosition - origin).Magnitude
 
-    local predictionTime = math.clamp(
-        distance / 1000,
-        0.03,
-        0.20
+    if PROJECTILE_SPEED <= 0 then
+        return targetPosition
+    end
+
+    local travelTime = math.clamp(
+        distance / PROJECTILE_SPEED,
+        0,
+        MAX_PREDICTION_TIME
     )
 
-    return targetPosition + (velocity * predictionTime)
+    return targetPosition + targetVelocity * travelTime
 end
+
 
 --========================================================
 -- FIRE FUNCTION
