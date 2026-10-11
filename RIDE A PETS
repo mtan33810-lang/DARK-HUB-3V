@@ -347,7 +347,7 @@ local function TweenToCustomPosition(TargetCFrame)
 
     -- Adjust speed here
     local Speed = 500
-    local Duration = math.max(Distance / Speed, 0.1)
+    local Duration = 2
 
     local Tween = TweenService:Create(
         Root,
@@ -769,8 +769,7 @@ local function RunAfterEggPickup(Egg)
                 local Distance =
                     (Root.Position - TargetCFrame.Position).Magnitude
 
-                local Duration =
-                    math.clamp(Distance / 150, 1, 4)
+                local Duration = 2
 
                 local StartCFrame =
                     Root.CFrame
