@@ -3205,6 +3205,7 @@ end
 
 --==================================================
 -- 🍬 AUTO CANDY FARM
+-- Teleport → Pick Up → Tween to Destination
 --==================================================
 
 EventTab:CreateToggle({
@@ -3242,7 +3243,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Teleport to candy
+                -- 1. TELEPORT TO CANDY
                 Root.CFrame = Part.CFrame
                     + Vector3.new(0, 3, 0)
 
@@ -3252,7 +3253,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Find pickup prompt
+                -- 2. FIND PICKUP PROMPT
                 local Prompt = FindPickupPrompt(
                     Candy,
                     Part,
@@ -3271,6 +3272,10 @@ EventTab:CreateToggle({
                             ErrorMessage
                         )
                     end
+                else
+                    warn(
+                        "[Candy Farm] Pickup prompt not found"
+                    )
                 end
 
                 task.wait(1)
@@ -3279,7 +3284,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Return to destination
+                -- 3. TWEEN TO DESTINATION
                 Character = Player.Character
 
                 if Character then
@@ -3288,7 +3293,38 @@ EventTab:CreateToggle({
                     )
 
                     if Root then
-                        Root.CFrame = CandyDestination
+                        local Distance = (
+                            Root.Position
+                            - CandyDestination.Position
+                        ).Magnitude
+
+                        -- Use the slider's current speed
+                        local Duration = math.max(
+                            Distance / math.max(CandyTweenSpeed, 1),
+                            0.1
+                        )
+
+                        local Tween = TweenService:Create(
+                            Root,
+                            TweenInfo.new(
+                                Duration,
+                                Enum.EasingStyle.Linear,
+                                Enum.EasingDirection.Out
+                            ),
+                            {
+                                CFrame = CandyDestination
+                            }
+                        )
+
+                        Tween:Play()
+
+                        local PlaybackState =
+                            Tween.Completed:Wait()
+
+                        if PlaybackState
+                            ~= Enum.PlaybackState.Completed then
+                            break
+                        end
                     end
                 end
 
@@ -3298,6 +3334,25 @@ EventTab:CreateToggle({
                 task.wait(1)
             end
         end)
+    end
+})
+
+--==================================================
+-- 🍬 CANDY TWEEN SPEED SLIDER
+--==================================================
+
+local CandyTweenSpeed = 800
+
+EventTab:CreateSlider({
+    name = "⚡ Candy Tween Speed",
+    flag = "CandyTweenSpeed",
+    range = {50, 1500},
+    increment = 50,
+    suffix = " studs/s",
+    currentValue = 800,
+
+    callback = function(Value)
+        CandyTweenSpeed = Value
     end
 })
 
