@@ -346,7 +346,7 @@ local function TweenToCustomPosition(TargetCFrame)
     ).Magnitude
 
     -- Adjust speed here
-    local Speed = 600
+    local Speed = 650
     local Duration = math.max(Distance / Speed, 0.1)
 
     local Tween = TweenService:Create(
@@ -3281,43 +3281,6 @@ EventTab:CreateToggle({
 
                 -- Mark candy and continue
                 ProcessedCandy[Candy] = true
-
-                task.wait(1)
-            end
-        end)
-    end
-})
-
---==================================================
--- 🎃 AUTO HALLOWEEN EGG
---==================================================
-
-local HalloweenEggEnabled = false
-
-EventTab:CreateToggle({
-    name = "🎃 Auto Buy Halloween Egg",
-    flag = "AutoBuyHalloweenEgg",
-    value = false,
-
-    callback = function(Value)
-        HalloweenEggEnabled = Value
-
-        if not Value then
-            return
-        end
-
-        task.spawn(function()
-            while HalloweenEggEnabled do
-                local Success, Result = pcall(function()
-                    local Event = game:GetService("ReplicatedStorage")
-                        .Remotes.Game.BuyHalloweenEgg
-
-                    return Event:InvokeServer("Halloween Egg")
-                end)
-
-                if not Success then
-                    warn("Halloween Egg purchase failed:", Result)
-                end
 
                 task.wait(1)
             end
