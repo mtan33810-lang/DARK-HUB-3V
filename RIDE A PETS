@@ -322,11 +322,37 @@ local VOLCANO_POSITION = CFrame.new(
     -3452.42
 )
 
+
+--==================================================
+-- CHECK IF PLAYER IS HOLDING AN EGG
+--==================================================
+
+local function IsHoldingEgg()
+    local Character = Player.Character
+    if not Character then
+        return false
+    end
+
+    for _, Object in ipairs(Character:GetChildren()) do
+        if Object:IsA("Tool")
+            and string.find(
+                string.lower(Object.Name),
+                "egg",
+                1,
+                true
+            )
+        then
+            return true
+        end
+    end
+
+    return false
+end
+
 --==================================================
 -- TWEEN TELEPORT 
 --==================================================
 
--- Smooth Custom Position Tween
 local ActiveCustomTween = nil
 
 local function TweenToCustomPosition(TargetCFrame)
@@ -335,7 +361,6 @@ local function TweenToCustomPosition(TargetCFrame)
 
     local Root = Character:WaitForChild("HumanoidRootPart")
 
-    -- Stop the previous custom-position tween
     if ActiveCustomTween then
         ActiveCustomTween:Cancel()
         ActiveCustomTween = nil
