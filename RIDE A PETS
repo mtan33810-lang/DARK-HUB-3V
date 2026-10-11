@@ -3110,134 +3110,31 @@ end
 -- 🍬 AUTO CANDY FARM TOGGLE
 --==================================================
 
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
 local CandyFarmEnabled = false
 
 local CandyDestination = CFrame.new(
--45841.91,
-40371.20,
--20123.44
+    -45841.91,
+    40371.20,
+    -20123.44
 )
 
-EventTab:CreateToggle({
-name = "🍬 Auto Candy Farm",
-flag = "AutoCandyFarm",
-value = false,
-
-callback = function(Value)  
-    CandyFarmEnabled = Value  
-
-    if not Value then  
-        print("[Candy Farm] Stopped")  
-        return  
-    end  
-
-    task.spawn(function()  
-        while CandyFarmEnabled do  
-
-            -- Find candy folder  
-            local CandyFolder =  
-                workspace:FindFirstChild("HalloweenCandy")  
-
-            local Candy, Prompt, Part  
-
-            if CandyFolder then  
-                for _, Object in ipairs(  
-                    CandyFolder:GetDescendants()  
-                ) do  
-                    if not CandyFarmEnabled then  
-                        break  
-                    end  
-
-                    if string.match(Object.Name, "^Candy") then  
-                        local CandidatePart  
-
-                        if Object:IsA("BasePart") then  
-                            CandidatePart = Object  
-                        elseif Object:IsA("Model") then  
-                            CandidatePart =  
-                                Object.PrimaryPart  
-                                or Object:FindFirstChildWhichIsA(  
-                                    "BasePart",  
-                                    true  
-                                )  
-                        end  
-
-                        if CandidatePart then  
-                            Candy = Object  
-                            Part = CandidatePart  
-
-                            Prompt =  
-                                Object:FindFirstChildWhichIsA(  
-                                    "ProximityPrompt",  
-                                    true  
-                                )  
-
-                            break  
-                        end  
-                    end  
-                end  
-            end  
-
-            if not Candy or not Part then  
-                warn("[Candy Farm] No candy found")  
-                task.wait(1)  
-                continue  
-            end  
-
-            -- Get character  
-            local Character = Player.Character  
-                or Player.CharacterAdded:Wait()  
-
-            local Root = Character:WaitForChild(  
-                "HumanoidRootPart"  
-            )  
-
-            -- 1. Teleport to candy  
-            Root.CFrame = Part.CFrame  
-                + Vector3.new(0, 2, 0)  
-
-            task.wait(0.5)  
-
-            if not CandyFarmEnabled then  
-                break  
-            end  
-
-            -- 2. Monitor collection  
-            local Collected = false  
-
-            local Connection =  
-                Candy.AncestryChanged:Connect(function()  
-                    if not Candy:IsDescendantOf(  
-                        CandyFolder  
-                    ) then  
-                        Collected = true  
-                    end  
-                end)  
-
---==================================================
--- 🍬 PICK UP CANDY
---==================================================
-
+-- Helper function to fire proximity prompts safely
 local function TryPickupCandy(candy)
     if not candy or not candy.Parent then
         return false
     end
 
-    local prompt = candy:FindFirstChildWhichIsA(
-        "ProximityPrompt",
-        true
-    )
+    local prompt = candy:FindFirstChildWhichIsA("ProximityPrompt", true)
 
     if not prompt then
-        warn("Candy has no ProximityPrompt")
+        warn("[Candy Farm] Candy has no ProximityPrompt")
         return false
     end
 
-    print("Candy prompt found:", prompt.Name)
-    print("Hold duration:", prompt.HoldDuration)
-
-    -- Move close enough for the prompt to activate.
-    local character = game.Players.LocalPlayer.Character
+    local character = Player.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
 
     local part = prompt.Parent
@@ -3246,83 +3143,107 @@ local function TryPickupCandy(candy)
     end
 
     if not root or not part or not part:IsA("BasePart") then
-        warn("Could not find candy's pickup part")
+        warn("[Candy Farm] Could not find candy's pickup part")
         return false
     end
 
-    if (root.Position - part.Position).Magnitude >
-        prompt.MaxActivationDistance then
-        warn("Too far from candy prompt")
+    -- Force teleport directly to the prompt parent part to ensure range
+    root.CFrame = part.CFrame + Vector3.new(0, 2, 0)
+    task.wait(0.3)
+
+    if (root.Position - part.Position).Magnitude > prompt.MaxActivationDistance then
+        warn("[Candy Farm] Too far from candy prompt")
         return false
     end
 
-    -- Executor-specific: this may not work in every environment.
     if typeof(fireproximityprompt) == "function" then
+        print("[Candy Farm] Interacting with prompt:", prompt.Name)
+        
+        -- Fire prompt multiple times if needed or handle hold duration
         fireproximityprompt(prompt)
-        task.wait(math.max(prompt.HoldDuration, 0.5) + 0.5)
+        task.wait(math.max(prompt.HoldDuration, 0.2) + 0.3)
     else
-        warn("fireproximityprompt is unavailable")
+        warn("[Candy Farm] fireproximityprompt is unavailable in your executor")
         return false
     end
 
-    return candy.Parent == nil
+    -- Return true if candy was collected (removed from workspace)
+    return not candy:IsDescendantOf(workspace)
 end
 
+EventTab:CreateToggle({
+    name = "🍬 Auto Candy Farm",
+    flag = "AutoCandyFarm",
+    value = false,
 
-            -- Wait for collection  
-            local StartTime = os.clock()  
-            local Timeout = 15  
+    callback = function(Value)  
+        CandyFarmEnabled = Value  
 
-            while CandyFarmEnabled  
-                and not Collected  
-                and os.clock() - StartTime < Timeout do  
-
-                if not Candy:IsDescendantOf(CandyFolder) then  
-                    Collected = true  
-                    break  
-                end  
-
-                task.wait(0.2)  
-            end  
-
-            Connection:Disconnect()  
-
-            if not CandyFarmEnabled then  
-                break  
-            end  
-
-            if not Collected then  
-                warn(  
-                    "[Candy Farm] Collection not detected; " ..  
-                    "not teleporting yet"  
-                )  
-                task.wait(1)  
-                continue  
-            end  
-
-            -- 3. Teleport only after collection  
-            Character = Player.Character  
-
-            if Character then  
-                Root = Character:FindFirstChild(  
-                    "HumanoidRootPart"  
-                )  
-
-                if Root then  
-                    Root.CFrame = CandyDestination  
-                end  
-            end  
-
-            print(  
-                "[Candy Farm] Candy collected; " ..  
-                "teleported to destination"  
-            )  
-
-            task.wait(1)  
+        if not Value then  
+            print("[Candy Farm] Stopped")  
+            return  
         end  
-    end)  
-end
 
+        task.spawn(function()  
+            while CandyFarmEnabled do  
+
+                -- Find candy folder  
+                local CandyFolder = workspace:FindFirstChild("HalloweenCandy")  
+                local Candy, Part  
+
+                if CandyFolder then  
+                    for _, Object in ipairs(CandyFolder:GetDescendants()) do  
+                        if not CandyFarmEnabled then break end  
+
+                        if string.match(Object.Name, "^Candy") then  
+                            local CandidatePart  
+
+                            if Object:IsA("BasePart") then  
+                                CandidatePart = Object  
+                            elseif Object:IsA("Model") then  
+                                CandidatePart = Object.PrimaryPart or Object:FindFirstChildWhichIsA("BasePart", true)  
+                            end  
+
+                            if CandidatePart then  
+                                Candy = Object  
+                                Part = CandidatePart  
+                                break  
+                            end  
+                        end  
+                    end  
+                end  
+
+                if not Candy or not Part then  
+                    warn("[Candy Farm] No candy found")  
+                    task.wait(2)  
+                    continue  
+                end  
+
+                -- Attempt pickup
+                local collected = TryPickupCandy(Candy)
+
+                if not CandyFarmEnabled then break end  
+
+                if not collected then  
+                    warn("[Candy Farm] Collection failed or timed out")  
+                    task.wait(1)  
+                    continue  
+                end  
+
+                -- Teleport back to dropoff destination after pickup
+                local Character = Player.Character  
+                if Character then  
+                    local Root = Character:FindFirstChild("HumanoidRootPart")  
+                    if Root then  
+                        Root.CFrame = CandyDestination  
+                    end  
+                end  
+
+                print("[Candy Farm] Candy collected; teleported to destination")  
+                task.wait(1)  
+            end  
+        end)  
+    end
 })
 
 --==================================================
