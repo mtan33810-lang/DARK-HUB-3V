@@ -3127,16 +3127,16 @@ task.spawn(function()
 
         task.wait(0.5)
 
+        if not CandyFarmEnabled then    
+            break    
+        end    
+
         -- Attempt candy pickup
         local Success = pcall(function()
             fireproximityprompt(Prompt)
         end)
 
 task.wait(0.5)
-
-        if not CandyFarmEnabled then    
-            break    
-        end    
 
         if not CandyFarmEnabled then
                     break
