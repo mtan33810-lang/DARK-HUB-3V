@@ -3051,6 +3051,7 @@ EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
 
 local CandyFarmEnabled = false
 local ResumeCandyAfterEgg = false
+local CandyTweenSpeed = 800
 local ProcessedCandy = {}
 
 local CandyDestination = CFrame.new(
@@ -3341,18 +3342,16 @@ EventTab:CreateToggle({
 -- 🍬 CANDY TWEEN SPEED SLIDER
 --==================================================
 
-local CandyTweenSpeed = 800
-
 EventTab:CreateSlider({
     name = "⚡ Candy Tween Speed",
     flag = "CandyTweenSpeed",
     range = {50, 1500},
     increment = 50,
     suffix = " studs/s",
-    currentValue = 800,
+    value = 800,
 
-    callback = function(Value)
-        CandyTweenSpeed = Value
+    callback = function(value)
+        CandyTweenSpeed = value
     end
 })
 
