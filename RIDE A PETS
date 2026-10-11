@@ -322,58 +322,30 @@ local VOLCANO_POSITION = CFrame.new(
     -3452.42
 )
 
-
 --==================================================
--- CHECK IF PLAYER IS HOLDING AN EGG
---==================================================
-
-local function IsHoldingEgg()
-    local Character = Player.Character
-    if not Character then
-        return false
-    end
-
-    for _, Object in ipairs(Character:GetChildren()) do
-        if Object:IsA("Tool")
-            and string.find(
-                string.lower(Object.Name),
-                "egg",
-                1,
-                true
-            )
-        then
-            return true
-        end
-    end
-
-    return false
-end
-
---==================================================
--- TWEEN TELEPORT - REQUIRE HELD EGG
+-- TWEEN TELEPORT 
 --==================================================
 
+-- Smooth Custom Position Tween
 local ActiveCustomTween = nil
 
 local function TweenToCustomPosition(TargetCFrame)
-    if not IsHoldingEgg() then
-        warn("[TWEEN] Cancelled: No egg held")
-        return false
-    end
-
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
     local Root = Character:WaitForChild("HumanoidRootPart")
 
+    -- Stop the previous custom-position tween
     if ActiveCustomTween then
         ActiveCustomTween:Cancel()
         ActiveCustomTween = nil
     end
 
-    local Distance =
-        (Root.Position - TargetCFrame.Position).Magnitude
+    local Distance = (
+        Root.Position - TargetCFrame.Position
+    ).Magnitude
 
+    -- Adjust speed here
     local Speed = 650
     local Duration = math.max(Distance / Speed, 0.1)
 
@@ -392,29 +364,13 @@ local function TweenToCustomPosition(TargetCFrame)
     ActiveCustomTween = Tween
     Tween:Play()
 
-    while Tween.PlaybackState == Enum.PlaybackState.Playing do
-        if not IsHoldingEgg() then
-            Tween:Cancel()
-
-            if ActiveCustomTween == Tween then
-                ActiveCustomTween = nil
-            end
-
-            warn("[TWEEN] Cancelled: Egg is no longer held")
-            return false
-        end
-
-        RunService.Heartbeat:Wait()
-    end
-
-    local Completed =
-        Tween.PlaybackState == Enum.PlaybackState.Completed
+    local Result = Tween.Completed:Wait()
 
     if ActiveCustomTween == Tween then
         ActiveCustomTween = nil
     end
 
-    return Completed and IsHoldingEgg()
+    return Result == Enum.PlaybackState.Completed
 end
 
 --==================================================
@@ -783,11 +739,6 @@ local function RunAfterEggPickup(Egg)
 
             local function TweenToMyPlot()
 
-            if not IsHoldingEgg() then
-                warn("[EGG FLOW] Cancelled My Plot tween: No egg held")
-                return false
-            end
-
                 local Character =
                     Player.Character
                     or Player.CharacterAdded:Wait()
@@ -828,16 +779,6 @@ local function RunAfterEggPickup(Egg)
 
                 while true do
 
-                if not IsHoldingEgg() then
-                    warn("[EGG FLOW] Stopped My Plot tween: Egg lost")
-                    return false
-                end
-
-                if not Root.Parent or Player.Character ~= Character then
-                    warn("[EGG FLOW] Stopped My Plot tween: Character changed")
-                    return false
-                end
-
                     local Alpha =
                         math.clamp(
                             (os.clock() - StartTime) / Duration,
@@ -865,11 +806,6 @@ local function RunAfterEggPickup(Egg)
 
                 end
 
-                if not IsHoldingEgg() then
-                    warn("[EGG FLOW] Arrival cancelled: Egg lost")
-                    return false
-                end
-
                 Root.CFrame =
                     TargetCFrame
 
@@ -877,6 +813,7 @@ local function RunAfterEggPickup(Egg)
 
                 return true
             end
+
 
 
             --==================================================
