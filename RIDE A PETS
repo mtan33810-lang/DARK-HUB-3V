@@ -3190,8 +3190,10 @@ local function FindPickupPrompt(Candy, Part, Timeout)
     return nil
 end
 
+
 --==================================================
 -- 🍬 AUTO CANDY FARM
+-- Teleport → Pick Up → Tween to Destination
 --==================================================
 
 EventTab:CreateToggle({
@@ -3229,7 +3231,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Teleport to candy
+                -- 1. TELEPORT TO CANDY
                 Root.CFrame = Part.CFrame
                     + Vector3.new(0, 3, 0)
 
@@ -3239,7 +3241,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Find pickup prompt
+                -- 2. FIND PICKUP PROMPT
                 local Prompt = FindPickupPrompt(
                     Candy,
                     Part,
@@ -3258,6 +3260,8 @@ EventTab:CreateToggle({
                             ErrorMessage
                         )
                     end
+                else
+                    warn("[Candy Farm] Pickup prompt not found")
                 end
 
                 task.wait(1)
@@ -3266,7 +3270,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- Return to destination
+                -- 3. TWEEN TO DESTINATION
                 Character = Player.Character
 
                 if Character then
@@ -3275,7 +3279,36 @@ EventTab:CreateToggle({
                     )
 
                     if Root then
-                        Root.CFrame = CandyDestination
+                        local Distance = (
+                            Root.Position
+                            - CandyDestination.Position
+                        ).Magnitude
+
+                        -- Adjust tween speed here
+                        local CandyTweenSpeed = 800
+
+                        local Duration = 2
+
+                        local Tween = TweenService:Create(
+                            Root,
+                            TweenInfo.new(
+                                Duration,
+                                Enum.EasingStyle.Linear,
+                                Enum.EasingDirection.Out
+                            ),
+                            {
+                                CFrame = CandyDestination
+                            }
+                        )
+
+                        Tween:Play()
+                        local PlaybackState =
+                            Tween.Completed:Wait()
+
+                        if PlaybackState
+                            ~= Enum.PlaybackState.Completed then
+                            break
+                        end
                     end
                 end
 
@@ -3287,6 +3320,7 @@ EventTab:CreateToggle({
         end)
     end
 })
+
 
 --==================================================
 -- AUTOMATIC TAB
