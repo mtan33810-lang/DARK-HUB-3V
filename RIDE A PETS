@@ -350,12 +350,17 @@ local function IsHoldingEgg()
 end
 
 --==================================================
--- TWEEN TELEPORT 
+-- TWEEN TELEPORT - REQUIRE HELD EGG
 --==================================================
 
 local ActiveCustomTween = nil
 
 local function TweenToCustomPosition(TargetCFrame)
+    if not IsHoldingEgg() then
+        warn("[TWEEN] Cancelled: No egg held")
+        return false
+    end
+
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
@@ -366,11 +371,9 @@ local function TweenToCustomPosition(TargetCFrame)
         ActiveCustomTween = nil
     end
 
-    local Distance = (
-        Root.Position - TargetCFrame.Position
-    ).Magnitude
+    local Distance =
+        (Root.Position - TargetCFrame.Position).Magnitude
 
-    -- Adjust speed here
     local Speed = 650
     local Duration = math.max(Distance / Speed, 0.1)
 
@@ -389,13 +392,29 @@ local function TweenToCustomPosition(TargetCFrame)
     ActiveCustomTween = Tween
     Tween:Play()
 
-    local Result = Tween.Completed:Wait()
+    while Tween.PlaybackState == Enum.PlaybackState.Playing do
+        if not IsHoldingEgg() then
+            Tween:Cancel()
+
+            if ActiveCustomTween == Tween then
+                ActiveCustomTween = nil
+            end
+
+            warn("[TWEEN] Cancelled: Egg is no longer held")
+            return false
+        end
+
+        RunService.Heartbeat:Wait()
+    end
+
+    local Completed =
+        Tween.PlaybackState == Enum.PlaybackState.Completed
 
     if ActiveCustomTween == Tween then
         ActiveCustomTween = nil
     end
 
-    return Result == Enum.PlaybackState.Completed
+    return Completed and IsHoldingEgg()
 end
 
 --==================================================
@@ -764,6 +783,11 @@ local function RunAfterEggPickup(Egg)
 
             local function TweenToMyPlot()
 
+            if not IsHoldingEgg() then
+                warn("[EGG FLOW] Cancelled My Plot tween: No egg held")
+                return false
+            end
+
                 local Character =
                     Player.Character
                     or Player.CharacterAdded:Wait()
@@ -804,6 +828,16 @@ local function RunAfterEggPickup(Egg)
 
                 while true do
 
+                if not IsHoldingEgg() then
+                    warn("[EGG FLOW] Stopped My Plot tween: Egg lost")
+                    return false
+                end
+
+                if not Root.Parent or Player.Character ~= Character then
+                    warn("[EGG FLOW] Stopped My Plot tween: Character changed")
+                    return false
+                end
+
                     local Alpha =
                         math.clamp(
                             (os.clock() - StartTime) / Duration,
@@ -829,6 +863,11 @@ local function RunAfterEggPickup(Egg)
 
                     RunService.Heartbeat:Wait()
 
+                end
+
+                if not IsHoldingEgg() then
+                    warn("[EGG FLOW] Arrival cancelled: Egg lost")
+                    return false
                 end
 
                 Root.CFrame =
