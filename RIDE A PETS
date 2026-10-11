@@ -1814,38 +1814,6 @@ TeleportsTab:CreateSlider({
 })
 
 --==================================================
--- MY PLOT SECTION
---==================================================
-
-TeleportsTab:CreateSection({ name = "Teleport Place", icon = nil })
-
-TeleportsTab:CreateButton({
-    name = "🏠 Teleport to Plot Now",
-    callback = function()
-    
-        TeleportToMyPlot()
-
-    end
-})
-
-TeleportsTab:CreateButton({
-    name = "🌋 Teleport to Volcano Now",
-    callback = function()
-        local Character = Player.Character
-        if not Character then return end
-
-        local RootPart = Character:FindFirstChild("HumanoidRootPart")
-        if not RootPart then return end
-
-        RootPart.CFrame = CFrame.new(
-            -4984.83,
-            41288.56,
-            -3625.90
-        )
-    end,
-})
-
---==================================================
 -- EGG RARITY SCANNER
 --==================================================
 
@@ -3367,6 +3335,38 @@ task.spawn(function()
     end
 end)
 
+--==================================================
+-- MY PLOT SECTION
+--==================================================
+
+AutomaticTab:CreateSection({ name = "Teleport Place", icon = nil })
+
+AutomaticTab:CreateButton({
+    name = "🏠 Teleport to Plot Now",
+    callback = function()
+    
+        TeleportToMyPlot()
+
+    end
+})
+
+T
+AutomaticTab:CreateButton({
+    name = "🌋 Teleport to Volcano Now",
+    callback = function()
+        local Character = Player.Character
+        if not Character then return end
+
+        local RootPart = Character:FindFirstChild("HumanoidRootPart")
+        if not RootPart then return end
+
+        RootPart.CFrame = CFrame.new(
+            -4984.83,
+            41288.56,
+            -3625.90
+        )
+    end,
+})
 
 --==================================================
 -- SETTING TAB
@@ -3481,6 +3481,10 @@ SettingTab:CreateToggle({
     callback = function(Value)
         SetNoclip(Value)
     end,
+})
+
+SettingTab:CreateSection({
+    name = "🎭 Performance "
 })
 
 --==================================================
