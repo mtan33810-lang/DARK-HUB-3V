@@ -3125,7 +3125,14 @@ task.spawn(function()
         Root.CFrame = Part.CFrame    
             + Vector3.new(0, 2, 0)    
 
-        task.wait(0.5)    
+        task.wait(0.5)
+
+        -- Attempt candy pickup
+        local Success = pcall(function()
+            fireproximityprompt(Prompt)
+        end)
+
+task.wait(0.5)
 
         if not CandyFarmEnabled then    
             break    
