@@ -3148,55 +3148,51 @@ task.spawn(function()
 --==================================================
 
 local function TryPickupCandy(candy)
-if not candy or not candy.Parent then
-return false
+    if not candy or not candy.Parent then
+        return false
+    end
+
+    local prompt = candy:FindFirstChildWhichIsA("ProximityPrompt", true)  
+
+    if not prompt then  
+        warn("Candy has no ProximityPrompt")  
+        return false  
+    end  
+
+    print("Candy prompt found:", prompt.Name)  
+    print("Hold duration:", prompt.HoldDuration)  
+
+    -- Move close enough for the prompt to activate.  
+    local character = game.Players.LocalPlayer.Character  
+    local root = character and character:FindFirstChild("HumanoidRootPart")  
+
+    local part = prompt.Parent  
+    if part:IsA("Attachment") then  
+        part = part.Parent  
+    end  
+
+    if not root or not part or not part:IsA("BasePart") then  
+        warn("Could not find candy's pickup part")  
+        return false  
+    end  
+
+    if (root.Position - part.Position).Magnitude > prompt.MaxActivationDistance then  
+        warn("Too far from candy prompt")  
+        return false  
+    end  
+
+    -- Executor-specific: this may not work in every environment.  
+    if typeof(fireproximityprompt) == "function" then  
+        fireproximityprompt(prompt)  
+        task.wait(math.max(prompt.HoldDuration, 0.5) + 0.5)  
+    else  
+        warn("fireproximityprompt is unavailable")  
+        return false  
+    end  
+
+    return candy.Parent == nil
 end
 
-local prompt = candy:FindFirstChildWhichIsA(  
-    "ProximityPrompt",  
-    true  
-)  
-
-if not prompt then  
-    warn("Candy has no ProximityPrompt")  
-    return false  
-end  
-
-print("Candy prompt found:", prompt.Name)  
-print("Hold duration:", prompt.HoldDuration)  
-
--- Move close enough for the prompt to activate.  
-local character = game.Players.LocalPlayer.Character  
-local root = character and character:FindFirstChild("HumanoidRootPart")  
-
-local part = prompt.Parent  
-if part:IsA("Attachment") then  
-    part = part.Parent  
-end  
-
-if not root or not part or not part:IsA("BasePart") then  
-    warn("Could not find candy's pickup part")  
-    return false  
-end  
-
-if (root.Position - part.Position).Magnitude >  
-    prompt.MaxActivationDistance then  
-    warn("Too far from candy prompt")  
-    return false  
-end  
-
--- Executor-specific: this may not work in every environment.  
-if typeof(fireproximityprompt) == "function" then  
-    fireproximityprompt(prompt)  
-    task.wait(math.max(prompt.HoldDuration, 0.5) + 0.5)  
-else  
-    warn("fireproximityprompt is unavailable")  
-    return false  
-end  
-
-return candy.Parent == nil
-
-end
 
 -- Wait for collection    
         local StartTime = os.clock()    
