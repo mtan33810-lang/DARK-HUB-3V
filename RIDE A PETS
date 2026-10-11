@@ -3405,7 +3405,6 @@ AutomaticTab:CreateButton({
     end
 })
 
-T
 AutomaticTab:CreateButton({
     name = "🌋 Teleport to Volcano Now",
     callback = function()
