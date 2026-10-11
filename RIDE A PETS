@@ -3287,7 +3287,7 @@ EventTab:CreateToggle({
                         -- Adjust tween speed here
                         local CandyTweenSpeed = 800
 
-                        local Duration = 1
+                        local Duration = 1.5
 
                         local Tween = TweenService:Create(
                             Root,
@@ -3521,32 +3521,48 @@ SettingTab:CreateButton({
 })
 
 --==================================================
--- REMOVE TREES
+-- 🌳 REMOVE TREES TOGGLE
 --==================================================
 
-SettingTab:CreateButton({
-    name = "🌳 Remove Trees",
+local RemoveTreesEnabled = false
 
-    callback = function()
-        local RemovedCount = 0
+local function RemoveTrees()
+local RemovedCount = 0
 
-        for _, Object in ipairs(workspace:GetDescendants()) do
-            if Object:IsA("Model")
-                or Object:IsA("BasePart") then
-
-                local Name = string.lower(Object.Name)
-
-                if string.find(Name, "tree", 1, true)
-                    and not Object:IsDescendantOf(Player.Character or workspace.Terrain) then
-
-                    Object:Destroy()
-                    RemovedCount += 1
-                end
-            end
-        end
-
-        print("[REMOVE TREES] Removed:", RemovedCount)
+for _, Object in ipairs(workspace:GetDescendants()) do
+    if not RemoveTreesEnabled then
+        break
     end
+
+    if Object:IsA("Model") or Object:IsA("BasePart") then
+        local Name = string.lower(Object.Name)
+
+        if string.find(Name, "tree", 1, true)
+            and not (Player.Character and Object:IsDescendantOf(Player.Character)) then
+
+            Object:Destroy()
+            RemovedCount += 1
+        end
+    end
+end
+
+print("[REMOVE TREES] Removed:", RemovedCount)
+
+end
+
+SettingTab:CreateToggle({
+name = "🌳 Remove Trees",
+flag = "RemoveTrees",
+value = false,
+
+callback = function(Value)
+    RemoveTreesEnabled = Value
+
+    if Value then
+        task.spawn(RemoveTrees)
+    end
+end
+
 })
 
 --==================================================
