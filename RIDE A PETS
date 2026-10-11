@@ -3427,7 +3427,7 @@ AutomaticTab:CreateButton({
 
 local SettingTab = Window:CreateTab({ name = "Setting", icon = 104919049969988 })
 
-SettingTab:CreateSection({ name = "⚙️ Setting", icon = nil })
+SettingTab:CreateSection({ name = "⚙️ Setting ", icon = nil })
 
 --==================================================
 -- ANTI-AFK
