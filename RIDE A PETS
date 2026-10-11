@@ -328,6 +328,7 @@ local VOLCANO_POSITION = CFrame.new(
 
 -- Smooth Custom Position Tween
 local ActiveCustomTween = nil
+local TweenTeleportSpeed = 650
 
 local function TweenToCustomPosition(TargetCFrame)
     local Character = Player.Character
@@ -346,8 +347,10 @@ local function TweenToCustomPosition(TargetCFrame)
     ).Magnitude
 
     -- Adjust speed here
-    local Speed = 650
-    local Duration = math.max(Distance / Speed, 0.1)
+    local Duration = math.max(
+        Distance / TweenTeleportSpeed,
+        0.1
+    )
 
     local Tween = TweenService:Create(
         Root,
@@ -769,7 +772,10 @@ local function RunAfterEggPickup(Egg)
                 local Distance =
                     (Root.Position - TargetCFrame.Position).Magnitude
 
-                local Duration = math.clamp(Distance / 150, 1, 4)
+                local Duration = math.max(
+                    Distance / TweenTeleportSpeed,
+                    0.1
+                )
 
                 local StartCFrame =
                     Root.CFrame
@@ -1791,7 +1797,21 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
     end
 })
 
+--==================================================
+-- 🚀 TWEEN TELEPORT SPEED
+--==================================================
 
+TeleportsTab:CreateSlider({
+    name = "Tween Teleport Speed",
+    range = {50, 1000},
+    increment = 25,
+    value = 650,
+    suffix = " studs/s",
+
+    callback = function(Value)
+        TweenTeleportSpeed = Value
+    end
+})
 
 --==================================================
 -- MY PLOT SECTION
