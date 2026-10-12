@@ -2445,14 +2445,12 @@ TeleportsTab:CreateToggle({
 
         AutoEggPickup = Value
 
-    -- Temporary 
-    if Value then
-    ResumeCandyAfterEgg = CandyFarmEnabled
-
-    if CandyFarmEnabled then
+    -- Temporary     
+    if Value and CandyFarmEnabled then
+        ResumeCandyAfterEgg = true
         CandyFarmEnabled = false
     end
-end
+
 
         if not Value then
             return
@@ -2932,15 +2930,21 @@ end
 
                     RunAfterEggPickup(Egg)
 
-                    while PostPickupRunning
-                        and AutoEggPickup
-                    do
+                    while PostPickupRunning and AutoEggPickup do
                         task.wait(0.1)
                     end
+
+-- RESUME CANDY TEMPORARY 
+if ResumeCandyAfterEgg then
+    ResumeCandyAfterEgg = false
+    CandyFarmEnabled = true
+    ProcessedCandy = {}
+end
 
                     if not AutoEggPickup then
                         break
                     end
+
 
 
                     --==================================================
@@ -2960,20 +2964,6 @@ end
         end)
     end
 })
-
---==================================================
--- RESUME CANDY FARM TEMPORARY
---==================================================
-
-local function ResumeCandyFarmAfterEgg()
-    if ResumeCandyAfterEgg then
-        task.wait(30) -- Delay  seconds
-
-        ResumeCandyAfterEgg = false
-        CandyFarmEnabled = true
-    end
-end
-
 
 --==================================================
 -- AUTO EGG WATCHER
