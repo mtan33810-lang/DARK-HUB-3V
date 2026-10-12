@@ -2431,6 +2431,12 @@ local AutoEggPickup = false
 local AutoEggWatcherRunning = false
 local AutoEggPickupToggle
 
+local CandyFarmEnabled = false
+local ResumeCandyAfterEgg = false
+local CandyTweenSpeed = 800
+local ProcessedCandy = {}
+local CandyFarmLoopRunning = false
+
 --==================================================
 -- AUTO EGG PICKUP
 --==================================================
@@ -2935,10 +2941,10 @@ TeleportsTab:CreateToggle({
                     end
 
 -- RESUME CANDY TEMPORARY 
-if ResumeCandyAfterEgg then
-    ResumeCandyAfterEgg = false
-    CandyFarmEnabled = true
+if ResumeCandyAfterEgg and AutoEggPickup then
     ProcessedCandy = {}
+    CandyFarmEnabled = true
+    ResumeCandyAfterEgg = false
 end
 
                     if not AutoEggPickup then
@@ -3038,11 +3044,6 @@ EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
 --==================================================
 -- 🍬 AUTO CANDY FARM SETTINGS
 --==================================================
-
-local CandyFarmEnabled = false
-local ResumeCandyAfterEgg = false
-local CandyTweenSpeed = 800
-local ProcessedCandy = {}
 
 local CandyDestination = CFrame.new(
     -45841.91,
@@ -3213,6 +3214,12 @@ EventTab:CreateToggle({
 
         ProcessedCandy = {}
 
+        if CandyFarmLoopRunning then
+            return
+        end
+
+        CandyFarmLoopRunning = true
+
         task.spawn(function()
             while CandyFarmEnabled do
                 local Candy, Part = FindCandy()
@@ -3355,6 +3362,7 @@ EventTab:CreateToggle({
 
                 task.wait(1)
             end
+            CandyFarmLoopRunning = false
         end)
     end
 })
