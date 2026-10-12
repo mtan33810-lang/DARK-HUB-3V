@@ -3288,7 +3288,7 @@ while CandyFarmEnabled do
                     )
                 end
 
-                task.wait(1)
+                task.wait(0.5)
 
                 if not CandyFarmEnabled then
                     break
