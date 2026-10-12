@@ -3597,9 +3597,48 @@ end
 
 })
 
+
 --==================================================
--- 🌱 REMOVE GRASS
+-- 🌱 REMOVE GRASS - FIX
 --==================================================
+
+local RemoveGrassEnabled = false
+local OriginalGrassTransparency = {}
+
+local function SetGrassVisibility(HideGrass)
+    local Terrain = workspace.Terrain
+
+    -- Hide terrain decorations
+    Terrain.Decoration = not HideGrass
+
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if Object:IsA("BasePart") then
+            local Name = string.lower(Object.Name)
+
+            if string.find(Name, "grass", 1, true) then
+                if HideGrass then
+                    if OriginalGrassTransparency[Object] == nil then
+                        OriginalGrassTransparency[Object] =
+                            Object.LocalTransparencyModifier
+                    end
+
+                    Object.LocalTransparencyModifier = 1
+                else
+                    local Original =
+                        OriginalGrassTransparency[Object]
+
+                    if Original ~= nil and Object.Parent then
+                        Object.LocalTransparencyModifier = Original
+                    end
+
+                    OriginalGrassTransparency[Object] = nil
+                end
+            end
+        end
+    end
+
+    print("[REMOVE GRASS] Enabled:", HideGrass)
+end
 
 SettingTab:CreateToggle({
     name = "🌱 Remove Grass",
@@ -3607,9 +3646,8 @@ SettingTab:CreateToggle({
     value = false,
 
     callback = function(Value)
-        local Terrain = workspace.Terrain
-
-        Terrain.Decoration = not Value
+        RemoveGrassEnabled = Value
+        SetGrassVisibility(Value)
     end
 })
 
