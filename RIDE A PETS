@@ -1802,7 +1802,7 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 --==================================================
 
 TeleportsTab:CreateSlider({
-    name = "Tween Teleport Speed",
+    name = "⚡ Egg Tween Speed",
     range = {50, 1000},
     increment = 25,
     value = 650,
