@@ -2257,32 +2257,6 @@ then
             RarityDropdown:Set(KeptSelections)
         end
     end
-
-    --==================================================
-    -- DEBUG
-    --==================================================
-
-    local TotalEggs = 0
-
-    for _, Rarity in ipairs(RarityOrder) do
-
-        local Count =
-            #(EggsByRarity[Rarity] or {})
-
-        TotalEggs =
-            TotalEggs + Count
-
-        print(
-            "[EGG SCANNER]",
-            Rarity,
-            Count
-        )
-    end
-
-    print(
-        "[EGG SCANNER] Total valid eggs:",
-        TotalEggs
-    )
 end
 
     --==================================================
