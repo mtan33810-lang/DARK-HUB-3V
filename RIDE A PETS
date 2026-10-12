@@ -3234,17 +3234,48 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- 1. TELEPORT TO CANDY
-                Root.CFrame = Part.CFrame
-                    + Vector3.new(0, 3, 0)
+                
+                -- 1. TWEEN TO DESTINATION FIRST AFTER RESUMING
+               if ResumeCandyAfterEgg then
+                   local Distance = (
+                       Root.Position - CandyDestination.Position
+                   ).Magnitude
+
+                   local Duration = math.max(
+                       Distance / math.max(CandyTweenSpeed, 1),
+                       0.1
+                   )
+
+                   local Tween = TweenService:Create(
+                       Root,
+                       TweenInfo.new(
+                           Duration,
+                           Enum.EasingStyle.Linear
+                       ),
+                       {CFrame = CandyDestination}
+                   )
+
+                   Tween:Play()
+                   Tween.Completed:Wait()
+
+                   if not CandyFarmEnabled then
+                       break
+                   end
+
+                       ResumeCandyAfterEgg = false
+                   end
+
+                -- 2. TELEPORT TO CANDY AND COLLECT IT
+                Root.CFrame = Part.CFrame + Vector3.new(0, 3, 0)
 
                 task.wait(0.5)
+
 
                 if not CandyFarmEnabled then
                     break
                 end
 
-                -- 2. FIND PICKUP PROMPT
+                -- 3. FIND PICKUP PROMPT
                 local Prompt = FindPickupPrompt(
                     Candy,
                     Part,
@@ -3275,7 +3306,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- 3. TWEEN TO DESTINATION
+                -- 4. TWEEN TO DESTINATION
                 Character = Player.Character
 
                 if Character then
