@@ -2458,9 +2458,38 @@ TeleportsTab:CreateToggle({
     end
 
 
-        if not Value then
-            return
-        end
+        
+if not Value then
+
+    -- Resume Candy Farm after egg pickup is switched off
+    if ResumeCandyAfterEgg then
+        task.spawn(function()
+            -- Wait for the egg post-pickup flow to finish
+            while PostPickupRunning do
+                task.wait(0.1)
+            end
+
+            -- Wait for the old candy loop to stop
+            while CandyFarmLoopRunning do
+                task.wait(0.1)
+            end
+
+            if ResumeCandyAfterEgg then
+                ProcessedCandy = {}
+                CandyFarmEnabled = true
+
+                -- Start the candy loop again
+                if AutoCandyFarmToggle then
+                    AutoCandyFarmToggle:Set(true)
+                end
+            end
+        end)
+    end
+
+
+    return
+end
+
 
         -- Always scan before checking eggs
         ScanEggs()
@@ -2939,31 +2968,6 @@ TeleportsTab:CreateToggle({
                     while PostPickupRunning and AutoEggPickup do
                         task.wait(0.1)
                     end
-
-
-
---==================================================
--- RESUME CANDY FARM AFTER EGG FLOW
---==================================================
-
-if ResumeCandyAfterEgg then
-    print("[Candy Farm] Resuming after egg flow")
-
-    -- Clear the resume request before restarting
-    ResumeCandyAfterEgg = false
-    ProcessedCandy = {}
-
-    -- Re-enable Candy Farm
-    CandyFarmEnabled = true
-
-    if AutoCandyFarmToggle then
-        AutoCandyFarmToggle:Set(true)
-    end
-
-    print("[Candy Farm] Resume requested")
-end
-
-
 
                     if not AutoEggPickup then
                         break
