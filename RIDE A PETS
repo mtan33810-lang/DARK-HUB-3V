@@ -2940,24 +2940,11 @@ TeleportsTab:CreateToggle({
                         task.wait(0.1)
                     end
 
--- RESUME CANDY TEMPORARY 
-if ResumeCandyAfterEgg then
+-- RESUME CANDY TEMPORARY
+if ResumeCandyAfterEgg and AutoEggPickup then
+    ProcessedCandy = {}
+    CandyFarmEnabled = true
     ResumeCandyAfterEgg = false
-
-    task.spawn(function()
-        -- Wait for the previous worker to exit
-        while CandyFarmLoopRunning do
-            task.wait(0.1)
-        end
-
-        -- Restart the Candy Farm toggle
-        if AutoCandyFarmToggle then
-            AutoCandyFarmToggle:Set(false)
-            task.wait(0.2)
-            ProcessedCandy = {}
-            AutoCandyFarmToggle:Set(true)
-        end
-    end)
 end
 
                     if not AutoEggPickup then
