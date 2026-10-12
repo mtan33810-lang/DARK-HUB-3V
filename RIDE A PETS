@@ -3238,9 +3238,10 @@ EventTab:CreateToggle({
 
         task.spawn(function()
             
+
 while CandyFarmEnabled do
 
-    -- Resume destination tween BEFORE searching for candy
+    -- TELEPORT TO DESTINATION AFTER EGG FLOW
     if ResumeCandyAfterEgg then
         local Character = Player.Character
             or Player.CharacterAdded:Wait()
@@ -3249,40 +3250,12 @@ while CandyFarmEnabled do
             "HumanoidRootPart"
         )
 
-        local Distance = (
-            Root.Position - CandyDestination.Position
-        ).Magnitude
-
-        local Duration = math.max(
-            Distance / math.max(CandyTweenSpeed, 1),
-            0.1
-        )
-
-        local Tween = TweenService:Create(
-            Root,
-            TweenInfo.new(
-                Duration,
-                Enum.EasingStyle.Linear
-            ),
-            {CFrame = CandyDestination}
-        )
-
-        Tween:Play()
-
-        local PlaybackState = Tween.Completed:Wait()
-
-        if PlaybackState ~= Enum.PlaybackState.Completed then
-            break
-        end
-
-        if not CandyFarmEnabled then
-            break
-        end
+        Root.CFrame = CandyDestination
 
         ResumeCandyAfterEgg = false
     end
 
-    -- Continue normal candy collection
+    -- FIND CANDY
     local Candy, Part = FindCandy()
 
     if not Candy or not Part then
