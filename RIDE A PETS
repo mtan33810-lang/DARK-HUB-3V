@@ -3598,6 +3598,22 @@ end
 })
 
 --==================================================
+-- 🌱 REMOVE GRASS
+--==================================================
+
+EventTab:CreateToggle({
+    name = "🌱 Remove Grass",
+    flag = "RemoveGrass",
+    value = false,
+
+    callback = function(Value)
+        local Terrain = workspace.Terrain
+
+        Terrain.Decoration = not Value
+    end
+})
+
+--==================================================
 -- REMOVE OTHER PLAYER PLOTS 
 --==================================================
 
