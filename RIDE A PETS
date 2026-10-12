@@ -3601,7 +3601,7 @@ end
 -- 🌱 REMOVE GRASS
 --==================================================
 
-EventTab:CreateToggle({
+SettingTab:CreateToggle({
     name = "🌱 Remove Grass",
     flag = "RemoveGrass",
     value = false,
