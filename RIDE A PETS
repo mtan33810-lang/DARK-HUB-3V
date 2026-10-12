@@ -3256,7 +3256,7 @@ while CandyFarmEnabled do
                 end
 
                 -- 1. TELEPORT TO CANDY AND COLLECT IT
-                Root.CFrame = Part.CFrame + Vector3.new(0, 3, 0)
+                Root.CFrame = Part.CFrame
 
                 task.wait(0.5)
 
@@ -3290,7 +3290,7 @@ while CandyFarmEnabled do
                     )
                 end
 
-                task.wait(1)
+                task.wait(0.5)
 
                 if not CandyFarmEnabled then
                     break
