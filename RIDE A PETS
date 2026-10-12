@@ -2941,25 +2941,28 @@ TeleportsTab:CreateToggle({
                     end
 
 
+
 --==================================================
 -- RESUME CANDY FARM AFTER EGG FLOW
 --==================================================
 
-if ResumeCandyAfterEgg and AutoEggPickup then
+if ResumeCandyAfterEgg then
+    print("[Candy Farm] Resuming after egg flow")
+
+    -- Clear the resume request before restarting
+    ResumeCandyAfterEgg = false
     ProcessedCandy = {}
 
-    -- Let the previous Candy Farm loop finish
-    while CandyFarmLoopRunning do
-        task.wait(0.1)
-    end
+    -- Re-enable Candy Farm
+    CandyFarmEnabled = true
 
     if AutoCandyFarmToggle then
-        -- Restart through the toggle callback
         AutoCandyFarmToggle:Set(true)
-    else
-        CandyFarmEnabled = true
     end
+
+    print("[Candy Farm] Resume requested")
 end
+
 
 
                     if not AutoEggPickup then
