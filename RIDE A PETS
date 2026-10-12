@@ -2940,12 +2940,27 @@ TeleportsTab:CreateToggle({
                         task.wait(0.1)
                     end
 
--- RESUME CANDY TEMPORARY
+
+--==================================================
+-- RESUME CANDY FARM AFTER EGG FLOW
+--==================================================
+
 if ResumeCandyAfterEgg and AutoEggPickup then
     ProcessedCandy = {}
-    CandyFarmEnabled = true
-    ResumeCandyAfterEgg = false
+
+    -- Let the previous Candy Farm loop finish
+    while CandyFarmLoopRunning do
+        task.wait(0.1)
+    end
+
+    if AutoCandyFarmToggle then
+        -- Restart through the toggle callback
+        AutoCandyFarmToggle:Set(true)
+    else
+        CandyFarmEnabled = true
+    end
 end
+
 
                     if not AutoEggPickup then
                         break
@@ -3222,13 +3237,59 @@ EventTab:CreateToggle({
         CandyFarmLoopRunning = true
 
         task.spawn(function()
-            while CandyFarmEnabled do
-                local Candy, Part = FindCandy()
+            
+while CandyFarmEnabled do
 
-                if not Candy or not Part then
-                    task.wait(2)
-                    continue
-                end
+    -- Resume destination tween BEFORE searching for candy
+    if ResumeCandyAfterEgg then
+        local Character = Player.Character
+            or Player.CharacterAdded:Wait()
+
+        local Root = Character:WaitForChild(
+            "HumanoidRootPart"
+        )
+
+        local Distance = (
+            Root.Position - CandyDestination.Position
+        ).Magnitude
+
+        local Duration = math.max(
+            Distance / math.max(CandyTweenSpeed, 1),
+            0.1
+        )
+
+        local Tween = TweenService:Create(
+            Root,
+            TweenInfo.new(
+                Duration,
+                Enum.EasingStyle.Linear
+            ),
+            {CFrame = CandyDestination}
+        )
+
+        Tween:Play()
+
+        local PlaybackState = Tween.Completed:Wait()
+
+        if PlaybackState ~= Enum.PlaybackState.Completed then
+            break
+        end
+
+        if not CandyFarmEnabled then
+            break
+        end
+
+        ResumeCandyAfterEgg = false
+    end
+
+    -- Continue normal candy collection
+    local Candy, Part = FindCandy()
+
+    if not Candy or not Part then
+        task.wait(2)
+        continue
+    end
+
 
                 -- Get character
                 local Character = Player.Character
@@ -3242,38 +3303,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                
-                -- 1. TWEEN TO DESTINATION FIRST AFTER RESUMING
-               if ResumeCandyAfterEgg then
-                   local Distance = (
-                       Root.Position - CandyDestination.Position
-                   ).Magnitude
-
-                   local Duration = math.max(
-                       Distance / math.max(CandyTweenSpeed, 1),
-                       0.1
-                   )
-
-                   local Tween = TweenService:Create(
-                       Root,
-                       TweenInfo.new(
-                           Duration,
-                           Enum.EasingStyle.Linear
-                       ),
-                       {CFrame = CandyDestination}
-                   )
-
-                   Tween:Play()
-                   Tween.Completed:Wait()
-
-                   if not CandyFarmEnabled then
-                       break
-                   end
-
-                       ResumeCandyAfterEgg = false
-                   end
-
-                -- 2. TELEPORT TO CANDY AND COLLECT IT
+                -- 1. TELEPORT TO CANDY AND COLLECT IT
                 Root.CFrame = Part.CFrame + Vector3.new(0, 3, 0)
 
                 task.wait(0.5)
@@ -3283,7 +3313,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- 3. FIND PICKUP PROMPT
+                -- 2. FIND PICKUP PROMPT
                 local Prompt = FindPickupPrompt(
                     Candy,
                     Part,
@@ -3314,7 +3344,7 @@ EventTab:CreateToggle({
                     break
                 end
 
-                -- 4. TWEEN TO DESTINATION
+                -- 3. TWEEN TO DESTINATION
                 Character = Player.Character
 
                 if Character then
