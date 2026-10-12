@@ -3236,7 +3236,21 @@ EventTab:CreateToggle({
 
         task.spawn(function()
             while CandyFarmEnabled do
-                local Candy, Part = FindCandy()
+
+    if ResumeCandyAfterEgg then
+        local Character = Player.Character
+            or Player.CharacterAdded:Wait()
+        local Root = Character:WaitForChild("HumanoidRootPart")
+
+        if not CandyFarmEnabled then break end
+
+        Root.CFrame = CandyDestination
+        task.wait(0.3)
+
+        ResumeCandyAfterEgg = false
+    end
+
+    local Candy, Part = FindCandy()
 
                 if not Candy or not Part then
                     task.wait(2)
