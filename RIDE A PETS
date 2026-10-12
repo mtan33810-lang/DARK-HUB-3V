@@ -2427,9 +2427,8 @@ end)
 -- AUTO EGG PICKUP
 --==================================================
 
-local AutoEggPickup = false
-local AutoEggWatcherRunning = false
 local AutoEggPickupToggle
+local AutoCandyFarmToggle
 
 local CandyFarmEnabled = false
 local ResumeCandyAfterEgg = false
@@ -2461,31 +2460,29 @@ TeleportsTab:CreateToggle({
         
 if not Value then
 
-    -- Resume Candy Farm after egg pickup is switched off
     if ResumeCandyAfterEgg then
         task.spawn(function()
-            -- Wait for the egg post-pickup flow to finish
+            -- Wait for egg flow to finish
             while PostPickupRunning do
                 task.wait(0.1)
             end
 
-            -- Wait for the old candy loop to stop
+            -- Wait for the old candy loop to exit
             while CandyFarmLoopRunning do
                 task.wait(0.1)
             end
 
             if ResumeCandyAfterEgg then
                 ProcessedCandy = {}
-                CandyFarmEnabled = true
 
-                -- Start the candy loop again
                 if AutoCandyFarmToggle then
                     AutoCandyFarmToggle:Set(true)
+                else
+                    CandyFarmEnabled = true
                 end
             end
         end)
     end
-
 
     return
 end
@@ -3222,7 +3219,7 @@ end
 -- Teleport → Pick Up → Tween to Destination
 --==================================================
 
-local AutoCandyFarmToggle =
+AutoCandyFarmToggle =
 EventTab:CreateToggle({
     name = "🍬 Auto Candy Farm",
     flag = "AutoCandyFarm",
