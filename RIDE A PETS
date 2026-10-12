@@ -2430,6 +2430,7 @@ end)
 local AutoEggPickupToggle
 local AutoCandyFarmToggle
 
+--Temporary
 local CandyFarmEnabled = false
 local ResumeCandyAfterEgg = false
 local CandyTweenSpeed = 800
@@ -2459,7 +2460,7 @@ TeleportsTab:CreateToggle({
 
         
 if not Value then
-
+    -- Temporary 
     if ResumeCandyAfterEgg then
         task.spawn(function()
             -- Wait for egg flow to finish
