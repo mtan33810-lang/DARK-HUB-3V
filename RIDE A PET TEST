@@ -873,18 +873,18 @@ local function RunAfterEggPickup(Egg)
         local Success, ErrorMessage = pcall(function()
 
             
+
 --==================================================
--- FLY TO MY PLOT
+-- FLY TO MY PLOT - NO TWEEN / NO TELEPORT
 --==================================================
 
 local function TweenToMyPlot()
 
-    local Character =
-        Player.Character
+    local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
+    local Root = Character:WaitForChild("HumanoidRootPart")
+    local Humanoid = Character:WaitForChild("Humanoid")
 
     local Plot = FindMyPlot()
 
@@ -893,30 +893,89 @@ local function TweenToMyPlot()
         return false
     end
 
-    local PlotCFrame =
-        GetPlotCFrame(Plot)
+    local PlotCFrame = GetPlotCFrame(Plot)
 
     if not PlotCFrame then
         warn("[EGG FLOW] Plot position not found")
         return false
     end
 
-    local TargetCFrame =
-        PlotCFrame + Vector3.new(0, 5, 0)
+    local TargetPosition =
+        (PlotCFrame + Vector3.new(0, 5, 0)).Position
 
-    print("[EGG FLOW] Flying to My Plot")
+    print("[EGG FLOW] Flying to plot using FlySpeed:", FlySpeed)
 
-    local Success =
-        FlyToPosition(TargetCFrame)
+    -- Disable the regular flight controller while traveling
+    local WasFlying = Flying
+    StopFly()
 
-    if Success then
-        print("[EGG FLOW] Arrived at My Plot")
-    else
-        warn("[EGG FLOW] Flight to My Plot failed")
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "PlotFlightAttachment"
+    Attachment.Parent = Root
+
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "PlotFlightVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.MaxForce = math.huge
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.Parent = Root
+
+    Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+
+    local Arrived = false
+
+    while Character.Parent and Root.Parent do
+        local Offset = TargetPosition - Root.Position
+        local Distance = Offset.Magnitude
+
+        if Distance <= 4 then
+            Arrived = true
+            break
+        end
+
+        -- Read the slider value continuously
+        local Speed = math.max(FlySpeed, 10)
+
+        Velocity.VectorVelocity =
+            Offset.Unit * math.min(Speed, Distance)
+
+        RunService.Heartbeat:Wait()
     end
 
-    return Success
+    -- Clean up movement controller
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
+
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
+
+    if Root.Parent then
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    if WasFlying and Character.Parent then
+        StartFly()
+    elseif Humanoid.Parent then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.GettingUp
+        )
+    end
+
+    if Arrived then
+        print("[EGG FLOW] Arrived at plot")
+    else
+        warn("[EGG FLOW] Flight interrupted")
+    end
+
+    return Arrived
 end
+
 
             --==================================================
             -- FIND PICKUP PROMPT
