@@ -3051,27 +3051,37 @@ local function FindCandy()
     local Folder = workspace:FindFirstChild("HalloweenCandy")
 
     if not Folder then
+        warn("[Candy Farm] HalloweenCandy folder not found!")
         return nil, nil
     end
 
-    for _, Candy in ipairs(Folder:GetChildren()) do
+    -- Check direct children and nested objects
+    local Items = Folder:GetChildren()
+
+    for _, Object in ipairs(Folder:GetDescendants()) do
+        table.insert(Items, Object)
+    end
+
+    for _, Candy in ipairs(Items) do
         if not CandyFarmEnabled then
             return nil, nil
         end
 
-        if not ProcessedCandy[Candy] then
+        if (Candy:IsA("BasePart") or Candy:IsA("Model"))
+            and Candy.Name:match("^Candy_%d+$")
+            and not ProcessedCandy[Candy] then
+
             local Part
 
             if Candy:IsA("BasePart") then
                 Part = Candy
-            elseif Candy:IsA("Model") then
+            else
                 Part = Candy.PrimaryPart
-                    or Candy:FindFirstChildWhichIsA(
-                        "BasePart", true
-                    )
+                    or Candy:FindFirstChildWhichIsA("BasePart", true)
             end
 
             if Part then
+                print("[Candy Farm] Found:", Candy:GetFullName())
                 return Candy, Part
             end
         end
