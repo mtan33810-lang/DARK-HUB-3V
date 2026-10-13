@@ -893,58 +893,20 @@ local function RunAfterEggPickup(Egg)
 
                 print("[EGG FLOW] Tweening to My Plot")
 
-                local Distance =
-                    (Root.Position - TargetCFrame.Position).Magnitude
+                
+                print("[EGG FLOW] Flying to My Plot")
 
-                local Duration = math.max(
-                    Distance / TweenTeleportSpeed,
-                    0.1
-                )
+                local Success = FlyToPosition(TargetCFrame)
 
-                local StartCFrame =
-                    Root.CFrame
-
-                local StartTime =
-                    os.clock()
-
-                while true do
-
-                    local Alpha =
-                        math.clamp(
-                            (os.clock() - StartTime) / Duration,
-                            0,
-                            1
-                        )
-
-                    Root.CFrame =
-                        StartCFrame:Lerp(
-                            TargetCFrame,
-                            Alpha
-                        )
-
-                    Root.AssemblyLinearVelocity =
-                        Vector3.zero
-
-                    Root.AssemblyAngularVelocity =
-                        Vector3.zero
-
-                    if Alpha >= 1 then
-                        break
-                    end
-
-                    RunService.Heartbeat:Wait()
-
+                if Success then
+                    print("[EGG FLOW] Arrived at My Plot")
                 end
 
-                Root.CFrame =
-                    TargetCFrame
-
-                print("[EGG FLOW] Arrived at My Plot")
-
-                return true
+                return Success
             end
 
-                        --==================================================
+
+            --==================================================
             -- FIND PICKUP PROMPT
             --==================================================
 
