@@ -787,7 +787,7 @@ end
 -- POST EGG PICKUP FLOW - FIXED
 --==================================================
 
-local VolcanoPostDelay = 10
+local VolcanoPostDelay = 0
 local EggDropPostDelay = 3
 
 local function RunAfterEggPickup(Egg)
