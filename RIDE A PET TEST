@@ -639,7 +639,7 @@ local function TweenToSavedPosition()
 end
 
 --==================================================
--- INSTANT TELEPORT TO VOLCANO + DIP
+-- 🌋 FLY TO VOLCANO + DIP
 --==================================================
 
 local function TweenToVolcanoDip()
@@ -648,18 +648,46 @@ local function TweenToVolcanoDip()
         return false
     end
 
-    local Character =
-        Player.Character
+    local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
+    local Root = Character:WaitForChild("HumanoidRootPart")
 
-    Root.CFrame =
-        VOLCANO_POSITION
+    local Speed = 650
+    local TargetPosition = VOLCANO_POSITION.Position
+    local StartTime = os.clock()
+
+    -- Fly toward the volcano
+    while Root.Parent do
+
+        local Offset = TargetPosition - Root.Position
+        local Distance = Offset.Magnitude
+
+        if Distance <= 4 then
+            break
+        end
+
+        -- Stop if movement takes too long
+        if os.clock() - StartTime > (Distance / Speed) + 15 then
+            Root.AssemblyLinearVelocity = Vector3.zero
+            warn("[VOLCANO] Flight timed out")
+            return false
+        end
+
+        Root.AssemblyLinearVelocity =
+            Offset.Unit * Speed
+
+        RunService.Heartbeat:Wait()
+    end
+
+    -- Stop at the destination
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+    Root.CFrame = VOLCANO_POSITION
 
     task.wait(0.5)
 
+    -- Find VolcanoDip event
     local Packages =
         ReplicatedStorage:FindFirstChild("packages")
 
@@ -670,9 +698,11 @@ local function TweenToVolcanoDip()
         Net and Net:FindFirstChild("RE/VolcanoDip")
 
     if Event then
-
         Event:FireServer()
-
+        print("[VOLCANO] Dip event fired")
+    else
+        warn("[VOLCANO] VolcanoDip event not found")
+        return false
     end
 
     return true
