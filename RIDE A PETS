@@ -3368,6 +3368,144 @@ EventTab:CreateSlider({
 })
 
 --==================================================
+-- 🍬 AUTO BUY HALLOWEEN EGG
+--==================================================
+
+local running = false
+
+local function runOnce()
+    local Character = Player.Character or Player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    -- 1. Teleport to exact coordinates
+    hrp.CFrame = CFrame.new(
+        -45758.45,
+        40377.75,
+        -20296.57
+    )
+
+    task.wait(1)
+
+    -- 2. Find the nearest Talk prompt
+    Character = Player.Character
+    hrp = Character and Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        warn("Character not found")
+        return
+    end
+
+    local closestPrompt
+    local closestDistance = math.huge
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Enabled then
+            local parent = obj.Parent
+            local pos
+
+            if parent:IsA("BasePart") then
+                pos = parent.Position
+            elseif parent:IsA("Attachment") then
+                pos = parent.WorldPosition
+            end
+
+            if pos then
+                local promptText =
+                    (obj.ActionText .. " " .. obj.ObjectText):lower()
+
+                if promptText:find("talk", 1, true) then
+                    local distance = (pos - hrp.Position).Magnitude
+
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPrompt = obj
+                    end
+                end
+            end
+        end
+    end
+
+    -- 3. Activate Talk
+    if not closestPrompt then
+        warn("No Talk prompt found")
+        return
+    end
+
+    if not fireproximityprompt then
+        warn("fireproximityprompt unavailable")
+        return
+    end
+
+    fireproximityprompt(closestPrompt)
+    task.wait(0.5)
+
+    -- 4. Select "Show me!"
+    local dialogue = ReplicatedStorage:WaitForChild("Dialogue")
+    local dialogueEvent = dialogue
+        :WaitForChild("Remotes")
+        :WaitForChild("DialogueSelect")
+
+    local halloween = workspace
+        :WaitForChild("ShopGuy")
+        :WaitForChild("Halloween")
+
+    dialogueEvent:FireServer(halloween, "Show me!")
+    task.wait(2)
+
+-- 5. Buy Halloween Egg 5 times
+local buyEvent = ReplicatedStorage
+    :WaitForChild("Remotes")
+    :WaitForChild("Game")
+    :WaitForChild("BuyHalloweenEgg")
+
+for i = 1, 5 do
+    if not running then
+        break
+    end
+
+    local success, result = pcall(function()
+        return buyEvent:InvokeServer("Halloween Egg")
+    end)
+
+    if success then
+        print("Halloween Egg purchase request:", i, "/ 5")
+    else
+        warn("Purchase failed:", result)
+    end
+
+    task.wait(0.5)
+end
+
+EventTab:CreateToggle({
+    name = "Auto Buy Halloween Egg",
+    value = false,
+    flag = "AutoBuyHalloweenEgg",
+
+    callback = function(Value)
+        running = Value
+
+        if running then
+            task.spawn(function()
+                while running do
+                    local success, err = pcall(runOnce)
+
+                    if not success then
+                        warn("Loop error:", err)
+                    end
+
+                    -- Wait before starting the next cycle
+                    for i = 1, 5 do
+                        if not running then
+                            break
+                        end
+                        task.wait(0.5)
+                    end
+                end
+            end)
+        end
+    end
+})
+
+--==================================================
 -- AUTOMATIC TAB
 --==================================================
 
