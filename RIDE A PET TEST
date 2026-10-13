@@ -2627,7 +2627,7 @@ or tostring(Egg.Name) == "Bloom Egg" then
         CFrame.new(-5042.11, 41271.99, -3520.53)
     }
 
-    local Speed = 250
+    local Speed = 300
 
     local Character = HRP.Parent
     local Attachment = Instance.new("Attachment")
@@ -2779,38 +2779,44 @@ end
                     task.wait(0.8)
 
 --==================================================
--- 🌋 VOLCANIC / BLOOM EGG REVERSE FLY
--- 4 → 3 → 2 → 1
+-- 🌋 VOLCANIC / BLOOM EGG REVERSE
+-- 4 = TELEPORT | 3 → 2 → 1 = FLY
 --==================================================
 
 if tostring(Egg.Name) == "Volcanic Egg"
 or tostring(Egg.Name) == "Bloom Egg" then
 
     local Locations = {
-        CFrame.new(-4732.12, 41678.94, -3945.08),
-        CFrame.new(-4904.99, 41296.87, -3726.62),
-        CFrame.new(-4984.83, 41288.56, -3625.90),
-        CFrame.new(-5042.11, 41271.99, -3520.53)
+        CFrame.new(-4732.12, 41678.94, -3945.08), -- 1
+        CFrame.new(-4904.99, 41296.87, -3726.62), -- 2
+        CFrame.new(-4984.83, 41288.56, -3625.90), -- 3
+        CFrame.new(-5042.11, 41271.99, -3520.53)  -- 4
     }
 
-    local Speed = 250
+    local Speed = 300
 
-    -- Refresh character and HRP
+    -- Refresh character
     local Character = Player.Character
-
     if not Character then
         task.wait(0.5)
         continue
     end
 
     HRP = Character:FindFirstChild("HumanoidRootPart")
-
     if not HRP then
         task.wait(0.5)
         continue
     end
 
-    -- Create flight objects
+    -- LOCATION 4: INSTANT TELEPORT
+    HRP.CFrame = Locations[4]
+    task.wait(1)
+
+    if not AutoEggPickup then
+        continue
+    end
+
+    -- Flight objects for locations 3, 2, 1
     local Attachment = Instance.new("Attachment")
     Attachment.Name = "EggReverseFlyAttachment"
     Attachment.Parent = HRP
@@ -2821,11 +2827,11 @@ or tostring(Egg.Name) == "Bloom Egg" then
     Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
     Velocity.VelocityConstraintMode =
         Enum.VelocityConstraintMode.Vector
-    Velocity.VectorVelocity = Vector3.zero
     Velocity.MaxForce = math.huge
+    Velocity.VectorVelocity = Vector3.zero
     Velocity.Parent = HRP
 
-    local function FlyBack(TargetCFrame)
+    local function FlyTo(TargetCFrame)
         while AutoEggPickup and HRP and HRP.Parent do
             local Offset = TargetCFrame.Position - HRP.Position
             local Distance = Offset.Magnitude
@@ -2850,23 +2856,18 @@ or tostring(Egg.Name) == "Bloom Egg" then
         end
     end
 
-    -- REVERSE PATH: 4 → 3 → 2 → 1
-    for Index = 4, 1, -1 do
+    -- FLY: LOCATION 3 → 2 → 1
+    for Index = 3, 1, -1 do
         if not AutoEggPickup then
             break
         end
 
-        FlyBack(Locations[Index])
+        FlyTo(Locations[Index])
     end
 
     -- Cleanup
-    if Velocity.Parent then
-        Velocity:Destroy()
-    end
-
-    if Attachment.Parent then
-        Attachment:Destroy()
-    end
+    Velocity:Destroy()
+    Attachment:Destroy()
 
 end
 
