@@ -860,51 +860,51 @@ local function RunAfterEggPickup(Egg)
 
         local Success, ErrorMessage = pcall(function()
 
-            --==================================================
-            -- TWEEN TO MY PLOT
-            --==================================================
+            
+--==================================================
+-- FLY TO MY PLOT
+--==================================================
 
-            local function TweenToMyPlot()
+local function TweenToMyPlot()
 
-                local Character =
-                    Player.Character
-                    or Player.CharacterAdded:Wait()
+    local Character =
+        Player.Character
+        or Player.CharacterAdded:Wait()
 
-                local Root =
-                    Character:WaitForChild("HumanoidRootPart")
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
 
-                local Plot = FindMyPlot()
+    local Plot = FindMyPlot()
 
-                if not Plot then
-                    warn("[EGG FLOW] My plot not found")
-                    return false
-                end
+    if not Plot then
+        warn("[EGG FLOW] My plot not found")
+        return false
+    end
 
-                local PlotCFrame =
-                    GetPlotCFrame(Plot)
+    local PlotCFrame =
+        GetPlotCFrame(Plot)
 
-                if not PlotCFrame then
-                    warn("[EGG FLOW] Plot position not found")
-                    return false
-                end
+    if not PlotCFrame then
+        warn("[EGG FLOW] Plot position not found")
+        return false
+    end
 
-                local TargetCFrame =
-                    PlotCFrame + Vector3.new(0, 5, 0)
+    local TargetCFrame =
+        PlotCFrame + Vector3.new(0, 5, 0)
 
-                print("[EGG FLOW] Tweening to My Plot")
+    print("[EGG FLOW] Flying to My Plot")
 
-                
-                print("[EGG FLOW] Flying to My Plot")
+    local Success =
+        FlyToPosition(TargetCFrame)
 
-                local Success = FlyToPosition(TargetCFrame)
+    if Success then
+        print("[EGG FLOW] Arrived at My Plot")
+    else
+        warn("[EGG FLOW] Flight to My Plot failed")
+    end
 
-                if Success then
-                    print("[EGG FLOW] Arrived at My Plot")
-                end
-
-                return Success
-            end
-
+    return Success
+end
 
             --==================================================
             -- FIND PICKUP PROMPT
