@@ -3197,6 +3197,7 @@ end
 AutoCandyFarmToggle =
 EventTab:CreateToggle({
     name = "🍬 Auto Candy Farm",
+    description = "Ride your best pet before turning on",
     flag = "AutoCandyFarm",
     value = false,
 
@@ -3375,7 +3376,7 @@ local running = false
 
 local function runOnce()
     local Character = Player.Character or Player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
+    local hrp = Character:WaitForChild("HumanoidRootPart")
 
     -- 1. Teleport to exact coordinates
     hrp.CFrame = CFrame.new(
