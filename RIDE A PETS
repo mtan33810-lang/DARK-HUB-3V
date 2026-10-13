@@ -3387,75 +3387,22 @@ local function runOnce()
         -20296.57
     )
 
-    task.wait(1)
+    -- 2. Open Halloween Shop
+    local Event = game:GetService("ReplicatedStorage")
+        :WaitForChild("Remotes")
+        :WaitForChild("Game")
+        :WaitForChild("OpenHalloweenShop")
 
-    -- 2. Find nearest Talk prompt
-    Character = Player.Character
-    hrp = Character and Character:FindFirstChild("HumanoidRootPart")
-
-    if not hrp then
-        warn("Character not found")
-        return
+    if firesignal then
+        firesignal(Event.OnClientEvent)
+    else
+        warn("firesignal unavailable")
     end
 
-    local closestPrompt
-    local closestDistance = math.huge
-
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("ProximityPrompt") and obj.Enabled then
-            local parent = obj.Parent
-            local pos
-
-            if parent:IsA("BasePart") then
-                pos = parent.Position
-            elseif parent:IsA("Attachment") then
-                pos = parent.WorldPosition
-            end
-
-            if pos then
-                local promptText =
-                    (obj.ActionText .. " " .. obj.ObjectText):lower()
-
-                if promptText:find("talk", 1, true) then
-                    local distance = (pos - hrp.Position).Magnitude
-
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPrompt = obj
-                    end
-                end
-            end
-        end
-    end
-
-    if not closestPrompt then
-        warn("No Talk prompt found")
-        return
-    end
-
-    if not fireproximityprompt then
-        warn("fireproximityprompt unavailable")
-        return
-    end
-
-    fireproximityprompt(closestPrompt)
     task.wait(0.5)
 
-    -- 3. Select "Show me!"
-    local dialogue = ReplicatedStorage:WaitForChild("Dialogue")
-    local dialogueEvent = dialogue
-        :WaitForChild("Remotes")
-        :WaitForChild("DialogueSelect")
-
-    local halloween = workspace
-        :WaitForChild("ShopGuy")
-        :WaitForChild("Halloween")
-
-    dialogueEvent:FireServer(halloween, "Show me!")
-    task.wait(2)
-
-    -- 4. Buy 5 eggs
-    local buyEvent = ReplicatedStorage
+    -- 3. Buy 5 Halloween Eggs
+    local buyEvent = game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
         :WaitForChild("Game")
         :WaitForChild("BuyHalloweenEgg")
@@ -3477,14 +3424,14 @@ local function runOnce()
 
         task.wait(0.5)
     end
-end -- closes runOnce()
+end
 
 --==================================================
 -- TOGGLE
 --==================================================
 
 EventTab:CreateToggle({
-    name = "Auto Buy Halloween Egg",
+    name = "🥚 Auto Buy Halloween Egg ",
     value = false,
     flag = "AutoBuyHalloweenEgg",
 
