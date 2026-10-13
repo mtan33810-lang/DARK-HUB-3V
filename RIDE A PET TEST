@@ -386,73 +386,64 @@ end
 local function FlyToPosition(TargetCFrame)
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
-
     local Root = Character:WaitForChild("HumanoidRootPart")
     local Humanoid = Character:WaitForChild("Humanoid")
 
     local WasFlying = Flying
+    StopFly()
 
-    -- Stop the normal fly controller so it cannot
-    -- cancel the movement toward the plot.
-    Flying = false
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "PlotFlightAttachment"
+    Attachment.Parent = Root
 
-    if FlyConnection then
-        FlyConnection:Disconnect()
-        FlyConnection = nil
-    end
-
-    local TargetPosition = TargetCFrame.Position
-    local ReachedTarget = false
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "PlotFlightVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.MaxForce = math.huge
+    Velocity.Parent = Root
 
     Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
-    local Success, ErrorMessage = pcall(function()
-        while Root.Parent and Character.Parent do
-            local Offset = TargetPosition - Root.Position
-            local Distance = Offset.Magnitude
+    local TargetPosition = TargetCFrame.Position
+    local Reached = false
 
-            -- Stop close to the destination
-            if Distance <= 3 then
-                ReachedTarget = true
-                break
-            end
+    while Root.Parent and Character.Parent do
+        local Offset = TargetPosition - Root.Position
+        local Distance = Offset.Magnitude
 
-            -- Read the current slider speed continuously
-            local CurrentSpeed = math.max(FlySpeed, 10)
-            local Direction = Offset.Unit
-
-            -- Move using physics velocity, not CFrame tweening
-            Root.AssemblyLinearVelocity =
-                Direction * math.min(CurrentSpeed, Distance * 5)
-
-            Root.AssemblyAngularVelocity = Vector3.zero
-
-            RunService.Heartbeat:Wait()
+        if Distance <= 3 then
+            Reached = true
+            break
         end
-    end)
 
-    -- Stop movement after reaching the destination
+        local Speed = math.max(FlySpeed, 10)
+        Velocity.VectorVelocity =
+            Offset.Unit * math.min(Speed, Distance * 2)
+
+        RunService.Heartbeat:Wait()
+    end
+
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
+
     if Root.Parent then
         Root.AssemblyLinearVelocity = Vector3.zero
-        Root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    -- Restore normal flying if it was enabled before
     if WasFlying then
-        Flying = false
         StartFly()
     else
-        Humanoid:ChangeState(
-            Enum.HumanoidStateType.GettingUp
-        )
+        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end
 
-    if not Success then
-        warn("[FLY] Movement error:", ErrorMessage)
-        return false
-    end
-
-    return ReachedTarget
+    return Reached
 end
 
 --==================================================
