@@ -2613,102 +2613,80 @@ end
                 end
 
              --==================================================
-             -- VOLCANIC / BLOOM EGG FORWARD TELEPORT
-             -- 1 → 2 → 3 → 4
-             --==================================================
+-- 🌋 VOLCANIC EGG FORWARD FLY
+-- 1 → 2 → 3 → 4
+--==================================================
 
-             if tostring(Egg.Name) == "Volcanic Egg"
-                 then
+if tostring(Egg.Name) == "Volcanic Egg"
+or tostring(Egg.Name) == "Bloom Egg" then
 
-             local Location1 = CFrame.new(
-                 -4732.12,
-                 41678.94,
-                 -3945.08
-             )
+    local Locations = {
+        CFrame.new(-4732.12, 41678.94, -3945.08),
+        CFrame.new(-4904.99, 41296.87, -3726.62),
+        CFrame.new(-4984.83, 41288.56, -3625.90),
+        CFrame.new(-5042.11, 41271.99, -3520.53)
+    }
 
-             local Location2 = CFrame.new(
-                 -4904.99,
-                 41296.87,
-                 -3726.62
-             )
+    local Speed = 250
 
-             local Location3 = CFrame.new(
-                 -4984.83,
-                 41288.56,
-                 -3625.90
-             )
+    local Character = HRP.Parent
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "VolcanicFlyAttachment"
+    Attachment.Parent = HRP
 
-             local Location4 = CFrame.new(
-                 -5042.11,
-                 41271.99,
-                 -3520.53
-             )
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "VolcanicFlyVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.MaxForce = math.huge
+    Velocity.Parent = HRP
 
-             local Speed = 250
+    local function FlyToLocation(TargetCFrame)
+        while AutoEggPickup and HRP and HRP.Parent do
+            local Offset = TargetCFrame.Position - HRP.Position
+            local Distance = Offset.Magnitude
 
-             local function TweenToLocation(TargetCFrame)
+            if Distance <= 3 then
+                break
+            end
 
-                 while AutoEggPickup
-                     and HRP
-                     and (
-                         HRP.Position
-                         - TargetCFrame.Position
-                         ).Magnitude > 5
-                     do
+            Velocity.VectorVelocity =
+                Offset.Unit * math.min(Speed, Distance * 4)
 
-            local Direction =
-                (
-                    TargetCFrame.Position
-                    - HRP.Position
-                ).Unit
-
-            local dt = task.wait()
-
-            HRP.CFrame = CFrame.new(
-                HRP.Position
-                    + Direction * Speed * dt,
-                TargetCFrame.Position
-            )
+            task.wait()
         end
 
-        if AutoEggPickup
-            and HRP
-        then
+        if Velocity.Parent then
+            Velocity.VectorVelocity = Vector3.zero
+        end
+
+        if AutoEggPickup and HRP and HRP.Parent then
             HRP.CFrame = TargetCFrame
             task.wait(1.5)
         end
     end
 
-            --==============================================
-            -- FORWARD PATH
-            -- 1 → 2 → 3 → 4
-            --==============================================
+    for _, Location in ipairs(Locations) do
+        if not AutoEggPickup then
+            break
+        end
 
-            TweenToLocation(Location1)
-
-            if not AutoEggPickup then
-                continue
-            end
-
-            TweenToLocation(Location2)
-
-            if not AutoEggPickup then
-                continue
-            end
-
-            TweenToLocation(Location3)
-
-            if not AutoEggPickup then
-                continue
-            end
-
-            TweenToLocation(Location4)
-
-            if not AutoEggPickup then
-                continue
-         end
-
+        FlyToLocation(Location)
     end
+
+    -- Clean up flight objects
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
+
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
+
+end
 
                 --==================================================
                 -- INSTANT TELEPORT TO EGG
@@ -2806,7 +2784,7 @@ end
                 --==================================================
 
                 if tostring(Egg.Name) == "Volcanic Egg"
-                    then
+                or tostring(Egg.Name) == "Bloom Egg" then
 
                 local Location1 = CFrame.new(
                     -4732.12,
