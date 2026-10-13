@@ -45,7 +45,7 @@ end
 
 local Flying = false
 local FlyConnection = nil
-local FlySpeed = 700
+local FlySpeed = 60
 
 -- Saved height while joystick is released
 local HoldY = nil
@@ -383,6 +383,8 @@ end
 -- Uses the existing Fly Speed slider
 --==================================================
 
+local PlotFlySpeed = 700
+
 local function FlyToPosition(TargetCFrame)
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
@@ -419,7 +421,7 @@ local function FlyToPosition(TargetCFrame)
             break
         end
 
-        local Speed = math.max(FlySpeed, 10)
+        local Speed = math.max(PlotFlySpeed, 10)
         Velocity.VectorVelocity =
             Offset.Unit * math.min(Speed, Distance * 2)
 
@@ -1897,15 +1899,15 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 --==================================================
 
 TeleportsTab:CreateSlider({
-    name = "✈️ Fly Speed",
+    name = "Fly to My Plot Speed",
+    flag = "PlotFlySpeed",
     range = {25, 1000},
     increment = 25,
-    suffix = "Speed",
     value = 700,
-    flag = "FlySpeed",
+    suffix = "Speed",
 
     callback = function(Value)
-        FlySpeed = Value
+        PlotFlySpeed = Value
     end,
 })
 
