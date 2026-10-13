@@ -874,8 +874,10 @@ local function RunAfterEggPickup(Egg)
 
             
 
+
 --==================================================
--- FLY TO MY PLOT - NO TWEEN / NO TELEPORT
+-- FLY TO MY PLOT - SMOOTH FLIGHT / ANTI-SHAKE
+-- Uses existing FlySpeed slider
 --==================================================
 
 local function TweenToMyPlot()
@@ -903,11 +905,17 @@ local function TweenToMyPlot()
     local TargetPosition =
         (PlotCFrame + Vector3.new(0, 5, 0)).Position
 
-    print("[EGG FLOW] Flying to plot using FlySpeed:", FlySpeed)
-
-    -- Disable the regular flight controller while traveling
+    -- Stop normal flight and its heartbeat controller
     local WasFlying = Flying
     StopFly()
+
+    -- Remove any leftover plot flight controllers
+    for _, Object in ipairs(Root:GetChildren()) do
+        if Object.Name == "PlotFlightVelocity"
+            or Object.Name == "PlotFlightAttachment" then
+            Object:Destroy()
+        end
+    end
 
     local Attachment = Instance.new("Attachment")
     Attachment.Name = "PlotFlightAttachment"
@@ -919,15 +927,22 @@ local function TweenToMyPlot()
     Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
     Velocity.VelocityConstraintMode =
         Enum.VelocityConstraintMode.Vector
-    Velocity.MaxForce = math.huge
+    Velocity.ForceLimitsEnabled = false
     Velocity.VectorVelocity = Vector3.zero
     Velocity.Parent = Root
 
     Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
     local Arrived = false
+    local StartTime = os.clock()
+    local Timeout = 90
 
-    while Character.Parent and Root.Parent do
+    print("[PLOT FLIGHT] Started")
+
+    while Character.Parent
+        and Root.Parent
+        and os.clock() - StartTime < Timeout do
+
         local Offset = TargetPosition - Root.Position
         local Distance = Offset.Magnitude
 
@@ -936,16 +951,20 @@ local function TweenToMyPlot()
             break
         end
 
-        -- Read the slider value continuously
+        -- Smoothly reduce speed as the character approaches
         local Speed = math.max(FlySpeed, 10)
+        local DesiredSpeed = math.min(
+            Speed,
+            math.sqrt(2 * Speed * math.max(Distance - 3, 0))
+        )
 
         Velocity.VectorVelocity =
-            Offset.Unit * math.min(Speed, Distance)
+            Offset.Unit * math.max(DesiredSpeed, 3)
 
         RunService.Heartbeat:Wait()
     end
 
-    -- Clean up movement controller
+    -- Stop the flight controller cleanly
     if Velocity.Parent then
         Velocity:Destroy()
     end
@@ -959,18 +978,21 @@ local function TweenToMyPlot()
         Root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    if WasFlying and Character.Parent then
-        StartFly()
-    elseif Humanoid.Parent then
+    if Humanoid.Parent then
         Humanoid:ChangeState(
             Enum.HumanoidStateType.GettingUp
         )
     end
 
+    -- Restore normal flight only after cleanup
+    if WasFlying and Character.Parent then
+        StartFly()
+    end
+
     if Arrived then
-        print("[EGG FLOW] Arrived at plot")
+        print("[PLOT FLIGHT] Arrived smoothly")
     else
-        warn("[EGG FLOW] Flight interrupted")
+        warn("[PLOT FLIGHT] Flight interrupted or timed out")
     end
 
     return Arrived
