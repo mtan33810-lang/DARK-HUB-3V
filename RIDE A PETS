@@ -2667,7 +2667,7 @@ or tostring(Egg.Name) == "Bloom Egg" then
 
         if AutoEggPickup and HRP then
             HRP.CFrame = TargetCFrame
-            task.wait(1.5)
+            task.wait(1)
         end
     end
 
@@ -2783,7 +2783,7 @@ end
                 --==================================================
 
                 if tostring(Egg.Name) == "Volcanic Egg"
-                    then
+                or tostring(Egg.Name) == "Bloom Egg" then
 
                 local Location1 = CFrame.new(
                     -4732.12,
@@ -2871,7 +2871,7 @@ end
                 HRP.CFrame =
                     TargetCFrame
 
-                task.wait(1.5)
+                task.wait(1)
             end
         end
 
