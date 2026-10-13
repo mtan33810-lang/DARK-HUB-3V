@@ -639,7 +639,7 @@ local function TweenToSavedPosition()
 end
 
 --==================================================
--- 🌋 FLY TO VOLCANO + DIP
+-- 🌋 VOLCANO TELEPORT + HOVER + DIP
 --==================================================
 
 local function TweenToVolcanoDip()
@@ -648,46 +648,50 @@ local function TweenToVolcanoDip()
         return false
     end
 
-    local Character = Player.Character
+    local Character =
+        Player.Character
         or Player.CharacterAdded:Wait()
 
-    local Root = Character:WaitForChild("HumanoidRootPart")
+    local Root =
+        Character:WaitForChild("HumanoidRootPart")
 
-    local Speed = 650
-    local TargetPosition = VOLCANO_POSITION.Position
-    local StartTime = os.clock()
+    local Humanoid =
+        Character:WaitForChild("Humanoid")
 
-    -- Fly toward the volcano
-    while Root.Parent do
-
-        local Offset = TargetPosition - Root.Position
-        local Distance = Offset.Magnitude
-
-        if Distance <= 4 then
-            break
-        end
-
-        -- Stop if movement takes too long
-        if os.clock() - StartTime > (Distance / Speed) + 15 then
-            Root.AssemblyLinearVelocity = Vector3.zero
-            warn("[VOLCANO] Flight timed out")
-            return false
-        end
-
-        Root.AssemblyLinearVelocity =
-            Offset.Unit * Speed
-
-        RunService.Heartbeat:Wait()
-    end
-
-    -- Stop at the destination
-    Root.AssemblyLinearVelocity = Vector3.zero
-    Root.AssemblyAngularVelocity = Vector3.zero
+    -- 1. TELEPORT TO VOLCANO
     Root.CFrame = VOLCANO_POSITION
-
     task.wait(0.5)
 
-    -- Find VolcanoDip event
+    -- SAVE HOVER POSITION
+    local HoverCFrame = Root.CFrame
+
+    -- 2. CREATE HOVER FORCE
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "VolcanoHoverAttachment"
+    Attachment.Parent = Root
+
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "VolcanoHoverVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.MaxForce = math.huge
+    Velocity.Parent = Root
+
+    -- COUNTER GRAVITY
+    Velocity.VectorVelocity = Vector3.new(
+        0,
+        workspace.Gravity * 0, 
+        0
+    )
+
+    Humanoid:ChangeState(
+        Enum.HumanoidStateType.Physics
+    )
+
+    -- 3. FIRE VOLCANO DIP EVENT
     local Packages =
         ReplicatedStorage:FindFirstChild("packages")
 
@@ -699,13 +703,45 @@ local function TweenToVolcanoDip()
 
     if Event then
         Event:FireServer()
-        print("[VOLCANO] Dip event fired")
     else
-        warn("[VOLCANO] VolcanoDip event not found")
-        return false
+        warn("[VOLCANO] Dip event not found")
     end
 
-    return true
+    -- 4. HOLD POSITION FOR 10 SECONDS
+    local StartTime = os.clock()
+
+    while os.clock() - StartTime < 10 do
+        if not Root.Parent or not Character.Parent then
+            break
+        end
+
+        -- Hold the original position
+        Root.CFrame = HoverCFrame
+        Root.AssemblyLinearVelocity = Vector3.zero
+
+        task.wait(0.05)
+    end
+
+    -- 5. CLEAN UP
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
+
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
+
+    if Root.Parent then
+        Root.AssemblyLinearVelocity = Vector3.zero
+    end
+
+    if Humanoid.Parent then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.GettingUp
+        )
+    end
+
+    return Event ~= nil
 end
 
 --==================================================
