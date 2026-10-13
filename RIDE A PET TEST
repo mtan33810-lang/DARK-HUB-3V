@@ -2778,134 +2778,98 @@ end
 
                     task.wait(0.8)
 
-                --==================================================
-                -- VOLCANIC / BLOOM EGG REVERSE TELEPORT
-                -- 4 → 3 → 2 → 1
-                --==================================================
+--==================================================
+-- 🌋 VOLCANIC / BLOOM EGG REVERSE FLY
+-- 4 → 3 → 2 → 1
+--==================================================
 
-                if tostring(Egg.Name) == "Volcanic Egg"
-                or tostring(Egg.Name) == "Bloom Egg" then
+if tostring(Egg.Name) == "Volcanic Egg"
+or tostring(Egg.Name) == "Bloom Egg" then
 
-                local Location1 = CFrame.new(
-                    -4732.12,
-                    41678.94,
-                    -3945.08
-                )
+    local Locations = {
+        CFrame.new(-4732.12, 41678.94, -3945.08),
+        CFrame.new(-4904.99, 41296.87, -3726.62),
+        CFrame.new(-4984.83, 41288.56, -3625.90),
+        CFrame.new(-5042.11, 41271.99, -3520.53)
+    }
 
-                local Location2 = CFrame.new(
-                    -4904.99,
-                    41296.87,
-                    -3726.62
-                )
+    local Speed = 250
 
-                local Location3 = CFrame.new(
-                    -4984.83,
-                    41288.56,
-                    -3625.90
-                )
+    -- Refresh character and HRP
+    local Character = Player.Character
 
-                local Location4 = CFrame.new(
-                    -5042.11,
-                    41271.99,
-                    -3520.53
-                )
+    if not Character then
+        task.wait(0.5)
+        continue
+    end
 
-                local Speed = 250
+    HRP = Character:FindFirstChild("HumanoidRootPart")
 
-                --==================================================
-                -- REFRESH CHARACTER / HRP
-                --==================================================
+    if not HRP then
+        task.wait(0.5)
+        continue
+    end
 
-                local Character =
-                    Player.Character
+    -- Create flight objects
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "EggReverseFlyAttachment"
+    Attachment.Parent = HRP
 
-                if not Character then
-                    task.wait(0.5)
-                    continue
-                end
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "EggReverseFlyVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.MaxForce = math.huge
+    Velocity.Parent = HRP
 
-                HRP =
-                    Character:FindFirstChild(
-                        "HumanoidRootPart"
-                )
+    local function FlyBack(TargetCFrame)
+        while AutoEggPickup and HRP and HRP.Parent do
+            local Offset = TargetCFrame.Position - HRP.Position
+            local Distance = Offset.Magnitude
 
-                if not HRP then
-                    task.wait(0.5)
-                    continue
-                end
-
-                --==================================================
-                -- REVERSE TWEEN FUNCTION
-                --==================================================
-
-                local function TweenBack(TargetCFrame)
-
-                while AutoEggPickup
-                    and HRP
-                    and HRP.Parent
-                    and (
-                        HRP.Position
-                        - TargetCFrame.Position
-                    ).Magnitude > 5
-                 do
-
-                 local Direction =
-                    (
-                        TargetCFrame.Position
-                        - HRP.Position
-                    ).Unit
-
-                 local dt = task.wait()
-
-                 HRP.CFrame = CFrame.new(
-                     HRP.Position
-                         + Direction * Speed * dt,
-                     TargetCFrame.Position
-                )
-             end
-
-            if AutoEggPickup
-                and HRP
-                and HRP.Parent
-            then
-
-                HRP.CFrame =
-                    TargetCFrame
-
-                task.wait(1.5)
+            if Distance <= 3 then
+                break
             end
+
+            Velocity.VectorVelocity =
+                Offset.Unit * math.min(Speed, Distance * 4)
+
+            task.wait()
         end
 
-                --==================================================
-                -- REVERSE PATH
-                -- 4 → 3 → 2 → 1
-                --==================================================
+        if Velocity.Parent then
+            Velocity.VectorVelocity = Vector3.zero
+        end
 
-                TweenBack(Location4)
+        if AutoEggPickup and HRP and HRP.Parent then
+            HRP.CFrame = TargetCFrame
+            task.wait(1.5)
+        end
+    end
 
-                if not AutoEggPickup then
-                    break
-                end
+    -- REVERSE PATH: 4 → 3 → 2 → 1
+    for Index = 4, 1, -1 do
+        if not AutoEggPickup then
+            break
+        end
 
-                TweenBack(Location3)
+        FlyBack(Locations[Index])
+    end
 
-                if not AutoEggPickup then
-                    break
-                end
+    -- Cleanup
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
 
-                TweenBack(Location2)
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
 
-                if not AutoEggPickup then
-                    break
-                end
+end
 
-                TweenBack(Location1)
-
-                if not AutoEggPickup then
-                    break
-                end
-
-            end
 
                    --==================================================
                     -- POST PICKUP FLOW
