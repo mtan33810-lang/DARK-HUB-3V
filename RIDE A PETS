@@ -2317,7 +2317,7 @@ end
 RarityDropdown =
 TeleportsTab:CreateDropdown({
     name = "💎 Select Egg Rarities",
-    description = "Ride a flying pet when you're stealing an egg",
+    description = "Ride a pet when you're stealing an egg",
     multiSelect = true,
     options = RarityOptions,
     value = {},
