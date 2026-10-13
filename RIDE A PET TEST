@@ -873,11 +873,10 @@ local function RunAfterEggPickup(Egg)
         local Success, ErrorMessage = pcall(function()
 
             
-
-
 --==================================================
--- FLY TO MY PLOT - SMOOTH FLIGHT / ANTI-SHAKE
--- Uses existing FlySpeed slider
+-- FLY TO MY PLOT - SAVED POSITION STYLE
+-- Uses the existing FlySpeed slider
+-- No CFrame tween movement
 --==================================================
 
 local function TweenToMyPlot()
@@ -891,111 +890,30 @@ local function TweenToMyPlot()
     local Plot = FindMyPlot()
 
     if not Plot then
-        warn("[EGG FLOW] My plot not found")
+        warn("[PLOT FLIGHT] My plot not found")
         return false
     end
 
     local PlotCFrame = GetPlotCFrame(Plot)
 
     if not PlotCFrame then
-        warn("[EGG FLOW] Plot position not found")
+        warn("[PLOT FLIGHT] Plot position not found")
         return false
     end
 
-    local TargetPosition =
-        (PlotCFrame + Vector3.new(0, 5, 0)).Position
+    local TargetCFrame =
+        PlotCFrame + Vector3.new(0, 5, 0)
 
-    -- Stop normal flight and its heartbeat controller
-    local WasFlying = Flying
-    StopFly()
+    -- Use the same movement function as Saved Position
+    local Success = FlyToPosition(TargetCFrame)
 
-    -- Remove any leftover plot flight controllers
-    for _, Object in ipairs(Root:GetChildren()) do
-        if Object.Name == "PlotFlightVelocity"
-            or Object.Name == "PlotFlightAttachment" then
-            Object:Destroy()
-        end
-    end
-
-    local Attachment = Instance.new("Attachment")
-    Attachment.Name = "PlotFlightAttachment"
-    Attachment.Parent = Root
-
-    local Velocity = Instance.new("LinearVelocity")
-    Velocity.Name = "PlotFlightVelocity"
-    Velocity.Attachment0 = Attachment
-    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
-    Velocity.VelocityConstraintMode =
-        Enum.VelocityConstraintMode.Vector
-    Velocity.ForceLimitsEnabled = false
-    Velocity.VectorVelocity = Vector3.zero
-    Velocity.Parent = Root
-
-    Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-
-    local Arrived = false
-    local StartTime = os.clock()
-    local Timeout = 90
-
-    print("[PLOT FLIGHT] Started")
-
-    while Character.Parent
-        and Root.Parent
-        and os.clock() - StartTime < Timeout do
-
-        local Offset = TargetPosition - Root.Position
-        local Distance = Offset.Magnitude
-
-        if Distance <= 4 then
-            Arrived = true
-            break
-        end
-
-        -- Smoothly reduce speed as the character approaches
-        local Speed = math.max(FlySpeed, 10)
-        local DesiredSpeed = math.min(
-            Speed,
-            math.sqrt(2 * Speed * math.max(Distance - 3, 0))
-        )
-
-        Velocity.VectorVelocity =
-            Offset.Unit * math.max(DesiredSpeed, 3)
-
-        RunService.Heartbeat:Wait()
-    end
-
-    -- Stop the flight controller cleanly
-    if Velocity.Parent then
-        Velocity:Destroy()
-    end
-
-    if Attachment.Parent then
-        Attachment:Destroy()
-    end
-
-    if Root.Parent then
-        Root.AssemblyLinearVelocity = Vector3.zero
-        Root.AssemblyAngularVelocity = Vector3.zero
-    end
-
-    if Humanoid.Parent then
-        Humanoid:ChangeState(
-            Enum.HumanoidStateType.GettingUp
-        )
-    end
-
-    -- Restore normal flight only after cleanup
-    if WasFlying and Character.Parent then
-        StartFly()
-    end
-
-    if Arrived then
-        print("[PLOT FLIGHT] Arrived smoothly")
+    if Success then
+        print("[PLOT FLIGHT] Arrived at My Plot")
     else
-        warn("[PLOT FLIGHT] Flight interrupted or timed out")
+        warn("[PLOT FLIGHT] Flight failed or interrupted")
     end
 
-    return Arrived
+    return Success
 end
 
 
