@@ -376,6 +376,64 @@ local function TweenToCustomPosition(TargetCFrame)
     return Result == Enum.PlaybackState.Completed
 end
 
+
+--==================================================
+-- FLY TO TARGET POSITION
+--==================================================
+
+local FlySpeed = 700
+
+local function FlyToPosition(TargetCFrame)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    local StartPosition = Root.Position
+    local TargetPosition = TargetCFrame.Position
+
+    local Distance = (TargetPosition - StartPosition).Magnitude
+    local Duration = math.max(Distance / FlySpeed, 0.1)
+    local StartTime = os.clock()
+
+    local WasFlying = Flying
+
+    if not WasFlying then
+        StartFly()
+    end
+
+    while Root.Parent do
+        local Alpha = math.clamp(
+            (os.clock() - StartTime) / Duration,
+            0,
+            1
+        )
+
+        local Position = StartPosition:Lerp(
+            TargetPosition,
+            Alpha
+        )
+
+        Root.CFrame = CFrame.new(Position)
+            * TargetCFrame.Rotation
+
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
+
+        if Alpha >= 1 then
+            break
+        end
+
+        RunService.Heartbeat:Wait()
+    end
+
+    if not WasFlying then
+        StopFly()
+    end
+
+    return true
+end
+
 --==================================================
 -- FLOW SETTINGS
 --==================================================
@@ -631,11 +689,11 @@ end
 
 local function TweenToSavedPosition()
     if not SAVED_POSITION then
-        warn("[TWEEN] Saved position is not set!")
+        warn("[FLY] Saved position is not set!")
         return false
     end
 
-    return TweenToCustomPosition(SAVED_POSITION)
+    return FlyToPosition(SAVED_POSITION)
 end
 
 --==================================================
@@ -1866,15 +1924,16 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 --==================================================
 
 TeleportsTab:CreateSlider({
-    name = "Tween Teleport Speed",
-    range = {50, 1000},
+    name = "✈️ Fly Speed",
+    range = {10, 1000},
     increment = 25,
-    value = 650,
-    suffix = " studs/s",
+    suffix = "Speed",
+    value = 700,
+    flag = "FlySpeed",
 
     callback = function(Value)
-        TweenTeleportSpeed = Value
-    end
+        FlySpeed = Value
+    end,
 })
 
 --==================================================
