@@ -3375,10 +3375,12 @@ EventTab:CreateSlider({
 local running = false
 
 local function runOnce()
-    local Character = Player.Character or Player.CharacterAdded:Wait()
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
     local hrp = Character:WaitForChild("HumanoidRootPart")
 
-    -- 1. Teleport to exact coordinates
+    -- 1. Teleport
     hrp.CFrame = CFrame.new(
         -45758.45,
         40377.75,
@@ -3387,9 +3389,10 @@ local function runOnce()
 
     task.wait(1)
 
-    -- 2. Find the nearest Talk prompt
+    -- 2. Find nearest Talk prompt
     Character = Player.Character
     hrp = Character and Character:FindFirstChild("HumanoidRootPart")
+
     if not hrp then
         warn("Character not found")
         return
@@ -3425,7 +3428,6 @@ local function runOnce()
         end
     end
 
-    -- 3. Activate Talk
     if not closestPrompt then
         warn("No Talk prompt found")
         return
@@ -3439,7 +3441,7 @@ local function runOnce()
     fireproximityprompt(closestPrompt)
     task.wait(0.5)
 
-    -- 4. Select "Show me!"
+    -- 3. Select "Show me!"
     local dialogue = ReplicatedStorage:WaitForChild("Dialogue")
     local dialogueEvent = dialogue
         :WaitForChild("Remotes")
@@ -3452,29 +3454,34 @@ local function runOnce()
     dialogueEvent:FireServer(halloween, "Show me!")
     task.wait(2)
 
--- 5. Buy Halloween Egg 5 times
-local buyEvent = ReplicatedStorage
-    :WaitForChild("Remotes")
-    :WaitForChild("Game")
-    :WaitForChild("BuyHalloweenEgg")
+    -- 4. Buy 5 eggs
+    local buyEvent = ReplicatedStorage
+        :WaitForChild("Remotes")
+        :WaitForChild("Game")
+        :WaitForChild("BuyHalloweenEgg")
 
-for i = 1, 5 do
-    if not running then
-        break
+    for i = 1, 5 do
+        if not running then
+            break
+        end
+
+        local success, result = pcall(function()
+            return buyEvent:InvokeServer("Halloween Egg")
+        end)
+
+        if success then
+            print("Purchase request:", i, "/ 5", result)
+        else
+            warn("Purchase failed:", result)
+        end
+
+        task.wait(0.5)
     end
+end -- closes runOnce()
 
-    local success, result = pcall(function()
-        return buyEvent:InvokeServer("Halloween Egg")
-    end)
-
-    if success then
-        print("Halloween Egg purchase request:", i, "/ 5")
-    else
-        warn("Purchase failed:", result)
-    end
-
-    task.wait(0.5)
-end
+--==================================================
+-- TOGGLE
+--==================================================
 
 EventTab:CreateToggle({
     name = "Auto Buy Halloween Egg",
@@ -3493,11 +3500,11 @@ EventTab:CreateToggle({
                         warn("Loop error:", err)
                     end
 
-                    -- Wait before starting the next cycle
-                    for i = 1, 5 do
+                    for i = 1, 10 do
                         if not running then
                             break
                         end
+
                         task.wait(0.5)
                     end
                 end
