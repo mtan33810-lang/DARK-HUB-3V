@@ -1342,7 +1342,7 @@ local function RunAfterEggPickup(Egg)
                     CFrame.new(81.75, 40315.66, 894.93)
                 )
 
-                task.wait(0.5)
+                task.wait(1)
 
                 -- Drop
                 local Dropped =
@@ -1435,7 +1435,7 @@ local function RunAfterEggPickup(Egg)
                 CFrame.new(81.75, 40315.66, 894.93)
             )
 
-            task.wait(0.5)
+            task.wait(1)
 
             -- Drop
             local Dropped =
@@ -2873,9 +2873,12 @@ end
                 -- INSTANT TELEPORT TO EGG
                 --==================================================
 
-                HRP.CFrame =
-                    LiveEggCFrame
-                    + Vector3.new(0, 5, 0)
+                local EggTargetCFrame =
+                    LiveEggCFrame + Vector3.new(0, 5, 0)
+
+                HRP.CFrame = EggTargetCFrame
+                HRP.AssemblyLinearVelocity = Vector3.zero
+                HRP.AssemblyAngularVelocity = Vector3.zero
 
                 task.wait(0.2)
 
