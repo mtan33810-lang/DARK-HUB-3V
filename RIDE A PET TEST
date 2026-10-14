@@ -626,11 +626,17 @@ local function GetPlotCFrame(Plot)
 end
 
 
+
 --==================================================
--- FLY TO MY PLOT - NO TWEEN
+-- FLY TO MY PLOT - FLY ABOVE, THEN DESCEND
 --==================================================
 
 local function TweenToMyPlot()
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
 
     local Plot = FindMyPlot()
 
@@ -646,12 +652,52 @@ local function TweenToMyPlot()
         return false
     end
 
-    local TargetCFrame =
+    -- Save and pause normal joystick flight
+    local WasFlying = Flying
+    StopFly()
+
+    -- First waypoint: fly above the plot
+    local AbovePlotCFrame =
+        PlotCFrame + Vector3.new(0, 35, 0)
+
+    -- Second waypoint: descend to the plot
+    local LandingCFrame =
         PlotCFrame + Vector3.new(0, 5, 0)
 
-    -- Physics-based flight, not TweenService
-    return FlyToPosition(TargetCFrame)
+    -- 1. Fly above the plot using physics movement
+    local ReachedAbove =
+        FlyToPosition(AbovePlotCFrame)
+
+    if not ReachedAbove then
+        if WasFlying and Root.Parent then
+            StartFly()
+        end
+
+        warn("[PLOT FLIGHT] Failed to reach above the plot")
+        return false
+    end
+
+    -- Briefly reach the overhead position
+    task.wait(0.15)
+
+    -- 2. Fly downward to the plot
+    local ReachedPlot =
+        FlyToPosition(LandingCFrame)
+
+    -- Restore manual flight if it was active before
+    if WasFlying and Root.Parent then
+        StartFly()
+    end
+
+    if ReachedPlot then
+        print("[PLOT FLIGHT] Landed at My Plot")
+    else
+        warn("[PLOT FLIGHT] Landing failed")
+    end
+
+    return ReachedPlot
 end
+
 
 --==================================================
 -- TELEPORT TO MY PLOT → UNEQUIP EGG
