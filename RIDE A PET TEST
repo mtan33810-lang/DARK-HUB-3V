@@ -378,9 +378,9 @@ end
 
 
 
+
 --==================================================
 -- FLY TO TARGET POSITION - PHYSICS MOVEMENT
--- Uses the existing Fly Speed slider
 --==================================================
 
 local PlotFlySpeed = 700
@@ -388,10 +388,13 @@ local PlotFlySpeed = 700
 local function FlyToPosition(TargetCFrame)
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
+
     local Root = Character:WaitForChild("HumanoidRootPart")
     local Humanoid = Character:WaitForChild("Humanoid")
 
     local WasFlying = Flying
+
+    -- Stop normal fly so it won't fight plot flight
     StopFly()
 
     local Attachment = Instance.new("Attachment")
@@ -405,6 +408,7 @@ local function FlyToPosition(TargetCFrame)
     Velocity.VelocityConstraintMode =
         Enum.VelocityConstraintMode.Vector
     Velocity.MaxForce = math.huge
+    Velocity.VectorVelocity = Vector3.zero
     Velocity.Parent = Root
 
     Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
@@ -421,7 +425,9 @@ local function FlyToPosition(TargetCFrame)
             break
         end
 
+        -- Use the existing plot flight speed slider
         local Speed = math.max(PlotFlySpeed, 10)
+
         Velocity.VectorVelocity =
             Offset.Unit * math.min(Speed, Distance * 2)
 
@@ -431,18 +437,24 @@ local function FlyToPosition(TargetCFrame)
     if Velocity.Parent then
         Velocity:Destroy()
     end
+
     if Attachment.Parent then
         Attachment:Destroy()
     end
 
     if Root.Parent then
         Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    if WasFlying then
+    if Humanoid.Parent then
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.GettingUp
+        )
+    end
+
+    if WasFlying and Root.Parent then
         StartFly()
-    else
-        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end
 
     return Reached
@@ -613,6 +625,46 @@ local function GetPlotCFrame(Plot)
     return nil
 end
 
+--==================================================
+-- FLY TO MY PLOT - SAVED POSITION STYLE
+--==================================================
+
+local function TweenToMyPlot()
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+    local Humanoid = Character:WaitForChild("Humanoid")
+
+    local Plot = FindMyPlot()
+
+    if not Plot then
+        warn("[PLOT FLIGHT] My plot not found")
+        return false
+    end
+
+    local PlotCFrame = GetPlotCFrame(Plot)
+
+    if not PlotCFrame then
+        warn("[PLOT FLIGHT] Plot position not found")
+        return false
+    end
+
+    local TargetCFrame =
+        PlotCFrame + Vector3.new(0, 5, 0)
+
+    -- Use the same movement function as Saved Position
+    local Success = FlyToPosition(TargetCFrame)
+
+    if Success then
+        print("[PLOT FLIGHT] Arrived at My Plot")
+    else
+        warn("[PLOT FLIGHT] Flight failed or interrupted")
+    end
+
+    return Success
+end
 
 --==================================================
 -- TELEPORT TO MY PLOT → UNEQUIP EGG
@@ -873,51 +925,6 @@ local function RunAfterEggPickup(Egg)
     task.spawn(function()
 
         local Success, ErrorMessage = pcall(function()
-
-            
---==================================================
--- FLY TO MY PLOT - SAVED POSITION STYLE
--- Uses the existing FlySpeed slider
--- No CFrame tween movement
---==================================================
-
-local function TweenToMyPlot()
-
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root = Character:WaitForChild("HumanoidRootPart")
-    local Humanoid = Character:WaitForChild("Humanoid")
-
-    local Plot = FindMyPlot()
-
-    if not Plot then
-        warn("[PLOT FLIGHT] My plot not found")
-        return false
-    end
-
-    local PlotCFrame = GetPlotCFrame(Plot)
-
-    if not PlotCFrame then
-        warn("[PLOT FLIGHT] Plot position not found")
-        return false
-    end
-
-    local TargetCFrame =
-        PlotCFrame + Vector3.new(0, 5, 0)
-
-    -- Use the same movement function as Saved Position
-    local Success = FlyToPosition(TargetCFrame)
-
-    if Success then
-        print("[PLOT FLIGHT] Arrived at My Plot")
-    else
-        warn("[PLOT FLIGHT] Flight failed or interrupted")
-    end
-
-    return Success
-end
-
 
             --==================================================
             -- FIND PICKUP PROMPT
