@@ -3510,26 +3510,49 @@ if Character then
         -- Mark the current candy before scanning for another
         ProcessedCandy[Candy] = true
 
-        task.wait(0.2)
+        task.wait(1.5)
 
-        -- SECOND DESTINATION
-        local SecondDestination = CFrame.new(
-            -46382.04,
-            40353.38,
-            -19821.20
-        )
+        
+-- SECOND DESTINATION
+local SecondDestination = CFrame.new(
+    -46382.04,
+    40353.38,
+    -19821.20
+)
 
-        local SecondReached, FoundNewCandy =
-            TweenToDestination(SecondDestination, true)
+local SecondReached, FoundNewCandy =
+    TweenToDestination(SecondDestination, true)
 
-        -- Stop traveling and find the new candy instead
-        if FoundNewCandy then
-            continue
-        end
+if FoundNewCandy then
+    continue
+end
 
-        if not SecondReached then
-            break
-        end
+if not SecondReached then
+    break
+end
+
+if not CandyFarmEnabled then
+    break
+end
+
+-- THIRD DESTINATION
+local ThirdDestination = CFrame.new(
+    -46192.32,
+    40376.94,
+    -20564.35
+)
+
+local ThirdReached, FoundNewCandy =
+    TweenToDestination(ThirdDestination, true)
+
+if FoundNewCandy then
+    continue
+end
+
+if not ThirdReached then
+    break
+end
+
     end
 end
 
