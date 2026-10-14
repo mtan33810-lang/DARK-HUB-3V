@@ -631,6 +631,39 @@ local function GetPlotCFrame(Plot)
 end
 
 
+--==================================================
+-- UNEQUIP EGG AFTER REACHING MY PLOT
+--==================================================
+
+local function UnequipEggAtPlot()
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Humanoid =
+        Character:FindFirstChildOfClass("Humanoid")
+
+    if not Humanoid then
+        return false
+    end
+
+    local EquippedTool =
+        Character:FindFirstChildOfClass("Tool")
+
+    if EquippedTool
+        and string.find(
+            string.lower(EquippedTool.Name),
+            "egg",
+            1,
+            true
+        )
+    then
+        Humanoid:UnequipTools()
+        print("[PLOT FLIGHT] Egg unequipped")
+        return true
+    end
+
+    return false
+end
 
 --==================================================
 -- FLY TO MY PLOT - FLY ABOVE, THEN DESCEND
@@ -694,13 +727,14 @@ local function TweenToMyPlot()
         StartFly()
     end
 
-    if ReachedPlot then
-        print("[PLOT FLIGHT] Landed at My Plot")
-    else
-        warn("[PLOT FLIGHT] Landing failed")
-    end
+    
+if ReachedPlot then
+    print("[PLOT FLIGHT] Landed at My Plot")
 
-    return ReachedPlot
+    task.wait(0.3)
+    UnequipEggAtPlot()
+else
+    warn("[PLOT FLIGHT] Landing failed")
 end
 
 
