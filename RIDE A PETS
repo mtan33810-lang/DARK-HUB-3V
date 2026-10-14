@@ -377,6 +377,92 @@ local function TweenToCustomPosition(TargetCFrame)
 end
 
 --==================================================
+-- FLY TO TARGET POSITION - PHYSICS MOVEMENT
+--==================================================
+
+local PlotFlySpeed = 700
+
+local function FlyToPosition(TargetCFrame)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+    local Humanoid = Character:WaitForChild("Humanoid")
+
+    local WasFlying = Flying
+
+    -- Stop normal fly so it won't fight plot flight
+    StopFly()
+
+    local Attachment = Instance.new("Attachment")
+    Attachment.Name = "PlotFlightAttachment"
+    Attachment.Parent = Root
+
+    local Velocity = Instance.new("LinearVelocity")
+    Velocity.Name = "PlotFlightVelocity"
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    Velocity.MaxForce = math.huge
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.Parent = Root
+
+    local OldAutoRotate = Humanoid.AutoRotate
+    Humanoid.AutoRotate = false
+
+    Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+
+    local TargetPosition = TargetCFrame.Position
+    local Reached = false
+
+    while Root.Parent and Character.Parent do
+        local Offset = TargetPosition - Root.Position
+        local Distance = Offset.Magnitude
+
+        if Distance <= 3 then
+            Reached = true
+            break
+        end
+
+        -- Use the existing plot flight speed slider
+        local Speed = math.max(PlotFlySpeed, 10)
+
+        Velocity.VectorVelocity =
+            Offset.Unit * math.min(Speed, Distance * 2)
+
+        RunService.Heartbeat:Wait()
+    end
+
+    if Velocity.Parent then
+        Velocity:Destroy()
+    end
+
+    if Attachment.Parent then
+        Attachment:Destroy()
+    end
+
+    if Root.Parent then
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    if Humanoid.Parent then
+        Humanoid.AutoRotate = OldAutoRotate
+
+        Humanoid:ChangeState(
+            Enum.HumanoidStateType.GettingUp
+        )
+     end
+
+    if WasFlying and Root.Parent then
+        StartFly()
+    end
+
+    return Reached
+end
+
+--==================================================
 -- FLOW SETTINGS
 --==================================================
 
@@ -541,6 +627,125 @@ local function GetPlotCFrame(Plot)
     return nil
 end
 
+--==================================================
+-- UNEQUIP EGG AFTER ARRIVING AT MY PLOT
+--==================================================
+
+local function UnequipEggAfterPlotFlight()
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Humanoid =
+        Character:FindFirstChildOfClass("Humanoid")
+
+    if not Humanoid then
+        warn("[PLOT FLIGHT] Humanoid not found")
+        return false
+    end
+
+    for _, Tool in ipairs(Character:GetChildren()) do
+
+        if Tool:IsA("Tool")
+            and string.find(
+                string.lower(Tool.Name),
+                "egg",
+                1,
+                true
+            )
+        then
+            Humanoid:UnequipTools()
+            print("[PLOT FLIGHT] Egg unequipped")
+            return true
+        end
+    end
+
+    print("[PLOT FLIGHT] No equipped egg found")
+    return false
+end
+
+--==================================================
+-- FLY TO MY PLOT - FLY ABOVE, THEN DESCEND
+--==================================================
+
+local function TweenToMyPlot()
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    local Plot = FindMyPlot()
+
+    if not Plot then
+        warn("[PLOT FLIGHT] My plot not found")
+        return false
+    end
+
+    local PlotCFrame = GetPlotCFrame(Plot)
+
+    if not PlotCFrame then
+        warn("[PLOT FLIGHT] Plot position not found")
+        return false
+    end
+
+    -- Save and pause normal joystick flight
+    local WasFlying = Flying
+    StopFly()
+
+    -- First waypoint: fly above the plot
+    local AbovePlotCFrame =
+        PlotCFrame + Vector3.new(0, 35, 0)
+
+    -- Second waypoint: descend to the plot
+    local LandingCFrame =
+        PlotCFrame + Vector3.new(0, 5, 0)
+
+    -- 1. Fly above the plot using physics movement
+    local ReachedAbove =
+        FlyToPosition(AbovePlotCFrame)
+
+    if not ReachedAbove then
+        if WasFlying and Root.Parent then
+            StartFly()
+        end
+
+        warn("[PLOT FLIGHT] Failed to reach above the plot")
+        return false
+    end
+
+    -- Briefly reach the overhead position
+    task.wait(0.15)
+
+    -- 2. Fly downward to the plot
+    local ReachedPlot =
+        FlyToPosition(LandingCFrame)
+
+    -- Restore manual flight if it was active before
+    if WasFlying and Root.Parent then
+        StartFly()
+    end
+    
+
+if ReachedPlot then
+
+    print("[PLOT FLIGHT] Landed at My Plot")
+
+    -- Wait for the character to settle
+    task.wait(0.3)
+
+    -- Unequip the egg after landing
+    UnequipEggAfterPlotFlight()
+
+else
+
+    warn("[PLOT FLIGHT] Landing failed")
+
+end
+
+return ReachedPlot
+
+end 
 
 --==================================================
 -- TELEPORT TO MY PLOT → UNEQUIP EGG
