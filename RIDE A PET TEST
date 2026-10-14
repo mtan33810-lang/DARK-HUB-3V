@@ -625,17 +625,12 @@ local function GetPlotCFrame(Plot)
     return nil
 end
 
+
 --==================================================
--- FLY TO MY PLOT - SAVED POSITION STYLE
+-- FLY TO MY PLOT - NO TWEEN
 --==================================================
 
 local function TweenToMyPlot()
-
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root = Character:WaitForChild("HumanoidRootPart")
-    local Humanoid = Character:WaitForChild("Humanoid")
 
     local Plot = FindMyPlot()
 
@@ -654,16 +649,8 @@ local function TweenToMyPlot()
     local TargetCFrame =
         PlotCFrame + Vector3.new(0, 5, 0)
 
-    -- Use the same movement function as Saved Position
-    local Success = FlyToPosition(TargetCFrame)
-
-    if Success then
-        print("[PLOT FLIGHT] Arrived at My Plot")
-    else
-        warn("[PLOT FLIGHT] Flight failed or interrupted")
-    end
-
-    return Success
+    -- Physics-based flight, not TweenService
+    return FlyToPosition(TargetCFrame)
 end
 
 --==================================================
