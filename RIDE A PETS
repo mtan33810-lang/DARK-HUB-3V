@@ -783,6 +783,39 @@ local function DropEgg()
     return true
 end
 
+
+--==================================================
+-- UNEQUIP EGG AFTER ARRIVING AT MY PLOT
+--==================================================
+local function UnequipEggAfterTween()
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Humanoid =
+        Character:FindFirstChildOfClass("Humanoid")
+
+    if not Humanoid then
+        return
+    end
+
+    task.wait(0.3)
+
+    local EquippedTool =
+        Character:FindFirstChildOfClass("Tool")
+
+    if EquippedTool
+        and string.find(
+            string.lower(EquippedTool.Name),
+            "egg",
+            1,
+            true
+        )
+    then
+        Humanoid:UnequipTools()
+        print("[EGG FLOW] Egg unequipped at My Plot")
+    end
+end
+
  --==================================================
 -- POST EGG PICKUP FLOW - FIXED
 --==================================================
@@ -877,16 +910,21 @@ local function RunAfterEggPickup(Egg)
                     RunService.Heartbeat:Wait()
 
                 end
-
+              
                 Root.CFrame =
                     TargetCFrame
 
                 print("[EGG FLOW] Arrived at My Plot")
 
                 return true
-            end
+                end
 
+                -- Unequip the egg after arriving at My Plot
+                local Arrived = TweenToMyPlot()
 
+                if Arrived then
+                    UnequipEggAfterTween()
+                end
 
             --==================================================
             -- FIND PICKUP PROMPT
