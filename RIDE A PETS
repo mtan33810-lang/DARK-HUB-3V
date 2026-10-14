@@ -836,11 +836,11 @@ end
 
 local function TweenToSavedPosition()
     if not SAVED_POSITION then
-        warn("[TWEEN] Saved position is not set!")
+        warn("[FLY] Saved position is not set!")
         return false
     end
 
-    return TweenToCustomPosition(SAVED_POSITION)
+    return FlyToPosition(SAVED_POSITION)
 end
 
 --==================================================
@@ -988,39 +988,6 @@ local function DropEgg()
     return true
 end
 
-
---==================================================
--- UNEQUIP EGG AFTER ARRIVING AT MY PLOT
---==================================================
-local function UnequipEggAfterTween()
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Humanoid =
-        Character:FindFirstChildOfClass("Humanoid")
-
-    if not Humanoid then
-        return
-    end
-
-    task.wait(0.3)
-
-    local EquippedTool =
-        Character:FindFirstChildOfClass("Tool")
-
-    if EquippedTool
-        and string.find(
-            string.lower(EquippedTool.Name),
-            "egg",
-            1,
-            true
-        )
-    then
-        Humanoid:UnequipTools()
-        print("[EGG FLOW] Egg unequipped at My Plot")
-    end
-end
-
  --==================================================
 -- POST EGG PICKUP FLOW - FIXED
 --==================================================
@@ -1040,96 +1007,6 @@ local function RunAfterEggPickup(Egg)
 
         local Success, ErrorMessage = pcall(function()
 
-            --==================================================
-            -- TWEEN TO MY PLOT
-            --==================================================
-
-            local function TweenToMyPlot()
-
-                local Character =
-                    Player.Character
-                    or Player.CharacterAdded:Wait()
-
-                local Root =
-                    Character:WaitForChild("HumanoidRootPart")
-
-                local Plot = FindMyPlot()
-
-                if not Plot then
-                    warn("[EGG FLOW] My plot not found")
-                    return false
-                end
-
-                local PlotCFrame =
-                    GetPlotCFrame(Plot)
-
-                if not PlotCFrame then
-                    warn("[EGG FLOW] Plot position not found")
-                    return false
-                end
-
-                local TargetCFrame =
-                    PlotCFrame + Vector3.new(0, 5, 0)
-
-                print("[EGG FLOW] Tweening to My Plot")
-
-                local Distance =
-                    (Root.Position - TargetCFrame.Position).Magnitude
-
-                local Duration = math.max(
-                    Distance / TweenTeleportSpeed,
-                    0.1
-                )
-
-                local StartCFrame =
-                    Root.CFrame
-
-                local StartTime =
-                    os.clock()
-
-                while true do
-
-                    local Alpha =
-                        math.clamp(
-                            (os.clock() - StartTime) / Duration,
-                            0,
-                            1
-                        )
-
-                    Root.CFrame =
-                        StartCFrame:Lerp(
-                            TargetCFrame,
-                            Alpha
-                        )
-
-                    Root.AssemblyLinearVelocity =
-                        Vector3.zero
-
-                    Root.AssemblyAngularVelocity =
-                        Vector3.zero
-
-                    if Alpha >= 1 then
-                        break
-                    end
-
-                    RunService.Heartbeat:Wait()
-
-                end
-              
-                Root.CFrame =
-                    TargetCFrame
-
-                print("[EGG FLOW] Arrived at My Plot")
-
-                return true
-                end
-
-                -- Unequip the egg after arriving at My Plot
-                local Arrived = TweenToMyPlot()
-
-                if Arrived then
-                    UnequipEggAfterTween()
-                end
 
             --==================================================
             -- FIND PICKUP PROMPT
@@ -2111,16 +1988,18 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 --==================================================
 
 TeleportsTab:CreateSlider({
-    name = "⚡ Egg Tween Speed",
-    range = {50, 1000},
+    name = "Fly Speed",
+    flag = "PlotFlySpeed",
+    range = {25, 1000},
     increment = 25,
-    value = 650,
-    suffix = " studs/s",
+    value = 700,
+    suffix = "Speed",
 
     callback = function(Value)
-        TweenTeleportSpeed = Value
-    end
+        PlotFlySpeed = Value
+    end,
 })
+
 
 --==================================================
 -- EGG RARITY SCANNER
