@@ -408,9 +408,6 @@ local function FlyToPosition(TargetCFrame)
     Velocity.VectorVelocity = Vector3.zero
     Velocity.Parent = Root
 
-    local OldAutoRotate = Humanoid.AutoRotate
-    Humanoid.AutoRotate = false
-
     Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
     local TargetPosition = TargetCFrame.Position
@@ -447,13 +444,7 @@ local function FlyToPosition(TargetCFrame)
         Root.AssemblyAngularVelocity = Vector3.zero
     end
 
-    if Humanoid.Parent then
-        Humanoid.AutoRotate = OldAutoRotate
-
-        Humanoid:ChangeState(
-            Enum.HumanoidStateType.GettingUp
-        )
-     end
+    Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 
     if WasFlying and Root.Parent then
         StartFly()
