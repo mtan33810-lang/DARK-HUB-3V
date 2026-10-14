@@ -631,11 +631,13 @@ local function GetPlotCFrame(Plot)
 end
 
 
+
 --==================================================
--- UNEQUIP EGG AFTER REACHING MY PLOT
+-- UNEQUIP EGG AFTER ARRIVING AT MY PLOT
 --==================================================
 
-local function UnequipEggAtPlot()
+local function UnequipEggAfterPlotFlight()
+
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
@@ -643,25 +645,27 @@ local function UnequipEggAtPlot()
         Character:FindFirstChildOfClass("Humanoid")
 
     if not Humanoid then
+        warn("[PLOT FLIGHT] Humanoid not found")
         return false
     end
 
-    local EquippedTool =
-        Character:FindFirstChildOfClass("Tool")
+    for _, Tool in ipairs(Character:GetChildren()) do
 
-    if EquippedTool
-        and string.find(
-            string.lower(EquippedTool.Name),
-            "egg",
-            1,
-            true
-        )
-    then
-        Humanoid:UnequipTools()
-        print("[PLOT FLIGHT] Egg unequipped")
-        return true
+        if Tool:IsA("Tool")
+            and string.find(
+                string.lower(Tool.Name),
+                "egg",
+                1,
+                true
+            )
+        then
+            Humanoid:UnequipTools()
+            print("[PLOT FLIGHT] Egg unequipped")
+            return true
+        end
     end
 
+    print("[PLOT FLIGHT] No equipped egg found")
     return false
 end
 
@@ -726,17 +730,25 @@ local function TweenToMyPlot()
     if WasFlying and Root.Parent then
         StartFly()
     end
-
     
+
 if ReachedPlot then
+
     print("[PLOT FLIGHT] Landed at My Plot")
 
+    -- Wait for the character to settle
     task.wait(0.3)
-    UnequipEggAtPlot()
+
+    -- Unequip the egg after landing
+    UnequipEggAfterPlotFlight()
+
 else
+
     warn("[PLOT FLIGHT] Landing failed")
+
 end
 
+return ReachedPlot
 
 --==================================================
 -- TELEPORT TO MY PLOT → UNEQUIP EGG
