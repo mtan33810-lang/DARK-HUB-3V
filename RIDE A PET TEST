@@ -2885,9 +2885,12 @@ end
                 -- INSTANT TELEPORT TO EGG
                 --==================================================
 
-                HRP.CFrame =
-                    LiveEggCFrame
-                    + Vector3.new(0, 5, 0)
+                local EggTargetCFrame =
+                    LiveEggCFrame + Vector3.new(0, 5, 0)
+
+                HRP.CFrame = EggTargetCFrame
+                HRP.AssemblyLinearVelocity = Vector3.zero
+                HRP.AssemblyAngularVelocity = Vector3.zero
 
                 task.wait(0.2)
 
