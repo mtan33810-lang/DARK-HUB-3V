@@ -3363,7 +3363,7 @@ while CandyFarmEnabled do
     local Candy, Part = FindCandy()
 
     if not Candy or not Part then
-        task.wait(2)
+        task.wait(1)
         continue
     end
 
@@ -3383,7 +3383,7 @@ while CandyFarmEnabled do
                 -- 1. TELEPORT TO CANDY AND COLLECT IT
                 Root.CFrame = Part.CFrame
 
-                task.wait(0.5)
+                task.wait(0.2)
 
 
                 if not CandyFarmEnabled then
@@ -3391,8 +3391,9 @@ while CandyFarmEnabled do
                 end
 
                 
+
 --==================================================
--- 🍬 CANDY PICKUP - RETRY AND VERIFY
+-- 🍬 CANDY PICKUP - STRICT VERIFICATION FIX
 --==================================================
 
 local PickedUp = false
@@ -3402,23 +3403,32 @@ for Attempt = 1, 3 do
         break
     end
 
-    -- Candy may have disappeared already
-    if not Candy or not Candy.Parent then
-        PickedUp = true
+    -- IMPORTANT:
+    -- If candy disappeared before attempting pickup,
+    -- DO NOT count it as collected.
+    if not Candy or not Candy:IsDescendantOf(workspace) then
+        warn(
+            "[Candy Farm] Candy disappeared before pickup. "
+            .. "Skipping destinations."
+        )
         break
     end
 
     local Prompt = FindPickupPrompt(Candy, Part, 3)
 
     if not Prompt then
-        warn("[Candy Farm] Pickup prompt not found. Attempt:", Attempt)
+        warn(
+            "[Candy Farm] Pickup prompt not found. Attempt:",
+            Attempt
+        )
         task.wait(0.4)
         continue
     end
 
-    -- Make sure the character is close enough
     local Character = Player.Character
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Root = Character
+        and Character:FindFirstChild("HumanoidRootPart")
+
     local PromptPosition = GetPromptPosition(Prompt)
 
     if not Root or not PromptPosition then
@@ -3426,44 +3436,76 @@ for Attempt = 1, 3 do
         continue
     end
 
-    -- Move near the prompt instead of inside the candy
+    -- Move close to the pickup prompt
     if (Root.Position - PromptPosition).Magnitude > 8 then
-        Root.CFrame = CFrame.new(PromptPosition + Vector3.new(0, 2, 0))
+        Root.CFrame = CFrame.new(
+            PromptPosition + Vector3.new(0, 2, 0)
+        )
         task.wait(0.3)
     end
 
-    -- Recheck that the prompt is still available
-    if Prompt.Parent and Prompt.Enabled
+    if not CandyFarmEnabled then
+        break
+    end
+
+    -- Verify candy still exists BEFORE triggering pickup
+    if not Candy:IsDescendantOf(workspace) then
+        warn(
+            "[Candy Farm] Candy vanished before interaction. "
+            .. "Pickup not confirmed."
+        )
+        break
+    end
+
+    if Prompt.Parent
+        and Prompt.Enabled
         and typeof(fireproximityprompt) == "function" then
 
-        local Success, ErrorMessage = pcall(function()
+        local Triggered, ErrorMessage = pcall(function()
             fireproximityprompt(Prompt)
         end)
 
-        if not Success then
-            warn("[Candy Farm] Pickup error:", ErrorMessage)
-        end
+        if not Triggered then
+            warn("[Candy Farm] Pickup interaction failed:", ErrorMessage)
+        else
+            -- Wait for evidence that the candy was collected
+            local VerifyStart = os.clock()
 
-        task.wait(0.5)
+            repeat
+                task.wait(0.1)
 
-        -- Confirm collection or disappearance
-        if not Candy.Parent then
-            PickedUp = true
-            break
+                if not Candy:IsDescendantOf(workspace) then
+                    PickedUp = true
+                    break
+                end
+            until os.clock() - VerifyStart >= 1.5
         end
+    else
+        warn(
+            "[Candy Farm] Pickup prompt unavailable "
+            .. "or fireproximityprompt unsupported."
+        )
+    end
+
+    if PickedUp then
+        break
     end
 
     task.wait(0.4)
 end
 
+-- Never proceed to destinations without confirmation
 if not PickedUp then
-    warn("[Candy Farm] Pickup not confirmed; retrying scan.")
-    task.wait(0.1)
+    warn(
+        "[Candy Farm] Pickup NOT confirmed. "
+        .. "Skipping all destinations and scanning again."
+    )
+
+    task.wait(0.2)
     continue
 end
 
 print("[Candy Farm] Pickup confirmed!")
-
 
                 if not CandyFarmEnabled then
                     break
