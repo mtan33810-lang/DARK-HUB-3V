@@ -454,6 +454,52 @@ local function FlyToPosition(TargetCFrame)
 end
 
 --==================================================
+-- DARK HUB | CUSTOM POSITION: FLY UP, THEN DOWN
+--==================================================
+
+local CUSTOM_POSITION = CFrame.new(
+    81.75,
+    40315.66,
+    894.93
+)
+
+local CUSTOM_APPROACH_HEIGHT = 30
+
+local function FlyAboveThenToCustomPosition()
+
+    -- Calculate the point directly above Custom Position
+    local AbovePosition = CFrame.new(
+        CUSTOM_POSITION.Position
+            + Vector3.new(0, CUSTOM_APPROACH_HEIGHT, 0)
+    )
+
+    print("[CUSTOM FLOW] Flying ABOVE Custom Position")
+
+    -- STEP 1: Fly upward/approach the point above
+    local ReachedAbove = FlyToPosition(AbovePosition)
+
+    if not ReachedAbove then
+        warn("[CUSTOM FLOW] Could not reach above position")
+        return false
+    end
+
+    task.wait(0.3)
+
+    print("[CUSTOM FLOW] Above position reached; descending")
+
+    -- STEP 2: Fly down to the exact Custom Position
+    local ReachedCustom = FlyToPosition(CUSTOM_POSITION)
+
+    if not ReachedCustom then
+        warn("[CUSTOM FLOW] Could not reach Custom Position")
+        return false
+    end
+
+    print("[CUSTOM FLOW] Custom Position reached")
+    return true
+end
+
+--==================================================
 -- FLOW SETTINGS
 --==================================================
 
@@ -1241,9 +1287,10 @@ local function RunAfterEggPickup(Egg)
 
             local Root = Character:WaitForChild("HumanoidRootPart")
 
-            TweenToCustomPosition(
-                CFrame.new(81.75, 40315.66, 894.93)
-            )
+            if not FlyAboveThenToCustomPosition() then
+                return
+            end
+
             task.wait(0.5)
 
             -- Drop the egg at the custom position
@@ -1338,11 +1385,11 @@ local function RunAfterEggPickup(Egg)
                     )
 
                 
-                FlyToPosition(
-                    CFrame.new(81.75, 40315.66, 894.93)
-                )
+                if not FlyAboveThenToCustomPosition() then
+                    return
+                end
 
-                task.wait(1)
+                task.wait(0.5)
 
                 -- Drop
                 local Dropped =
@@ -1431,11 +1478,11 @@ local function RunAfterEggPickup(Egg)
 
             -- Custom position
             
-            FlyToPosition(
-                CFrame.new(81.75, 40315.66, 894.93)
-            )
+            if not FlyAboveThenToCustomPosition() then
+                return
+            end
 
-            task.wait(1)
+            task.wait(0.5)
 
             -- Drop
             local Dropped =
