@@ -3164,9 +3164,9 @@ EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
 --==================================================
 
 local CandyDestination = CFrame.new(
-    -45841.91,
-    40371.20,
-    -20123.44
+    -45843.39,
+    40402.92,
+    -20129.49
 )
 
 --==================================================
@@ -3586,7 +3586,7 @@ if Character then
         -- Mark the current candy before scanning for another
         ProcessedCandy[Candy] = true
 
-        task.wait(0.5)
+        task.wait(0.4)
 
         
         -- SECOND DESTINATION
