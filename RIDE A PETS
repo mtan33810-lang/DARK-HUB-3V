@@ -3421,59 +3421,136 @@ while CandyFarmEnabled do
                     break
                 end
 
-                -- 3. TWEEN TO DESTINATION
-                Character = Player.Character
+-- 3. TWEEN TO FIRST DESTINATION, THEN SECOND
+Character = Player.Character
 
-                if Character then
-                    Root = Character:FindFirstChild(
-                        "HumanoidRootPart"
-                    )
+if Character then
+    Root = Character:FindFirstChild("HumanoidRootPart")
 
-                    if Root then
-                        local Distance = (
-                            Root.Position
-                            - CandyDestination.Position
-                        ).Magnitude
+    if Root then
+        local function TweenToDestination(TargetCFrame, StopForCandy)
+            local Distance = (
+                Root.Position - TargetCFrame.Position
+            ).Magnitude
 
-                        -- Use the slider's current speed
-                        local Duration = math.max(
-                            Distance / math.max(CandyTweenSpeed, 1),
-                            0.1
+            local Duration = math.max(
+                Distance / math.max(CandyTweenSpeed, 1),
+                0.1
+            )
+
+            local Tween = TweenService:Create(
+                Root,
+                TweenInfo.new(
+                    Duration,
+                    Enum.EasingStyle.Linear,
+                    Enum.EasingDirection.Out
+                ),
+                {CFrame = TargetCFrame}
+            )
+
+            Tween:Play()
+
+            while Tween.PlaybackState
+                == Enum.PlaybackState.Playing do
+
+                if not CandyFarmEnabled then
+                    Tween:Cancel()
+                    return false, false
+                end
+
+                -- Check for new candy during SECOND tween
+                if StopForCandy then
+                    local FoundCandy = FindCandy()
+
+                    if FoundCandy and FoundCandy ~= Candy then
+                        Tween:Cancel()
+
+                        print(
+                            "[Candy Farm] New candy found! " ..
+                            "Stopping second destination."
                         )
 
-                        local Tween = TweenService:Create(
-                            Root,
-                            TweenInfo.new(
-                                Duration,
-                                Enum.EasingStyle.Linear,
-                                Enum.EasingDirection.Out
-                            ),
-                            {
-                                CFrame = CandyDestination
-                            }
-                        )
-
-                        Tween:Play()
-
-                        local PlaybackState =
-                            Tween.Completed:Wait()
-
-                        if PlaybackState
-                            ~= Enum.PlaybackState.Completed then
-                            break
-                        end
+                        return false, true
                     end
                 end
 
-                -- Mark candy and continue
-                ProcessedCandy[Candy] = true
+                task.wait(0.1)
+            end
 
-                task.wait(0.5)
+            return Tween.PlaybackState
+                == Enum.PlaybackState.Completed, false
+        end
+
+        -- FIRST DESTINATION
+        local FirstReached =
+            TweenToDestination(CandyDestination, false)
+
+        if not FirstReached then
+            break
+        end
+
+        if not CandyFarmEnabled then
+            break
+        end
+
+        -- Mark the current candy before scanning for another
+        ProcessedCandy[Candy] = true
+
+        task.wait(0.5)
+
+        
+        -- SECOND DESTINATION
+        local SecondDestination = CFrame.new(
+            -46382.04,
+            40353.38,
+            -19821.20
+        )
+
+        local SecondReached, FoundNewCandy =
+            TweenToDestination(SecondDestination, true)
+
+        if FoundNewCandy then
+            continue
+        end
+
+        if not SecondReached then
+            break
+        end
+
+        if not CandyFarmEnabled then
+            break
+        end
+
+        -- THIRD DESTINATION
+        local ThirdDestination = CFrame.new(
+            -46192.32,
+            40376.94,
+            -20564.35
+        )
+
+        local ThirdReached, FoundNewCandy =
+            TweenToDestination(ThirdDestination, true)
+
+        if FoundNewCandy then
+            continue
+        end
+
+        if not ThirdReached then
+            break
+        end
+    end
+end
+
+-- Continue farming
+ProcessedCandy[Candy] = true
+task.wait(0.5)
+
             end
             CandyFarmLoopRunning = false
         end)
     end
 })
+
 
 --==================================================
 -- 🍬 CANDY TWEEN SPEED SLIDER
