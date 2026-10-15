@@ -539,46 +539,49 @@ local function FlyToPosition(TargetCFrame)
     return Reached
 end
 
-
 --==================================================
--- DARK HUB | FLY ABOVE CUSTOM POSITION, THEN DESCEND
+-- DARK HUB | CUSTOM POSITION: FLY UP, THEN DOWN
 --==================================================
 
-local CUSTOM_DROP_POSITION = CFrame.new(
+local CUSTOM_POSITION = CFrame.new(
     81.75,
     40315.66,
     894.93
 )
 
-local CUSTOM_APPROACH_HEIGHT = 20
+local CUSTOM_APPROACH_HEIGHT = 30
 
 local function FlyAboveThenToCustomPosition()
 
+    -- Calculate the point directly above Custom Position
     local AbovePosition = CFrame.new(
-        CUSTOM_DROP_POSITION.Position
+        CUSTOM_POSITION.Position
             + Vector3.new(0, CUSTOM_APPROACH_HEIGHT, 0)
     )
 
-    -- Step 1: Fly above the Custom Position
+    print("[CUSTOM FLOW] Flying ABOVE Custom Position")
+
+    -- STEP 1: Fly upward/approach the point above
     local ReachedAbove = FlyToPosition(AbovePosition)
 
     if not ReachedAbove then
-        warn("[EGG FLOW] Failed to reach above Custom Position")
+        warn("[CUSTOM FLOW] Could not reach above position")
         return false
     end
 
-    task.wait(0.15)
+    task.wait(0.3)
 
-    -- Step 2: Descend to the exact Custom Position
-    local ReachedCustom = FlyToPosition(
-        CUSTOM_DROP_POSITION
-    )
+    print("[CUSTOM FLOW] Above position reached; descending")
+
+    -- STEP 2: Fly down to the exact Custom Position
+    local ReachedCustom = FlyToPosition(CUSTOM_POSITION)
 
     if not ReachedCustom then
-        warn("[EGG FLOW] Failed to reach Custom Position")
+        warn("[CUSTOM FLOW] Could not reach Custom Position")
         return false
     end
 
+    print("[CUSTOM FLOW] Custom Position reached")
     return true
 end
 
@@ -1371,7 +1374,6 @@ local function RunAfterEggPickup(Egg)
 
             local Root = Character:WaitForChild("HumanoidRootPart")
             
-            -- Fly above Custom Position, then descend
             if not FlyAboveThenToCustomPosition() then
                 return
             end
@@ -1469,9 +1471,6 @@ local function RunAfterEggPickup(Egg)
                         "HumanoidRootPart"
                     )
 
-                
-                
-                -- Fly above Custom Position, then descend
                 if not FlyAboveThenToCustomPosition() then
                     return
                 end
@@ -1565,8 +1564,6 @@ local function RunAfterEggPickup(Egg)
 
             -- Custom position
             
-            
-            -- Fly above Custom Position, then descend
             if not FlyAboveThenToCustomPosition() then
                 return
             end
