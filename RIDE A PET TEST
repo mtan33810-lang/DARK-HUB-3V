@@ -968,6 +968,204 @@ local function TweenToSavedPosition()
     return FlyToPosition(SAVED_POSITION)
 end
 
+
+--==================================================
+-- DARK HUB | OBSTACLE-AVOIDING SAVED POSITION FLIGHT
+-- Fly up → detect obstacles → climb higher → saved position
+--==================================================
+
+local function FlyToSavedPositionAvoidingObstacles()
+
+    if not SAVED_POSITION then
+        warn("[SAVED FLIGHT] Saved position is missing")
+        return false
+    end
+
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    local Target = SAVED_POSITION.Position
+    local Clearance = 50
+    local ExtraClearance = 25
+    local MaxAttempts = 10
+
+    -- Start at least 50 studs above the higher endpoint
+    local CruiseY = math.max(
+        Root.Position.Y,
+        Target.Y
+    ) + Clearance
+
+    local RayParams = RaycastParams.new()
+    RayParams.FilterType = Enum.RaycastFilterType.Exclude
+    RayParams.FilterDescendantsInstances = {Character}
+    RayParams.IgnoreWater = true
+
+    -- Find the first solid obstacle along a ray
+    local function FindBlockingObstacle(Origin, Destination)
+
+        local Excluded = {Character}
+
+        for _ = 1, 20 do
+            RayParams.FilterDescendantsInstances = Excluded
+
+            local Hit = workspace:Raycast(
+                Origin,
+                Destination - Origin,
+                RayParams
+            )
+
+            if not Hit then
+                return nil
+            end
+
+            local Object = Hit.Instance
+
+            if Object:IsA("Terrain") then
+                return Hit
+            end
+
+            if Object:IsA("BasePart") and Object.CanCollide then
+                return Hit
+            end
+
+            table.insert(Excluded, Object)
+        end
+
+        return nil
+    end
+
+    -- Calculate the top of an obstacle, including rotated parts
+    local function GetObstacleTop(Hit)
+        local Object = Hit.Instance
+
+        if Object:IsA("BasePart") then
+            local HalfHeight =
+                math.abs(Object.CFrame.RightVector.Y)
+                    * Object.Size.X / 2
+                + math.abs(Object.CFrame.UpVector.Y)
+                    * Object.Size.Y / 2
+                + math.abs(Object.CFrame.LookVector.Y)
+                    * Object.Size.Z / 2
+
+            return Object.Position.Y + HalfHeight
+        end
+
+        return Hit.Position.Y
+    end
+
+    -- STEP 1: Fly upward first
+    local StartRotation = Root.CFrame.Rotation
+
+    print("[SAVED FLIGHT] Flying upward")
+
+    local ReachedAbove = FlyToPosition(
+        CFrame.new(
+            Root.Position.X,
+            CruiseY,
+            Root.Position.Z
+        ) * StartRotation
+    )
+
+    if not ReachedAbove then
+        warn("[SAVED FLIGHT] Could not reach flight height")
+        return false
+    end
+
+    -- STEP 2: Check the route and climb higher if blocked
+    local PathClear = false
+
+    for Attempt = 1, MaxAttempts do
+
+        if not Root.Parent then
+            return false
+        end
+
+        local ElevatedTarget = Vector3.new(
+            Target.X,
+            CruiseY,
+            Target.Z
+        )
+
+        local Origin = Root.Position + Vector3.new(0, 2, 0)
+        local Destination =
+            ElevatedTarget + Vector3.new(0, 2, 0)
+
+        local Obstacle = FindBlockingObstacle(
+            Origin,
+            Destination
+        )
+
+        if not Obstacle then
+            PathClear = true
+            break
+        end
+
+        local ObstacleTop = GetObstacleTop(Obstacle)
+
+        local NewHeight = math.max(
+            CruiseY + ExtraClearance,
+            ObstacleTop + 15
+        )
+
+        print(
+            "[SAVED FLIGHT] Obstacle detected; climbing to Y =",
+            NewHeight
+        )
+
+        -- Climb vertically before attempting the route again
+        local ReachedHigher = FlyToPosition(
+            CFrame.new(
+                Root.Position.X,
+                NewHeight,
+                Root.Position.Z
+            ) * Root.CFrame.Rotation
+        )
+
+        if not ReachedHigher then
+            warn("[SAVED FLIGHT] Could not climb over obstacle")
+            return false
+        end
+
+        CruiseY = NewHeight
+    end
+
+    if not PathClear then
+        warn("[SAVED FLIGHT] Route remains blocked; stopping")
+        return false
+    end
+
+    -- STEP 3: Fly horizontally above the obstacles
+    print("[SAVED FLIGHT] Route clear; flying to saved position")
+
+    local ReachedAcross = FlyToPosition(
+        CFrame.new(
+            Target.X,
+            CruiseY,
+            Target.Z
+        ) * SAVED_POSITION.Rotation
+    )
+
+    if not ReachedAcross then
+        warn("[SAVED FLIGHT] Could not cross to saved position")
+        return false
+    end
+
+    -- STEP 4: Descend to the exact saved position
+    print("[SAVED FLIGHT] Descending to saved position")
+
+    local ReachedSaved = FlyToPosition(SAVED_POSITION)
+
+    if not ReachedSaved then
+        warn("[SAVED FLIGHT] Could not reach saved position")
+        return false
+    end
+
+    print("[SAVED FLIGHT] Arrived successfully")
+    return true
+end
+
 --==================================================
 -- 🌋 VOLCANO TELEPORT + HOVER + DIP
 --==================================================
@@ -1509,59 +1707,37 @@ local function RunAfterEggPickup(Egg)
 --==================================================
 -- 3. VOLCANO OFF + SAVED ON
 --
--- Pick Up
+-- Pick Up Egg
 -- → Fly Up
--- → Fly to Saved Position
--- → Drop
+-- → Climb Higher If Blocked
+-- → Fly Above Obstacles
+-- → Descend to Saved Position
+-- → Drop Egg
 -- → END
 --==================================================
 
-if not VolcanoDipTween
-    and SavedPositionTween
-then
+if not VolcanoDipTween and SavedPositionTween then
+
     print("[EGG FLOW] Volcano OFF + Saved ON")
 
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root = Character:WaitForChild("HumanoidRootPart")
-
-    -- STEP 1: Fly upward first
-    local CurrentPosition = Root.Position
-    local AbovePosition = CFrame.new(
-        CurrentPosition.X,
-        CurrentPosition.Y + 150,
-        CurrentPosition.Z
-    ) * Root.CFrame.Rotation
-
-    local ReachedAbove = FlyToPosition(AbovePosition)
-
-    if not ReachedAbove then
-        warn("[EGG FLOW] Failed to fly upward")
-        return
-    end
-
-    task.wait(0.2)
-
-    -- STEP 2: Fly to the saved position
-    local ReachedSaved = TweenToSavedPosition()
+    local ReachedSaved =
+        FlyToSavedPositionAvoidingObstacles()
 
     if not ReachedSaved then
-        warn("[EGG FLOW] Failed to reach saved position")
+        warn("[EGG FLOW] Saved-position flight failed")
         return
     end
 
     task.wait(0.5)
 
-    -- STEP 3: Drop the egg
     local Dropped = DropEgg()
 
     if not Dropped then
-        warn("[EGG FLOW] Drop failed")
+        warn("[EGG FLOW] Egg drop failed")
         return
     end
 
-    print("[EGG FLOW] Finished: Fly Up → Saved → Drop")
+    print("[EGG FLOW] Finished: Obstacle Flight → Saved → Drop")
     return
 end
 
