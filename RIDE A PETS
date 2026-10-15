@@ -1338,7 +1338,7 @@ local function RunAfterEggPickup(Egg)
                     )
 
                 
-                TweenToCustomPosition(
+                FlyToPosition(
                     CFrame.new(81.75, 40315.66, 894.93)
                 )
 
@@ -1431,7 +1431,7 @@ local function RunAfterEggPickup(Egg)
 
             -- Custom position
             
-            TweenToCustomPosition(
+            FlyToPosition(
                 CFrame.new(81.75, 40315.66, 894.93)
             )
 
