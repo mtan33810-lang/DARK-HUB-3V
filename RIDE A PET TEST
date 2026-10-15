@@ -3402,33 +3402,80 @@ while CandyFarmEnabled do
                 if not CandyFarmEnabled then
                     break
                 end
+                
+--==================================================
+-- 🍬 CANDY PICKUP - RETRY AND VERIFY
+--==================================================
 
-                -- 2. FIND PICKUP PROMPT
-                local Prompt = FindPickupPrompt(
-                    Candy,
-                    Part,
-                    3
-                )
+local PickedUp = false
 
-                -- Attempt pickup and preserve errors
-                if Prompt then
-                    local Success, ErrorMessage = pcall(function()
-                        fireproximityprompt(Prompt)
-                    end)
+for Attempt = 1, 3 do
+    if not CandyFarmEnabled then
+        break
+    end
 
-                    if not Success then
-                        warn(
-                            "[Candy Farm] Pickup error:",
-                            ErrorMessage
-                        )
-                    end
-                else
-                    warn(
-                        "[Candy Farm] Pickup prompt not found"
-                    )
-                end
+    -- Candy may have disappeared already
+    if not Candy or not Candy.Parent then
+        PickedUp = true
+        break
+    end
 
-                task.wait(0.5)
+    local Prompt = FindPickupPrompt(Candy, Part, 3)
+
+    if not Prompt then
+        warn("[Candy Farm] Pickup prompt not found. Attempt:", Attempt)
+        task.wait(0.4)
+        continue
+    end
+
+    -- Make sure the character is close enough
+    local Character = Player.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local PromptPosition = GetPromptPosition(Prompt)
+
+    if not Root or not PromptPosition then
+        task.wait(0.4)
+        continue
+    end
+
+    -- Move near the prompt instead of inside the candy
+    if (Root.Position - PromptPosition).Magnitude > 8 then
+        Root.CFrame = CFrame.new(PromptPosition + Vector3.new(0, 2, 0))
+        task.wait(0.3)
+    end
+
+    -- Recheck that the prompt is still available
+    if Prompt.Parent and Prompt.Enabled
+        and typeof(fireproximityprompt) == "function" then
+
+        local Success, ErrorMessage = pcall(function()
+            fireproximityprompt(Prompt)
+        end)
+
+        if not Success then
+            warn("[Candy Farm] Pickup error:", ErrorMessage)
+        end
+
+        task.wait(0.7)
+
+        -- Confirm collection or disappearance
+        if not Candy.Parent then
+            PickedUp = true
+            break
+        end
+    end
+
+    task.wait(0.4)
+end
+
+if not PickedUp then
+    warn("[Candy Farm] Pickup not confirmed; retrying scan.")
+    task.wait(0.5)
+    continue
+end
+
+print("[Candy Farm] Pickup confirmed!")
+
 
                 if not CandyFarmEnabled then
                     break
