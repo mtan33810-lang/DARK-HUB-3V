@@ -3535,6 +3535,7 @@ if not CandyFarmEnabled then
     break
 end
 
+
 -- THIRD DESTINATION
 local ThirdDestination = CFrame.new(
     -46192.32,
@@ -3553,6 +3554,27 @@ if not ThirdReached then
     break
 end
 
+if not CandyFarmEnabled then
+    break
+end
+
+-- FOURTH DESTINATION
+local FourthDestination = CFrame.new(
+    -47394.40,
+    40414.50,
+    -20187.32
+)
+
+local FourthReached, FoundNewCandy =
+    TweenToDestination(FourthDestination, true)
+
+if FoundNewCandy then
+    continue
+end
+
+if not FourthReached then
+    break
+end
     end
 end
 
