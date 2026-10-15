@@ -3827,6 +3827,258 @@ EventTab:CreateToggle({
     end
 })
 
+
+--==================================================
+-- ☯ DARK HUB | YING HALF + YANG HALF ESP
+-- RAYFIELD GEN 2
+--==================================================
+
+local YingYangESPEnabled = false
+local YingYangESPObjects = {}
+
+-- ESP container
+local YingYangESPFolder = Instance.new("Folder")
+YingYangESPFolder.Name = "DARK_HUB_YingYangHalfESP"
+YingYangESPFolder.Parent = Workspace
+
+--==================================================
+-- FIND YING HALF / YANG HALF
+-- Supports Ying, Yin, and Yang spelling variations
+--==================================================
+
+local function GetYingYangInfo(Object)
+
+    if not Object:IsA("Model")
+        and not Object:IsA("BasePart") then
+        return nil, nil
+    end
+
+    local Name = string.lower(Object.Name)
+    local CompactName = Name:gsub("[%s_%-]", "")
+
+    local HasHalf = string.find(
+        CompactName, "half", 1, true
+    ) ~= nil
+
+    if not HasHalf then
+        return nil, nil
+    end
+
+    if string.find(CompactName, "ying", 1, true)
+        or string.find(CompactName, "yin", 1, true) then
+
+        return "☯ YING HALF", Color3.fromRGB(70, 180, 255)
+
+    elseif string.find(CompactName, "yang", 1, true) then
+
+        return "☯ YANG HALF", Color3.fromRGB(255, 220, 70)
+
+    end
+
+    return nil, nil
+end
+
+--==================================================
+-- GET ESP ADORNEE
+--==================================================
+
+local function GetYingYangAdornee(Object)
+
+    if Object:IsA("BasePart") then
+        return Object
+    end
+
+    if Object:IsA("Model") then
+        return Object.PrimaryPart
+            or Object:FindFirstChildWhichIsA(
+                "BasePart", true
+            )
+    end
+
+    return nil
+end
+
+--==================================================
+-- CREATE ESP
+--==================================================
+
+local function CreateYingYangESP(Object)
+
+    if not YingYangESPEnabled then
+        return
+    end
+
+    if not Object.Parent
+        or Object:IsDescendantOf(YingYangESPFolder) then
+        return
+    end
+
+    if YingYangESPObjects[Object] then
+        return
+    end
+
+    local Label, ESPColor = GetYingYangInfo(Object)
+
+    if not Label then
+        return
+    end
+
+    local Adornee = GetYingYangAdornee(Object)
+
+    if not Adornee then
+        return
+    end
+
+    -- Individual ESP container
+    local Entry = Instance.new("Folder")
+    Entry.Name = Label:gsub("[^%w]", "") .. "_ESP"
+
+    -- Outline visible through objects
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = "ESPHighlight"
+    Highlight.Adornee = Object
+    Highlight.FillColor = ESPColor
+    Highlight.OutlineColor = ESPColor
+    Highlight.FillTransparency = 0.75
+    Highlight.OutlineTransparency = 0
+    Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    Highlight.Parent = Entry
+
+    -- Floating name label
+    local Billboard = Instance.new("BillboardGui")
+    Billboard.Name = "ESPLabel"
+    Billboard.Adornee = Adornee
+    Billboard.Size = UDim2.new(0, 190, 0, 36)
+    Billboard.StudsOffset = Vector3.new(0, 4, 0)
+    Billboard.AlwaysOnTop = true
+    Billboard.Parent = Entry
+
+    local Text = Instance.new("TextLabel")
+    Text.Name = "NameLabel"
+    Text.Size = UDim2.fromScale(1, 1)
+    Text.BackgroundTransparency = 1
+    Text.Text = Label
+    Text.TextColor3 = ESPColor
+    Text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    Text.TextStrokeTransparency = 0
+    Text.TextSize = 15
+    Text.TextScaled = false
+    Text.Font = Enum.Font.GothamBold
+    Text.Parent = Billboard
+
+    Entry.Parent = YingYangESPFolder
+    YingYangESPObjects[Object] = Entry
+end
+
+--==================================================
+-- CLEAR ESP
+--==================================================
+
+local function ClearYingYangESP()
+
+    for _, Entry in ipairs(
+        YingYangESPFolder:GetChildren()
+    ) do
+        Entry:Destroy()
+    end
+
+    table.clear(YingYangESPObjects)
+end
+
+--==================================================
+-- SCAN ALL EXISTING OBJECTS
+--==================================================
+
+local function ScanYingYangESP()
+
+    ClearYingYangESP()
+
+    for _, Object in ipairs(Workspace:GetDescendants()) do
+
+        if not YingYangESPEnabled then
+            break
+        end
+
+        CreateYingYangESP(Object)
+    end
+
+    print("[DARK HUB ESP] Ying Half + Yang Half scan complete")
+end
+
+--==================================================
+-- DETECT NEWLY SPAWNED OBJECTS
+--==================================================
+
+Workspace.DescendantAdded:Connect(function(Object)
+
+    if not YingYangESPEnabled then
+        return
+    end
+
+    task.delay(0.1, function()
+
+        if YingYangESPEnabled and Object.Parent then
+            CreateYingYangESP(Object)
+        end
+
+    end)
+end)
+
+--==================================================
+-- REMOVE ESP WHEN OBJECT DISAPPEARS
+--==================================================
+
+Workspace.DescendantRemoving:Connect(function(Object)
+
+    local Entry = YingYangESPObjects[Object]
+
+    if Entry then
+        Entry:Destroy()
+        YingYangESPObjects[Object] = nil
+    end
+end)
+
+--==================================================
+-- ESP TAB + TOGGLE
+--==================================================
+
+EventTab:CreateSection({
+    name = "☯ Ying Half / Yang Half"
+})
+
+EventTab:CreateToggle({
+    name = "☯ Ying Half + Yang Half ESP",
+    flag = "YingYangHalfESP",
+    value = false,
+
+    callback = function(Value)
+
+        YingYangESPEnabled = Value
+
+        if Value then
+            ScanYingYangESP()
+
+            Window:Notify({
+                title = "Ying / Yang ESP",
+                content = "ESP enabled. Scanning for both halves.",
+                duration = 3
+            })
+        else
+            ClearYingYangESP()
+
+            Window:Notify({
+                title = "Ying / Yang ESP",
+                content = "ESP disabled. Highlights cleared.",
+                duration = 3
+            })
+        end
+    end
+})
+
+--==================================================
+-- END YING / YANG ESP
+--==================================================
+
 --==================================================
 -- AUTOMATIC TAB
 --==================================================
