@@ -1421,36 +1421,64 @@ local function RunAfterEggPickup(Egg)
             end
 
 
-            --==================================================
-            -- 3. VOLCANO OFF + SAVED ON
-            --
-            -- Pick Up
-            -- → Saved
-            -- → Drop
-            -- → END
-            --==================================================
+--==================================================
+-- 3. VOLCANO OFF + SAVED ON
+--
+-- Pick Up
+-- → Fly Up
+-- → Fly to Saved Position
+-- → Drop
+-- → END
+--==================================================
 
-            if not VolcanoDipTween
-                and SavedPositionTween
-            then
+if not VolcanoDipTween
+    and SavedPositionTween
+then
+    print("[EGG FLOW] Volcano OFF + Saved ON")
 
-                print(
-                    "[EGG FLOW] Volcano OFF + Saved ON"
-                )
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
 
-                TweenToSavedPosition()
+    local Root = Character:WaitForChild("HumanoidRootPart")
 
-                task.wait(0.5)
+    -- STEP 1: Fly upward first
+    local CurrentPosition = Root.Position
+    local AbovePosition = CFrame.new(
+        CurrentPosition.X,
+        CurrentPosition.Y + 150,
+        CurrentPosition.Z
+    ) * Root.CFrame.Rotation
 
-                DropEgg()
+    local ReachedAbove = FlyToPosition(AbovePosition)
 
-                print(
-                    "[EGG FLOW] Finished: Saved → Drop"
-                )
+    if not ReachedAbove then
+        warn("[EGG FLOW] Failed to fly upward")
+        return
+    end
 
-                return
-            end
+    task.wait(0.2)
 
+    -- STEP 2: Fly to the saved position
+    local ReachedSaved = TweenToSavedPosition()
+
+    if not ReachedSaved then
+        warn("[EGG FLOW] Failed to reach saved position")
+        return
+    end
+
+    task.wait(0.5)
+
+    -- STEP 3: Drop the egg
+    local Dropped = DropEgg()
+
+    if not Dropped then
+        warn("[EGG FLOW] Drop failed")
+        return
+    end
+
+    print("[EGG FLOW] Finished: Fly Up → Saved → Drop")
+    return
+end
 
             --==================================================
             -- 4. VOLCANO OFF + SAVED OFF
