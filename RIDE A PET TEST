@@ -376,81 +376,164 @@ local function TweenToCustomPosition(TargetCFrame)
     return Result == Enum.PlaybackState.Completed
 end
 
-
-
-
 --==================================================
--- FLY TO TARGET POSITION - PHYSICS MOVEMENT
+-- DARK HUB | STABLE PLOT FLIGHT
+-- Smooth movement, locked rotation, safe cleanup
 --==================================================
 
 local PlotFlySpeed = 700
+local PlotFlightBusy = false
 
 local function FlyToPosition(TargetCFrame)
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
+    if PlotFlightBusy then
+        return false
+    end
 
-    local Root = Character:WaitForChild("HumanoidRootPart")
-    local Humanoid = Character:WaitForChild("Humanoid")
+    PlotFlightBusy = true
 
-    local WasFlying = Flying
+    local Success, Reached = pcall(function()
+        local Character = Player.Character
+            or Player.CharacterAdded:Wait()
 
-    -- Stop normal fly so it won't fight plot flight
-    StopFly()
+        local Root = Character:WaitForChild("HumanoidRootPart")
+        local Humanoid = Character:WaitForChild("Humanoid")
 
-    local Attachment = Instance.new("Attachment")
-    Attachment.Name = "PlotFlightAttachment"
-    Attachment.Parent = Root
+        local WasFlying = Flying
+        local OldAutoRotate = Humanoid.AutoRotate
+        local StartRotation = Root.CFrame.Rotation
+        local TargetPosition = TargetCFrame.Position
 
-    local Velocity = Instance.new("LinearVelocity")
-    Velocity.Name = "PlotFlightVelocity"
-    Velocity.Attachment0 = Attachment
-    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
-    Velocity.VelocityConstraintMode =
-        Enum.VelocityConstraintMode.Vector
-    Velocity.MaxForce = math.huge
-    Velocity.VectorVelocity = Vector3.zero
-    Velocity.Parent = Root
+        -- Stop normal flight before starting plot flight
+        StopFly()
 
-    Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-
-    local TargetPosition = TargetCFrame.Position
-    local Reached = false
-
-    while Root.Parent and Character.Parent do
-        local Offset = TargetPosition - Root.Position
-        local Distance = Offset.Magnitude
-
-        if Distance <= 3 then
-            Reached = true
-            break
+        -- Remove leftovers from a previous flight
+        for _, Object in ipairs(Root:GetChildren()) do
+            if Object.Name == "PlotFlightVelocity"
+                or Object.Name == "PlotFlightAttachment"
+                or Object.Name == "PlotFlightRotation" then
+                Object:Destroy()
+            end
         end
 
-        -- Use the existing plot flight speed slider
-        local Speed = math.max(PlotFlySpeed, 10)
+        local Attachment = Instance.new("Attachment")
+        Attachment.Name = "PlotFlightAttachment"
+        Attachment.Parent = Root
 
-        Velocity.VectorVelocity =
-            Offset.Unit * math.min(Speed, Distance * 2)
+        local Velocity = Instance.new("LinearVelocity")
+        Velocity.Name = "PlotFlightVelocity"
+        Velocity.Attachment0 = Attachment
+        Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+        Velocity.VelocityConstraintMode =
+            Enum.VelocityConstraintMode.Vector
+        Velocity.MaxForce = math.huge
+        Velocity.VectorVelocity = Vector3.zero
+        Velocity.Parent = Root
 
-        RunService.Heartbeat:Wait()
-    end
+        -- Keep the character from spinning during flight
+        local Rotation = Instance.new("AlignOrientation")
+        Rotation.Name = "PlotFlightRotation"
+        Rotation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+        Rotation.Attachment0 = Attachment
+        Rotation.CFrame = StartRotation
+        Rotation.RigidityEnabled = true
+        Rotation.MaxTorque = math.huge
+        Rotation.Responsiveness = 200
+        Rotation.Parent = Root
 
-    if Velocity.Parent then
-        Velocity:Destroy()
-    end
+        Humanoid.AutoRotate = false
+        Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
-    if Attachment.Parent then
-        Attachment:Destroy()
-    end
+        local Distance = (TargetPosition - Root.Position).Magnitude
+        local Timeout = math.max(
+            Distance / math.max(PlotFlySpeed, 10) * 3,
+            8
+        )
 
-    if Root.Parent then
-        Root.AssemblyLinearVelocity = Vector3.zero
-        Root.AssemblyAngularVelocity = Vector3.zero
-    end
+        local Started = os.clock()
+        local Arrived = false
 
-    Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        while Root.Parent and Character.Parent
+            and Humanoid.Health > 0 do
 
-    if WasFlying and Root.Parent then
-        StartFly()
+            local Offset = TargetPosition - Root.Position
+            local Remaining = Offset.Magnitude
+
+            if Remaining <= 3 then
+                Arrived = true
+                break
+            end
+
+            if os.clock() - Started > Timeout then
+                warn("[PLOT FLIGHT] Flight timed out")
+                break
+            end
+
+            local Speed = math.max(PlotFlySpeed, 10)
+
+            -- Slow down near the destination
+            local ActualSpeed = math.min(
+                Speed,
+                math.max(Remaining * 2, 8)
+            )
+
+            Velocity.VectorVelocity =
+                Offset.Unit * ActualSpeed
+
+            -- Cancel unwanted spinning
+            Root.AssemblyAngularVelocity = Vector3.zero
+
+            RunService.Heartbeat:Wait()
+        end
+
+        -- Stop movement before removing constraints
+        Velocity.VectorVelocity = Vector3.zero
+
+        if Arrived and Root.Parent then
+            Root.CFrame =
+                CFrame.new(TargetPosition) * StartRotation
+        end
+
+        if Velocity.Parent then
+            Velocity:Destroy()
+        end
+
+        if Rotation.Parent then
+            Rotation:Destroy()
+        end
+
+        if Attachment.Parent then
+            Attachment:Destroy()
+        end
+
+        if Root.Parent then
+            Root.AssemblyLinearVelocity = Vector3.zero
+            Root.AssemblyAngularVelocity = Vector3.zero
+        end
+
+        if Humanoid.Parent then
+            Humanoid.AutoRotate = OldAutoRotate
+
+            if Humanoid.Health > 0 then
+                Humanoid:ChangeState(
+                    Enum.HumanoidStateType.GettingUp
+                )
+            end
+        end
+
+        -- Restore manual flight only when it was previously enabled
+        if WasFlying and Character == Player.Character
+            and Humanoid.Health > 0 then
+            StartFly()
+        end
+
+        return Arrived
+    end)
+
+    PlotFlightBusy = false
+
+    if not Success then
+        warn("[PLOT FLIGHT] Error: " .. tostring(Reached))
+        return false
     end
 
     return Reached
