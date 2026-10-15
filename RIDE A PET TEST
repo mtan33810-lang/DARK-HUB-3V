@@ -1530,7 +1530,7 @@ then
     local CurrentPosition = Root.Position
     local AbovePosition = CFrame.new(
         CurrentPosition.X,
-        CurrentPosition.Y + 50,
+        CurrentPosition.Y + 150,
         CurrentPosition.Z
     ) * Root.CFrame.Rotation
 
