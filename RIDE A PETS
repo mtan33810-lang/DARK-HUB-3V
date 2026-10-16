@@ -3831,22 +3831,66 @@ if Character then
                 == Enum.PlaybackState.Completed, false
         end
 
-        -- FIRST DESTINATION
-        local FirstReached =
-            TweenToDestination(CandyDestination, false)
+-- FIRST DESTINATION
+local function IsHoldingCandy()
+    local CharacterNow = Player.Character
 
-        if not FirstReached then
-            break
+    if not CharacterNow then
+        return false
+    end
+
+    for _, Object in ipairs(CharacterNow:GetDescendants()) do
+        local ObjectName = string.lower(Object.Name)
+
+        local IsCandyName =
+            string.find(ObjectName, "candy", 1, true)
+            or string.find(ObjectName, "ritual", 1, true)
+
+        if IsCandyName
+            and (
+                Object:IsA("Tool")
+                or Object:IsA("Model")
+                or Object:IsA("BasePart")
+            )
+        then
+            return true
         end
+    end
 
-        if not CandyFarmEnabled then
-            break
-        end
+    return false
+end
 
-        -- Mark the current candy before scanning for another
-        ProcessedCandy[Candy] = true
+local FirstReached = true
 
-        task.wait(0.4)
+repeat
+    if not CandyFarmEnabled then
+        FirstReached = false
+        break
+    end
+
+    -- Tween to the first destination
+    local ReachedFirst =
+        TweenToDestination(CandyDestination, false)
+
+    if not ReachedFirst then
+        FirstReached = false
+        break
+    end
+
+    task.wait(0.3)
+
+    -- If still holding candy, repeat the first tween
+until not IsHoldingCandy()
+
+if not FirstReached then
+    break
+end
+
+-- Mark the current candy before scanning for another
+ProcessedCandy[Candy] = true
+
+task.wait(0.1)
+
 
         
         -- SECOND DESTINATION
