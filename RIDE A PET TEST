@@ -1509,11 +1509,12 @@ local function RunAfterEggPickup(Egg)
 
 
 
+
 --==================================================
 -- 3. VOLCANO OFF + SAVED ON
 --
 -- Pick Up Egg
--- → Teleport
+-- → Tween Teleport
 -- → Fly to Saved Position
 -- → Drop Egg
 -- → END
@@ -1523,31 +1524,27 @@ if not VolcanoDipTween and SavedPositionTween then
 
     print("[EGG FLOW] Volcano OFF + Saved ON")
 
-    -- STEP 1: Teleport after picking up the egg
-    local Character =
-        Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root =
-        Character:WaitForChild("HumanoidRootPart")
-
-    Root.CFrame = CFrame.new(
-        1650.52,
-        40586.08,
-        397.75
+    -- STEP 1: Tween Teleport after picking up the egg
+    local TweenTeleported = TweenToCustomPosition(
+        CFrame.new(
+            1650.52,
+            40586.08,
+            397.75
+        )
     )
 
-    Root.AssemblyLinearVelocity = Vector3.zero
-    Root.AssemblyAngularVelocity = Vector3.zero
+    if not TweenTeleported then
+        warn("[EGG FLOW] Tween Teleport failed")
+        return
+    end
 
     task.wait(0.3)
 
-    -- STEP 2: Fly directly to Saved Position
-    local ReachedSaved =
-        FlyToPosition(SAVED_POSITION)
+    -- STEP 2: Fly to Saved Position
+    local ReachedSaved = TweenToSavedPosition()
 
     if not ReachedSaved then
-        warn("[EGG FLOW] Failed to fly to Saved Position")
+        warn("[EGG FLOW] Saved-position flight failed")
         return
     end
 
@@ -1561,7 +1558,9 @@ if not VolcanoDipTween and SavedPositionTween then
         return
     end
 
-    print("[EGG FLOW] Finished: Teleport → Saved Position → Drop")
+    print(
+        "[EGG FLOW] Finished: Tween Teleport → Fly to Saved Position → Drop"
+    )
 
     return
 end
