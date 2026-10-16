@@ -3641,40 +3641,37 @@ local CandyDestination = CFrame.new(
 --==================================================
 
 local function FindCandy()
-    local Folder = workspace:FindFirstChild("HalloweenCandy")
+    local CandyFolder =
+        workspace:FindFirstChild("HalloweenCandy")
 
-    if not Folder then
-        warn("[Candy Farm] HalloweenCandy folder not found!")
+    if not CandyFolder then
         return nil, nil
     end
 
-    -- Check direct children and nested objects
-    local Items = Folder:GetChildren()
+    for _, Candy in ipairs(CandyFolder:GetChildren()) do
+        local Name = string.lower(Candy.Name)
 
-    for _, Object in ipairs(Folder:GetDescendants()) do
-        table.insert(Items, Object)
-    end
+        local IsNormalCandy =
+            Name:match("^candy_%d+$") ~= nil
 
-    for _, Candy in ipairs(Items) do
-        if not CandyFarmEnabled then
-            return nil, nil
-        end
+        local IsRitualCandy =
+            Name:find("ritual") ~= nil
 
-        if (Candy:IsA("BasePart") or Candy:IsA("Model"))
-            and Candy.Name:match("^Candy_%d+$")
+        if (IsNormalCandy or IsRitualCandy)
             and not ProcessedCandy[Candy] then
 
             local Part
 
             if Candy:IsA("BasePart") then
                 Part = Candy
-            else
+            elseif Candy:IsA("Model") then
                 Part = Candy.PrimaryPart
-                    or Candy:FindFirstChildWhichIsA("BasePart", true)
+                    or Candy:FindFirstChildWhichIsA(
+                        "BasePart", true
+                    )
             end
 
             if Part then
-                print("[Candy Farm] Found:", Candy:GetFullName())
                 return Candy, Part
             end
         end
