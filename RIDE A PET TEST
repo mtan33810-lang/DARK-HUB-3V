@@ -4512,6 +4512,135 @@ local function FindYinYangPrompt(Target)
     return nil
 end
 
+
+--==================================================
+-- ☯️ YIN & YANG PLACEMENT
+--==================================================
+
+local YinYangPlacePosition = CFrame.new(
+    -46384.75,
+    40356.26,
+    -19676.62
+)
+
+local function NormalizeYinYangText(Value)
+    return string.lower(
+        tostring(Value or "")
+    ):gsub("[^%w]", "")
+end
+
+-- Find and activate the matching Place interaction
+local function PressPlaceYinYang(TargetName)
+    local Expected = NormalizeYinYangText(
+        "Place " .. TargetName
+    )
+
+    local function MatchesPlaceAction(Object)
+        local Parts = {}
+
+        if Object:IsA("ProximityPrompt") then
+            table.insert(Parts, Object.ActionText)
+        elseif Object:IsA("TextButton") then
+            table.insert(Parts, Object.Text)
+        end
+
+        table.insert(Parts, Object.Name)
+
+        local Parent = Object.Parent
+
+        for _ = 1, 4 do
+            if not Parent then
+                break
+            end
+
+            table.insert(Parts, Parent.Name)
+            Parent = Parent.Parent
+        end
+
+        local Combined = NormalizeYinYangText(
+            table.concat(Parts, " ")
+        )
+
+        return Combined:find(Expected, 1, true) ~= nil
+            or (
+                Combined:find("place", 1, true) ~= nil
+                and Combined:find(
+                    NormalizeYinYangText(TargetName),
+                    1,
+                    true
+                ) ~= nil
+            )
+    end
+
+    -- Look for the matching world interaction
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if Object:IsA("ProximityPrompt")
+            and Object.Enabled
+            and MatchesPlaceAction(Object)
+        then
+            if typeof(fireproximityprompt) == "function" then
+                local Success = pcall(function()
+                    fireproximityprompt(Object)
+                end)
+
+                if Success then
+                    return true
+                end
+            end
+        end
+    end
+
+    -- Look for the matching on-screen button
+    local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+
+    if PlayerGui then
+        for _, Object in ipairs(PlayerGui:GetDescendants()) do
+            if Object:IsA("TextButton")
+                and Object.Visible
+                and MatchesPlaceAction(Object)
+            then
+                local Success = pcall(function()
+                    if typeof(firesignal) == "function" then
+                        firesignal(Object.Activated)
+                    else
+                        Object:Activate()
+                    end
+                end)
+
+                if Success then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+-- Teleport to the altar and place the collected item
+local function TeleportAndPlaceYinYang(TargetName)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    Root.CFrame = YinYangPlacePosition
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+
+    task.wait(0.75)
+
+    local Success = PressPlaceYinYang(TargetName)
+
+    if not Success then
+        warn(
+            "[Yin & Yang] Could not find the Place "
+            .. TargetName
+            .. " interaction."
+        )
+    end
+end
+
 --==================================================
 -- TOGGLE
 --==================================================
@@ -4618,22 +4747,34 @@ EventTab:CreateToggle({
                         Target.Name
                     )
                 end
+   
+--==================================================
+-- WAIT FOR COLLECTION, THEN TELEPORT AND PLACE
+--==================================================
 
-                -- Give the game time to register collection
-                local StartTime = os.clock()
+local StartTime = os.clock()
 
-                repeat
-                    task.wait(0.1)
-                until not AutoCollectYinYangEnabled
-                    or not Target:IsDescendantOf(Runtime)
-                    or os.clock() - StartTime >= 1.2
+repeat
+    task.wait(0.1)
+until not AutoCollectYinYangEnabled
+    or not Target:IsDescendantOf(Runtime)
+    or os.clock() - StartTime >= 1.2
 
-                -- Skip objects that disappeared
-                if not Target:IsDescendantOf(Runtime) then
-                    ProcessedYinYang[Target] = true
-                end
+local WasCollected = not Target:IsDescendantOf(Runtime)
 
-                task.wait(0.2)
+if WasCollected then
+    ProcessedYinYang[Target] = true
+
+    -- Remember whether this was Yin or Yang
+    local CollectedName = Target.Name
+
+    -- Teleport to the placement location
+    -- and press the matching Place interaction
+    TeleportAndPlaceYinYang(CollectedName)
+end
+
+task.wait(0.2)
+
             end
 
             AutoCollectYinYangLoopRunning = false
