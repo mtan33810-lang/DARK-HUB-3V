@@ -4218,7 +4218,7 @@ local function FindNearestYinYang()
                 or Target:IsA("BasePart")
             )
             and not ProcessedYinYang[Target]
-            and (YinYangAttempts[Target] or 0) < 3
+            and (YinYangAttempts[Target] or 0) < 5
             and not HasSameNameAncestor(Target, Runtime)
         then
             local Part = GetYinYangPart(Target)
@@ -4556,9 +4556,10 @@ until not AutoCollectYinYangEnabled
     or not Target:IsDescendantOf(Runtime)
     or os.clock() - CollectionStart >= 5
 
--- Confirm collection again
+-- Confirm collection or force-complete after 5 attempts
 WasCollected = WasCollected
     or not Target:IsDescendantOf(Runtime)
+    or (YinYangAttempts[Target] or 0) >= 5
 
 if WasCollected then
     ProcessedYinYang[Target] = true
