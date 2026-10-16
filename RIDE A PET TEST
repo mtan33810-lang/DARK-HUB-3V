@@ -4699,81 +4699,100 @@ EventTab:CreateToggle({
 
                 local InteractionSent = false
 
-                -- Method 1: ProximityPrompt
-                local Prompt = FindYinYangPrompt(Target)
-
-                if Prompt
-                    and typeof(fireproximityprompt) == "function"
-                then
-                    InteractionSent = pcall(function()
-                        fireproximityprompt(Prompt)
-                    end)
-                end
-
-                -- Method 2: ClickDetector
-                if not InteractionSent
-                    and Target.Parent
-                then
-                    for _, Object in ipairs(
-                        Target:GetDescendants()
-                    ) do
-                        if Object:IsA("ClickDetector")
-                            and typeof(fireclickdetector) == "function"
-                        then
-                            InteractionSent = pcall(function()
-                                fireclickdetector(Object)
-                            end)
-
-                            break
-                        end
-                    end
-                end
-
-                -- Method 3: Touch interaction
-                if not InteractionSent
-                    and typeof(firetouchinterest) == "function"
-                    and Part.Parent
-                then
-                    InteractionSent = pcall(function()
-                        firetouchinterest(Root, Part, 0)
-                        task.wait(0.1)
-                        firetouchinterest(Root, Part, 1)
-                    end)
-                end
-
-                if not InteractionSent then
-                    warn(
-                        "[Yin & Yang] No supported interaction found:",
-                        Target.Name
-                    )
-                end
-   
 --==================================================
--- WAIT FOR COLLECTION, THEN TELEPORT AND PLACE
+-- ☯️ RETRY COLLECTION AND CONFIRM SUCCESS
 --==================================================
 
-local StartTime = os.clock()
+local CollectionStart = os.clock()
+local SupportedInteraction = false
+local WasCollected = false
 
 repeat
-    task.wait(0.1)
+    if not AutoCollectYinYangEnabled then
+        break
+    end
+
+    -- Check whether Yin or Yang disappeared
+    if not Target:IsDescendantOf(Runtime) then
+        WasCollected = true
+        break
+    end
+
+    local InteractionSent = false
+
+    -- Method 1: ProximityPrompt
+    local Prompt = FindYinYangPrompt(Target)
+
+    if Prompt
+        and typeof(fireproximityprompt) == "function"
+    then
+        InteractionSent = pcall(function()
+            fireproximityprompt(Prompt)
+        end)
+    end
+
+    -- Method 2: ClickDetector
+    if not InteractionSent
+        and typeof(fireclickdetector) == "function"
+    then
+        for _, Object in ipairs(
+            Target:GetDescendants()
+        ) do
+            if Object:IsA("ClickDetector") then
+                InteractionSent = pcall(function()
+                    fireclickdetector(Object)
+                end)
+
+                if InteractionSent then
+                    break
+                end
+            end
+        end
+    end
+
+    -- Method 3: Touch interaction
+    if not InteractionSent
+        and typeof(firetouchinterest) == "function"
+        and Part.Parent
+    then
+        InteractionSent = pcall(function()
+            firetouchinterest(Root, Part, 0)
+            task.wait(0.1)
+            firetouchinterest(Root, Part, 1)
+        end)
+    end
+
+    if InteractionSent then
+        SupportedInteraction = true
+    end
+
+    -- Retry while waiting for server confirmation
+    task.wait(0.35)
+
 until not AutoCollectYinYangEnabled
     or not Target:IsDescendantOf(Runtime)
-    or os.clock() - StartTime >= 1.2
+    or os.clock() - CollectionStart >= 5
 
-local WasCollected = not Target:IsDescendantOf(Runtime)
+-- Confirm collection again
+WasCollected = WasCollected
+    or not Target:IsDescendantOf(Runtime)
 
 if WasCollected then
     ProcessedYinYang[Target] = true
 
-    -- Remember whether this was Yin or Yang
     local CollectedName = Target.Name
 
-    -- Teleport to the placement location
-    -- and press the matching Place interaction
+    -- Teleport and place the collected Yin or Yang
     TeleportAndPlaceYinYang(CollectedName)
+
+elseif not SupportedInteraction then
+    warn(
+        "[Yin & Yang] No supported interaction worked for:",
+        Target.Name
+    )
 end
 
-task.wait(0.2)
+task.wait(0.3)
 
             end
 
