@@ -4248,6 +4248,120 @@ EventTab:CreateToggle({
 })
 
 --==================================================
+-- ☯️ YIN & YANG ESP
+--==================================================
+
+local YinYangESPEnabled = false
+local YinYangESPObjects = {}
+
+local function ClearYinYangESP()
+    for _, obj in pairs(YinYangESPObjects) do
+        if obj and obj.Parent then
+            obj:Destroy()
+        end
+    end
+
+    table.clear(YinYangESPObjects)
+end
+
+local function CreateYinYangESP(target, name)
+    if not target then
+        return
+    end
+
+    local adornee
+
+    if target:IsA("Model") then
+        adornee = target
+    elseif target:IsA("BasePart") then
+        adornee = target
+    else
+        return
+    end
+
+    -- Highlight
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = "YinYangESP"
+    Highlight.Adornee = adornee
+    Highlight.FillTransparency = 0.5
+    Highlight.OutlineTransparency = 0
+
+    if name == "Yin" then
+        Highlight.FillColor = Color3.fromRGB(255, 255, 255)
+        Highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    else
+        Highlight.FillColor = Color3.fromRGB(0, 0, 0)
+        Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    end
+
+    Highlight.Parent = adornee
+
+    table.insert(YinYangESPObjects, Highlight)
+
+    -- Name ESP
+    local Part = target:IsA("BasePart") and target or target.PrimaryPart
+
+    if not Part then
+        Part = target:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    if Part then
+        local Billboard = Instance.new("BillboardGui")
+        Billboard.Name = "YinYangNameESP"
+        Billboard.Adornee = Part
+        Billboard.Size = UDim2.new(0, 120, 0, 35)
+        Billboard.StudsOffset = Vector3.new(0, 3, 0)
+        Billboard.AlwaysOnTop = true
+        Billboard.Parent = Part
+
+        local Text = Instance.new("TextLabel")
+        Text.Size = UDim2.fromScale(1, 1)
+        Text.BackgroundTransparency = 1
+        Text.Text = name
+        Text.TextScaled = true
+        Text.Font = Enum.Font.GothamBold
+        Text.TextStrokeTransparency = 0
+
+        if name == "Yin" then
+            Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            Text.TextColor3 = Color3.fromRGB(0, 0, 0)
+        end
+
+        Text.Parent = Billboard
+
+        table.insert(YinYangESPObjects, Billboard)
+    end
+end
+
+local function UpdateYinYangESP()
+    ClearYinYangESP()
+
+    if not YinYangESPEnabled then
+        return
+    end
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name == "Yin" then
+            CreateYinYangESP(obj, "Yin")
+        elseif obj.Name == "Yang" then
+            CreateYinYangESP(obj, "Yang")
+        end
+    end
+end
+
+EventTab:CreateToggle({
+    name = "☯️ Yin & Yang ESP",
+    flag = "YinYangESP",
+    currentValue = false,
+
+    callback = function(Value)
+        YinYangESPEnabled = Value
+        UpdateYinYangESP()
+    end,
+})
+
+--==================================================
 -- AUTOMATIC TAB
 --==================================================
 
