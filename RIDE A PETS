@@ -4433,7 +4433,7 @@ end
 
 AutoCollectYinYangToggle = 
 EventTab:CreateToggle({
-    name = "☯️ Auto Collect Yin & Yang",
+    name = "☯️ Auto Ritual ",
     flag = "AutoCollectYinYang",
     value = false,
 
