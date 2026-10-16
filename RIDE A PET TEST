@@ -1507,8 +1507,9 @@ local function RunAfterEggPickup(Egg)
             end
 
 
+
 --==================================================
--- 2. VOLCANO ON + SAVED OFF
+-- 3. VOLCANO OFF + SAVED ON
 --
 -- Pick Up Egg
 -- → Fly to Saved Position
@@ -1516,16 +1517,15 @@ local function RunAfterEggPickup(Egg)
 -- → END
 --==================================================
 
-if VolcanoDipTween
-    and not SavedPositionTween
-then
-    print("[EGG FLOW] Volcano ON + Saved OFF")
+if not VolcanoDipTween and SavedPositionTween then
 
-    -- Fly directly to the saved position
+    print("[EGG FLOW] Volcano OFF + Saved ON")
+
+    -- Fly directly to Saved Position
     local ReachedSaved = TweenToSavedPosition()
 
     if not ReachedSaved then
-        warn("[EGG FLOW] Could not reach saved position")
+        warn("[EGG FLOW] Saved-position flight failed")
         return
     end
 
@@ -1539,8 +1539,7 @@ then
         return
     end
 
-    print("[EGG FLOW] Finished: Saved Position → Drop")
-
+    print("[EGG FLOW] Finished: Saved Position → Drop Egg")
     return
 end
 
