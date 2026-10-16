@@ -1542,12 +1542,12 @@ if not VolcanoDipTween and SavedPositionTween then
 
     task.wait(0.3)
 
-    -- STEP 2: Fly to Saved Position
+    -- STEP 2: Fly directly to Saved Position
     local ReachedSaved =
-        FlyToSavedPositionAvoidingObstacles()
+        FlyToPosition(SAVED_POSITION)
 
     if not ReachedSaved then
-        warn("[EGG FLOW] Saved-position flight failed")
+        warn("[EGG FLOW] Failed to fly to Saved Position")
         return
     end
 
