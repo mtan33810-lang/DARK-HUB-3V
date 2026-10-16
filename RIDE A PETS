@@ -4182,6 +4182,497 @@ EventTab:CreateToggle({
 })
 
 --==================================================
+-- ☯️ AUTO COLLECT YIN & YANG
+-- Teleport → Collect → Find Next
+--==================================================
+
+local AutoCollectYinYangEnabled = false
+local AutoCollectYinYangLoopRunning = false
+
+local YinYangAttempts = setmetatable({}, {
+    __mode = "k"
+})
+
+local ProcessedYinYang = setmetatable({}, {
+    __mode = "k"
+})
+
+-- Get a physical part from Yin or Yang
+local function GetYinYangPart(Target)
+    if Target:IsA("BasePart") then
+        return Target
+    end
+
+    if Target:IsA("Model") then
+        return Target.PrimaryPart
+            or Target:FindFirstChildWhichIsA(
+                "BasePart",
+                true
+            )
+    end
+
+    return nil
+end
+
+-- Avoid selecting a nested object with the
+-- same name as its parent collectible.
+local function HasSameNameAncestor(Target, Runtime)
+    local Parent = Target.Parent
+
+    while Parent and Parent ~= Runtime do
+        if Parent.Name == Target.Name
+            and (
+                Parent:IsA("Model")
+                or Parent:IsA("BasePart")
+            ) then
+            return true
+        end
+
+        Parent = Parent.Parent
+    end
+
+    return false
+end
+
+-- Find the nearest available Yin or Yang
+local function FindNearestYinYang()
+    local Ritual =
+        workspace:FindFirstChild("HeadlessRitual")
+
+    local Runtime = Ritual
+        and Ritual:FindFirstChild("Runtime")
+
+    local Character = Player.Character
+    local Root = Character
+        and Character:FindFirstChild("HumanoidRootPart")
+
+    if not Runtime or not Root then
+        return nil, nil, Runtime
+    end
+
+    local BestTarget = nil
+    local BestPart = nil
+    local BestDistance = math.huge
+
+    for _, Target in ipairs(Runtime:GetDescendants()) do
+        if (
+            Target.Name == "Yin"
+            or Target.Name == "Yang"
+        )
+            and (
+                Target:IsA("Model")
+                or Target:IsA("BasePart")
+            )
+            and not ProcessedYinYang[Target]
+            and (YinYangAttempts[Target] or 0) < 3
+            and not HasSameNameAncestor(Target, Runtime)
+        then
+            local Part = GetYinYangPart(Target)
+
+            if Part then
+                local Distance = (
+                    Root.Position - Part.Position
+                ).Magnitude
+
+                if Distance < BestDistance then
+                    BestDistance = Distance
+                    BestTarget = Target
+                    BestPart = Part
+                end
+            end
+        end
+    end
+
+    return BestTarget, BestPart, Runtime
+end
+
+-- Find an interaction prompt inside the collectible
+local function FindYinYangPrompt(Target)
+    for _, Object in ipairs(Target:GetDescendants()) do
+        if Object:IsA("ProximityPrompt")
+            and Object.Enabled then
+            return Object
+        end
+    end
+
+    return nil
+end
+
+
+--==================================================
+-- ☯️ YIN & YANG PLACEMENT
+--==================================================
+
+local YinYangPlacePosition = CFrame.new(
+    -46384.75,
+    40356.26,
+    -19676.62
+)
+
+local function NormalizeYinYangText(Value)
+    return string.lower(
+        tostring(Value or "")
+    ):gsub("[^%w]", "")
+end
+
+-- Find and activate the matching Place interaction
+local function PressPlaceYinYang(TargetName)
+    local Expected = NormalizeYinYangText(
+        "Place " .. TargetName
+    )
+
+    local function MatchesPlaceAction(Object)
+        local Parts = {}
+
+        if Object:IsA("ProximityPrompt") then
+            table.insert(Parts, Object.ActionText)
+        elseif Object:IsA("TextButton") then
+            table.insert(Parts, Object.Text)
+        end
+
+        table.insert(Parts, Object.Name)
+
+        local Parent = Object.Parent
+
+        for _ = 1, 4 do
+            if not Parent then
+                break
+            end
+
+            table.insert(Parts, Parent.Name)
+            Parent = Parent.Parent
+        end
+
+        local Combined = NormalizeYinYangText(
+            table.concat(Parts, " ")
+        )
+
+        return Combined:find(Expected, 1, true) ~= nil
+            or (
+                Combined:find("place", 1, true) ~= nil
+                and Combined:find(
+                    NormalizeYinYangText(TargetName),
+                    1,
+                    true
+                ) ~= nil
+            )
+    end
+
+    -- Look for the matching world interaction
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if Object:IsA("ProximityPrompt")
+            and Object.Enabled
+            and MatchesPlaceAction(Object)
+        then
+            if typeof(fireproximityprompt) == "function" then
+                local Success = pcall(function()
+                    fireproximityprompt(Object)
+                end)
+
+                if Success then
+                    return true
+                end
+            end
+        end
+    end
+
+    -- Look for the matching on-screen button
+    local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+
+    if PlayerGui then
+        for _, Object in ipairs(PlayerGui:GetDescendants()) do
+            if Object:IsA("TextButton")
+                and Object.Visible
+                and MatchesPlaceAction(Object)
+            then
+                local Success = pcall(function()
+                    if typeof(firesignal) == "function" then
+                        firesignal(Object.Activated)
+                    else
+                        Object:Activate()
+                    end
+                end)
+
+                if Success then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+-- Teleport to the altar and place the collected item
+local function TeleportAndPlaceYinYang(TargetName)
+    local Character = Player.Character
+        or Player.CharacterAdded:Wait()
+
+    local Root = Character:WaitForChild("HumanoidRootPart")
+
+    Root.CFrame = YinYangPlacePosition
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+
+    task.wait(0.75)
+
+    local Success = PressPlaceYinYang(TargetName)
+
+    if not Success then
+        warn(
+            "[Yin & Yang] Could not find the Place "
+            .. TargetName
+            .. " interaction."
+        )
+    end
+end
+
+--==================================================
+-- TOGGLE
+--==================================================
+
+AutoCollectYinYangToggle = 
+EventTab:CreateToggle({
+    name = "☯️ Auto Collect Yin & Yang",
+    flag = "AutoCollectYinYang",
+    value = false,
+
+    callback = function(Value)
+        AutoCollectYinYangEnabled = Value
+
+        if not Value or AutoCollectYinYangLoopRunning then
+            return
+        end
+
+        AutoCollectYinYangLoopRunning = true
+
+        task.spawn(function()
+    local NoYinYangSince = nil
+    while AutoCollectYinYangEnabled do
+
+        -- PAUSE WHILE AUTO EGG PICKUP IS ON
+        while AutoCollectYinYangEnabled
+            and AutoEggPickup do
+            NoYinYangSince = nil
+            task.wait(0.1)
+        end
+
+        if not AutoCollectYinYangEnabled then
+            break
+        end
+
+        local Target, Part, Runtime =
+    FindNearestYinYang()
+
+-- Runtime is not available yet; keep waiting
+if not Runtime then
+    NoYinYangSince = nil
+    task.wait(0.5)
+    continue
+end
+
+-- Check whether all Yin & Yang collectibles are finished
+if not Target or not Part then
+
+    NoYinYangSince =
+        NoYinYangSince or os.clock()
+
+    -- Finish after 5 seconds with no available target
+    if os.clock() - NoYinYangSince >= 5 then
+        AutoCollectYinYangEnabled = false
+        break
+    end
+
+    task.wait(0.5)
+    continue
+end
+
+-- A target was found, so reset the timer
+NoYinYangSince = nil
+
+                local Character = Player.Character
+                    or Player.CharacterAdded:Wait()
+
+                local Root = Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
+                if not AutoCollectYinYangEnabled then
+                    break
+                end
+
+                if AutoEggPickup then
+                    continue
+                end
+
+                -- Count this attempt
+                YinYangAttempts[Target] =
+                    (YinYangAttempts[Target] or 0) + 1
+
+                -- Teleport to Yin or Yang
+                Root.CFrame =
+                    Part.CFrame + Vector3.new(0, 2, 0)
+
+                Root.AssemblyLinearVelocity = Vector3.zero
+                Root.AssemblyAngularVelocity = Vector3.zero
+
+                task.wait(0.25)
+
+                if not AutoCollectYinYangEnabled then
+                    break
+                end
+
+                if AutoEggPickup then
+                    continue
+                end
+
+                local InteractionSent = false
+
+--==================================================
+-- ☯️ RETRY COLLECTION AND CONFIRM SUCCESS
+--==================================================
+
+local CollectionStart = os.clock()
+local SupportedInteraction = false
+local WasCollected = false
+
+repeat
+    if not AutoCollectYinYangEnabled then
+        break
+    end
+
+    -- Check whether Yin or Yang disappeared
+    if not Target:IsDescendantOf(Runtime) then
+        WasCollected = true
+        break
+    end
+
+    local InteractionSent = false
+
+    -- Method 1: ProximityPrompt
+    local Prompt = FindYinYangPrompt(Target)
+
+    if Prompt
+        and typeof(fireproximityprompt) == "function"
+    then
+        InteractionSent = pcall(function()
+            fireproximityprompt(Prompt)
+        end)
+    end
+
+    -- Method 2: ClickDetector
+    if not InteractionSent
+        and typeof(fireclickdetector) == "function"
+    then
+        for _, Object in ipairs(
+            Target:GetDescendants()
+        ) do
+            if Object:IsA("ClickDetector") then
+                InteractionSent = pcall(function()
+                    fireclickdetector(Object)
+                end)
+
+                if InteractionSent then
+                    break
+                end
+            end
+        end
+    end
+
+    -- Method 3: Touch interaction
+    if not InteractionSent
+        and typeof(firetouchinterest) == "function"
+        and Part.Parent
+    then
+        InteractionSent = pcall(function()
+            firetouchinterest(Root, Part, 0)
+            task.wait(0.1)
+            firetouchinterest(Root, Part, 1)
+        end)
+    end
+
+    if InteractionSent then
+        SupportedInteraction = true
+    end
+
+    -- Retry while waiting for server confirmation
+    task.wait(0.35)
+
+until not AutoCollectYinYangEnabled
+    or not Target:IsDescendantOf(Runtime)
+    or os.clock() - CollectionStart >= 5
+
+-- Confirm collection again
+WasCollected = WasCollected
+    or not Target:IsDescendantOf(Runtime)
+
+if WasCollected then
+    ProcessedYinYang[Target] = true
+
+    local CollectedName = Target.Name
+
+    -- Wait while Teleport to Next Egg + Pick Up is ON
+    while AutoCollectYinYangEnabled and AutoEggPickup do
+        task.wait(0.1)
+    end
+
+    if not AutoCollectYinYangEnabled then
+        break
+    end
+
+    -- Teleport and place after Auto Egg Pickup finishes
+    TeleportAndPlaceYinYang(CollectedName)
+
+elseif not SupportedInteraction then
+    warn(
+        "[Yin & Yang] No supported interaction worked for:",
+        Target.Name
+    )
+end
+
+task.wait(0.3)
+
+            end
+
+            AutoCollectYinYangLoopRunning = false
+
+-- Turn off Yin & Yang after the flow finishes
+if AutoCollectYinYangToggle
+    and not AutoCollectYinYangEnabled then
+
+    AutoCollectYinYangToggle:Set(false)
+end
+
+-- RESUME CANDY FARM AFTER YIN & YANG FINISHES
+if ResumeCandyAfterEgg and not AutoEggPickup then
+
+    task.spawn(function()
+
+        -- Make sure other movement flows have stopped
+        while PostPickupRunning
+            or CandyFarmLoopRunning do
+
+            task.wait(0.1)
+        end
+
+        -- Only resume if the egg flow has not restarted
+        if ResumeCandyAfterEgg and not AutoEggPickup then
+
+            ProcessedCandy = {}
+
+            if AutoCandyFarmToggle then
+                AutoCandyFarmToggle:Set(true)
+            else
+                CandyFarmEnabled = true
+            end
+        end
+    end)
+end
+        end)
+    end
+})
+
+--==================================================
 -- AUTOMATIC TAB
 --==================================================
 
