@@ -1869,65 +1869,65 @@ if not VolcanoDipTween and SavedPositionTween then
 end
 
             --==================================================
-            -- 4. VOLCANO OFF + SAVED OFF
-            --
-            -- Pick Up
-            -- → Custom Position
-            -- → Drop
-            -- → wait 1.5 sec
-            -- → Pick Up
-            -- → Tween My Plot
-            --==================================================
+-- 4. VOLCANO OFF + SAVED OFF
+--
+-- Pick Up Egg
+-- → Teleport to first position
+-- → Fly to Custom Position
+-- → Drop Egg
+-- → Pick Up Egg Again
+-- → Tween to My Plot
+--==================================================
 
-            print(
-                "[EGG FLOW] Volcano OFF + Saved OFF"
-            )
+print("[EGG FLOW] Volcano OFF + Saved OFF")
 
-            local Character =
-                Player.Character
-                or Player.CharacterAdded:Wait()
+local Character =
+    Player.Character
+    or Player.CharacterAdded:Wait()
 
-            local Root =
-                Character:WaitForChild(
-                    "HumanoidRootPart"
-                )
+local Root =
+    Character:WaitForChild("HumanoidRootPart")
 
-            -- Custom position
-            
-            if not FlyAboveThenToCustomPosition() then
-                return
-            end
+-- STEP 1: Teleport after the initial pickup
+Root.CFrame = CFrame.new(
+    1650.52,
+    40586.08,
+    397.75
+)
 
-            task.wait(0.5)
+Root.AssemblyLinearVelocity = Vector3.zero
+Root.AssemblyAngularVelocity = Vector3.zero
 
+task.wait(0.3)
 
-            -- Drop
-            local Dropped =
-                DropEgg()
+-- STEP 2: Fly to your existing Custom Position
+if not FlyAboveThenToCustomPosition() then
+    return
+end
 
-            if not Dropped then
-                warn(
-                    "[EGG FLOW] Drop failed"
-                )
-                return
-            end
+task.wait(0.5)
 
-            print(
-                "[EGG FLOW] Egg dropped at custom position"
-            )
+-- STEP 3: Drop the egg
+local Dropped = DropEgg()
 
-            -- Pick up again
-            local PickedUp =
-                PickUpEggAgain()
+if not Dropped then
+    warn("[EGG FLOW] Drop failed")
+    return
+end
 
-            if not PickedUp then
-                return
-            end
+print("[EGG FLOW] Egg dropped at custom position")
 
-            -- Tween to My Plot
-            TweenToMyPlot()
+-- STEP 4: Pick up the egg again
+local PickedUp = PickUpEggAgain()
 
-        end)
+if not PickedUp then
+    return
+end
+
+-- STEP 5: Go to My Plot
+TweenToMyPlot()
+
+end)
 
 
         --==================================================
