@@ -4248,11 +4248,12 @@ EventTab:CreateToggle({
 })
 
 --==================================================
--- ☯️ YIN & YANG ESP (RUNTIME ONLY)
+-- ☯️ YIN & YANG ESP (AUTO REFRESH: 10 SECONDS)
 --==================================================
 
 local YinYangESPEnabled = false
 local YinYangESPObjects = {}
+local YinYangRefreshLoopRunning = false
 
 local function ClearYinYangESP()
     for _, obj in pairs(YinYangESPObjects) do
@@ -4325,9 +4326,9 @@ local function CreateYinYangESP(target, name)
         Text.TextStrokeTransparency = 0
 
         if name == "Yin" then
-            Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Text.TextColor3 = Color3.fromRGB(255, 140, 0)
         else
-            Text.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Text.TextColor3 = Color3.fromRGB(255, 215, 0)
         end
 
         Text.Parent = Billboard
@@ -4362,7 +4363,7 @@ local function UpdateYinYangESP()
     end
 end
 
--- Rayfield toggle
+-- One toggle: ESP + automatic refresh
 EventTab:CreateToggle({
     name = "☯️ Yin & Yang ESP",
     flag = "YinYangESP",
@@ -4370,7 +4371,26 @@ EventTab:CreateToggle({
 
     callback = function(Value)
         YinYangESPEnabled = Value
+
+        -- Update immediately
         UpdateYinYangESP()
+
+        -- Start only one refresh loop
+        if Value and not YinYangRefreshLoopRunning then
+            YinYangRefreshLoopRunning = true
+
+            task.spawn(function()
+                while YinYangESPEnabled do
+                    task.wait(10)
+
+                    if YinYangESPEnabled then
+                        UpdateYinYangESP()
+                    end
+                end
+
+                YinYangRefreshLoopRunning = false
+            end)
+        end
     end,
 })
 
