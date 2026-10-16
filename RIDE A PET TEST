@@ -4248,7 +4248,7 @@ EventTab:CreateToggle({
 })
 
 --==================================================
--- ☯️ YIN & YANG ESP
+-- ☯️ YIN & YANG ESP (RUNTIME ONLY)
 --==================================================
 
 local YinYangESPEnabled = false
@@ -4287,19 +4287,20 @@ local function CreateYinYangESP(target, name)
     Highlight.OutlineTransparency = 0
 
     if name == "Yin" then
-        Highlight.FillColor = Color3.fromRGB(255, 255, 255)
-        Highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+        Highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     else
-        Highlight.FillColor = Color3.fromRGB(0, 0, 0)
+        Highlight.FillColor = Color3.fromRGB(0, 100, 255)
         Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     end
 
     Highlight.Parent = adornee
-
     table.insert(YinYangESPObjects, Highlight)
 
     -- Name ESP
-    local Part = target:IsA("BasePart") and target or target.PrimaryPart
+    local Part = target:IsA("BasePart")
+        and target
+        or target.PrimaryPart
 
     if not Part then
         Part = target:FindFirstChildWhichIsA("BasePart", true)
@@ -4318,7 +4319,8 @@ local function CreateYinYangESP(target, name)
         Text.Size = UDim2.fromScale(1, 1)
         Text.BackgroundTransparency = 1
         Text.Text = name
-        Text.TextScaled = true
+        Text.TextScaled = false
+        Text.TextSize = 14
         Text.Font = Enum.Font.GothamBold
         Text.TextStrokeTransparency = 0
 
@@ -4329,11 +4331,11 @@ local function CreateYinYangESP(target, name)
         end
 
         Text.Parent = Billboard
-
         table.insert(YinYangESPObjects, Billboard)
     end
 end
 
+-- Scan ONLY HeadlessRitual > Runtime
 local function UpdateYinYangESP()
     ClearYinYangESP()
 
@@ -4341,7 +4343,17 @@ local function UpdateYinYangESP()
         return
     end
 
-    for _, obj in ipairs(workspace:GetDescendants()) do
+    local HeadlessRitual =
+        workspace:FindFirstChild("HeadlessRitual")
+
+    local Runtime = HeadlessRitual
+        and HeadlessRitual:FindFirstChild("Runtime")
+
+    if not Runtime then
+        return
+    end
+
+    for _, obj in ipairs(Runtime:GetDescendants()) do
         if obj.Name == "Yin" then
             CreateYinYangESP(obj, "Yin")
         elseif obj.Name == "Yang" then
@@ -4350,6 +4362,7 @@ local function UpdateYinYangESP()
     end
 end
 
+-- Rayfield toggle
 EventTab:CreateToggle({
     name = "☯️ Yin & Yang ESP",
     flag = "YinYangESP",
