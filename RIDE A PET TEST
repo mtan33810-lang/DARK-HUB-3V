@@ -968,331 +968,6 @@ local function TweenToSavedPosition()
     return FlyToPosition(SAVED_POSITION)
 end
 
-
---==================================================
--- DARK HUB | EMERGENCY FLIGHT SETTINGS
---==================================================
-
-local EMERGENCY_POSITION = CFrame.new(
-    1650.52,
-    40586.08,
-    397.75
-)
-
---==================================================
--- SAVED POSITION FLIGHT WITH OBSTACLE AVOIDANCE
---==================================================
-
-local function FlyToSavedPositionAvoidingObstacles()
-    if not SAVED_POSITION then
-        warn("[SAVED FLIGHT] Saved position is missing")
-        return false
-    end
-
-    local Character = Player.Character
-        or Player.CharacterAdded:Wait()
-
-    local Root = Character:WaitForChild("HumanoidRootPart")
-    local Target = SAVED_POSITION.Position
-
-    local Clearance = 50
-    local ExtraClearance = 25
-    local MaxAttempts = 10
-    local EmergencyUsed = false
-
-    local CruiseY = math.max(
-        Root.Position.Y,
-        Target.Y
-    ) + Clearance
-
-    local RayParams = RaycastParams.new()
-    RayParams.FilterType = Enum.RaycastFilterType.Exclude
-    RayParams.FilterDescendantsInstances = { Character }
-    RayParams.IgnoreWater = true
-
-    -- Find solid obstacles along a route.
-    local function FindBlockingObstacle(Origin, Destination)
-        local Excluded = { Character }
-
-        for _ = 1, 20 do
-            RayParams.FilterDescendantsInstances = Excluded
-
-            local Hit = workspace:Raycast(
-                Origin,
-                Destination - Origin,
-                RayParams
-            )
-
-            if not Hit then
-                return nil
-            end
-
-            local Object = Hit.Instance
-
-            if Object:IsA("Terrain") then
-                return Hit
-            end
-
-            if Object:IsA("BasePart") and Object.CanCollide then
-                return Hit
-            end
-
-            table.insert(Excluded, Object)
-        end
-
-        return nil
-    end
-
-    -- Calculate the top of an obstacle.
-    local function GetObstacleTop(Hit)
-        local Object = Hit.Instance
-
-        if not Object:IsA("BasePart") then
-            return Hit.Position.Y
-        end
-
-        local HalfHeight =
-            math.abs(Object.CFrame.RightVector.Y)
-                * Object.Size.X / 2
-            + math.abs(Object.CFrame.UpVector.Y)
-                * Object.Size.Y / 2
-            + math.abs(Object.CFrame.LookVector.Y)
-                * Object.Size.Z / 2
-
-        return Object.Position.Y + HalfHeight
-    end
-
-    -- Emergency teleport and alternate flight route.
-    local function TeleportEmergencyAndContinue(Reason)
-        if EmergencyUsed then
-            warn("[SAVED FLIGHT] Emergency route already used")
-            return false
-        end
-
-        EmergencyUsed = true
-        warn("[SAVED FLIGHT] " .. tostring(Reason))
-
-        Character = Player.Character
-            or Player.CharacterAdded:Wait()
-
-        Root = Character:WaitForChild("HumanoidRootPart")
-
-        Root.AssemblyLinearVelocity = Vector3.zero
-        Root.AssemblyAngularVelocity = Vector3.zero
-        Root.CFrame = EMERGENCY_POSITION
-
-        task.wait(0.4)
-
-        Character = Player.Character
-            or Player.CharacterAdded:Wait()
-
-        Root = Character:WaitForChild("HumanoidRootPart")
-
-        RayParams.FilterDescendantsInstances = { Character }
-
-        local EmergencyCruiseY = math.max(
-            Root.Position.Y,
-            Target.Y + Clearance
-        )
-
-        local EmergencyPathClear = false
-
-        -- Try to clear the route from the emergency point.
-        for Attempt = 1, 6 do
-            if not Root.Parent then
-                return false
-            end
-
-            local ElevatedTarget = Vector3.new(
-                Target.X,
-                EmergencyCruiseY,
-                Target.Z
-            )
-
-            local Obstacle = FindBlockingObstacle(
-                Root.Position + Vector3.new(0, 2, 0),
-                ElevatedTarget + Vector3.new(0, 2, 0)
-            )
-
-            if not Obstacle then
-                EmergencyPathClear = true
-                break
-            end
-
-            local NewHeight = math.max(
-                EmergencyCruiseY + 75,
-                GetObstacleTop(Obstacle) + 20
-            )
-
-            print("[SAVED FLIGHT] Climbing to Y =", NewHeight)
-
-            local ReachedHigher = FlyToPosition(
-                CFrame.new(
-                    Root.Position.X,
-                    NewHeight,
-                    Root.Position.Z
-                ) * Root.CFrame.Rotation
-            )
-
-            if not ReachedHigher then
-                warn("[SAVED FLIGHT] Emergency climb failed")
-                return false
-            end
-
-            EmergencyCruiseY = NewHeight
-        end
-
-        if not EmergencyPathClear then
-            warn("[SAVED FLIGHT] Emergency route remains blocked")
-            return false
-        end
-
-        -- Fly across to the saved position.
-        local ReachedAcross = FlyToPosition(
-            CFrame.new(
-                Target.X,
-                EmergencyCruiseY,
-                Target.Z
-            ) * SAVED_POSITION.Rotation
-        )
-
-        if not ReachedAcross then
-            warn("[SAVED FLIGHT] Emergency crossing failed")
-            return false
-        end
-
-        -- Descend to the exact saved position.
-        local ReachedSaved = FlyToPosition(SAVED_POSITION)
-
-        if not ReachedSaved then
-            warn("[SAVED FLIGHT] Final descent failed")
-            return false
-        end
-
-        print("[SAVED FLIGHT] Emergency route completed")
-        return true
-    end
-
-    -- STEP 1: Check for an obstacle overhead.
-    local VerticalDestination = Vector3.new(
-        Root.Position.X,
-        CruiseY + 2,
-        Root.Position.Z
-    )
-
-    local OverheadObstacle = FindBlockingObstacle(
-        Root.Position + Vector3.new(0, 2, 0),
-        VerticalDestination
-    )
-
-    if OverheadObstacle then
-        return TeleportEmergencyAndContinue(
-            "Obstacle overhead; using emergency position"
-        )
-    end
-
-    -- STEP 2: Fly upward.
-    print("[SAVED FLIGHT] Flying upward")
-
-    local ReachedAbove = FlyToPosition(
-        CFrame.new(
-            Root.Position.X,
-            CruiseY,
-            Root.Position.Z
-        ) * Root.CFrame.Rotation
-    )
-
-    if not ReachedAbove then
-        return TeleportEmergencyAndContinue(
-            "Initial climb failed"
-        )
-    end
-
-    -- STEP 3: Detect obstacles and increase altitude.
-    local PathClear = false
-
-    for Attempt = 1, MaxAttempts do
-        if not Root.Parent then
-            return false
-        end
-
-        local ElevatedTarget = Vector3.new(
-            Target.X,
-            CruiseY,
-            Target.Z
-        )
-
-        local Obstacle = FindBlockingObstacle(
-            Root.Position + Vector3.new(0, 2, 0),
-            ElevatedTarget + Vector3.new(0, 2, 0)
-        )
-
-        if not Obstacle then
-            PathClear = true
-            break
-        end
-
-        local NewHeight = math.max(
-            CruiseY + ExtraClearance,
-            GetObstacleTop(Obstacle) + 15
-        )
-
-        print("[SAVED FLIGHT] Obstacle detected; climbing to Y =", NewHeight)
-
-        local ReachedHigher = FlyToPosition(
-            CFrame.new(
-                Root.Position.X,
-                NewHeight,
-                Root.Position.Z
-            ) * Root.CFrame.Rotation
-        )
-
-        if not ReachedHigher then
-            return TeleportEmergencyAndContinue(
-                "Obstacle climb failed"
-            )
-        end
-
-        CruiseY = NewHeight
-    end
-
-    if not PathClear then
-        return TeleportEmergencyAndContinue(
-            "Route blocked after maximum attempts"
-        )
-    end
-
-    -- STEP 4: Fly above obstacles toward the saved position.
-    print("[SAVED FLIGHT] Flying toward saved position")
-
-    local ReachedAcross = FlyToPosition(
-        CFrame.new(
-            Target.X,
-            CruiseY,
-            Target.Z
-        ) * SAVED_POSITION.Rotation
-    )
-
-    if not ReachedAcross then
-        return TeleportEmergencyAndContinue(
-            "Horizontal flight failed"
-        )
-    end
-
-    -- STEP 5: Descend to the saved position.
-    print("[SAVED FLIGHT] Descending")
-
-    local ReachedSaved = FlyToPosition(SAVED_POSITION)
-
-    if not ReachedSaved then
-        warn("[SAVED FLIGHT] Could not reach saved position")
-        return false
-    end
-
-    print("[SAVED FLIGHT] Flight completed successfully")
-    return true
-end
-
 --==================================================
 -- 🌋 VOLCANO TELEPORT + HOVER + DIP
 --==================================================
@@ -1831,32 +1506,32 @@ local function RunAfterEggPickup(Egg)
                 return
             end
 
+
 --==================================================
--- 3. VOLCANO OFF + SAVED ON
+-- 2. VOLCANO ON + SAVED OFF
 --
 -- Pick Up Egg
--- → Fly Up
--- → Climb Higher If Blocked
--- → Fly Above Obstacles
--- → Descend to Saved Position
+-- → Fly to Saved Position
 -- → Drop Egg
 -- → END
 --==================================================
 
-if not VolcanoDipTween and SavedPositionTween then
+if VolcanoDipTween
+    and not SavedPositionTween
+then
+    print("[EGG FLOW] Volcano ON + Saved OFF")
 
-    print("[EGG FLOW] Volcano OFF + Saved ON")
-
-    local ReachedSaved =
-        FlyToSavedPositionAvoidingObstacles()
+    -- Fly directly to the saved position
+    local ReachedSaved = TweenToSavedPosition()
 
     if not ReachedSaved then
-        warn("[EGG FLOW] Saved-position flight failed")
+        warn("[EGG FLOW] Could not reach saved position")
         return
     end
 
     task.wait(0.5)
 
+    -- Drop the egg
     local Dropped = DropEgg()
 
     if not Dropped then
@@ -1864,11 +1539,12 @@ if not VolcanoDipTween and SavedPositionTween then
         return
     end
 
-    print("[EGG FLOW] Finished: Obstacle Flight → Saved → Drop")
+    print("[EGG FLOW] Finished: Saved Position → Drop")
+
     return
 end
 
-            --==================================================
+--==================================================
 -- 4. VOLCANO OFF + SAVED OFF
 --
 -- Pick Up Egg
