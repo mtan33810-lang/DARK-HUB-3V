@@ -4394,6 +4394,253 @@ EventTab:CreateToggle({
     end,
 })
 
+
+--==================================================
+-- ☯️ AUTO COLLECT YIN & YANG
+-- Teleport → Collect → Find Next
+--==================================================
+
+local AutoCollectYinYangEnabled = false
+local AutoCollectYinYangLoopRunning = false
+
+local YinYangAttempts = setmetatable({}, {
+    __mode = "k"
+})
+
+local ProcessedYinYang = setmetatable({}, {
+    __mode = "k"
+})
+
+-- Get a physical part from Yin or Yang
+local function GetYinYangPart(Target)
+    if Target:IsA("BasePart") then
+        return Target
+    end
+
+    if Target:IsA("Model") then
+        return Target.PrimaryPart
+            or Target:FindFirstChildWhichIsA(
+                "BasePart",
+                true
+            )
+    end
+
+    return nil
+end
+
+-- Avoid selecting a nested object with the
+-- same name as its parent collectible.
+local function HasSameNameAncestor(Target, Runtime)
+    local Parent = Target.Parent
+
+    while Parent and Parent ~= Runtime do
+        if Parent.Name == Target.Name
+            and (
+                Parent:IsA("Model")
+                or Parent:IsA("BasePart")
+            ) then
+            return true
+        end
+
+        Parent = Parent.Parent
+    end
+
+    return false
+end
+
+-- Find the nearest available Yin or Yang
+local function FindNearestYinYang()
+    local Ritual =
+        workspace:FindFirstChild("HeadlessRitual")
+
+    local Runtime = Ritual
+        and Ritual:FindFirstChild("Runtime")
+
+    local Character = Player.Character
+    local Root = Character
+        and Character:FindFirstChild("HumanoidRootPart")
+
+    if not Runtime or not Root then
+        return nil, nil, Runtime
+    end
+
+    local BestTarget = nil
+    local BestPart = nil
+    local BestDistance = math.huge
+
+    for _, Target in ipairs(Runtime:GetDescendants()) do
+        if (
+            Target.Name == "Yin"
+            or Target.Name == "Yang"
+        )
+            and (
+                Target:IsA("Model")
+                or Target:IsA("BasePart")
+            )
+            and not ProcessedYinYang[Target]
+            and (YinYangAttempts[Target] or 0) < 3
+            and not HasSameNameAncestor(Target, Runtime)
+        then
+            local Part = GetYinYangPart(Target)
+
+            if Part then
+                local Distance = (
+                    Root.Position - Part.Position
+                ).Magnitude
+
+                if Distance < BestDistance then
+                    BestDistance = Distance
+                    BestTarget = Target
+                    BestPart = Part
+                end
+            end
+        end
+    end
+
+    return BestTarget, BestPart, Runtime
+end
+
+-- Find an interaction prompt inside the collectible
+local function FindYinYangPrompt(Target)
+    for _, Object in ipairs(Target:GetDescendants()) do
+        if Object:IsA("ProximityPrompt")
+            and Object.Enabled then
+            return Object
+        end
+    end
+
+    return nil
+end
+
+--==================================================
+-- TOGGLE
+--==================================================
+
+EventTab:CreateToggle({
+    name = "☯️ Auto Collect Yin & Yang",
+    flag = "AutoCollectYinYang",
+    value = false,
+
+    callback = function(Value)
+        AutoCollectYinYangEnabled = Value
+
+        if not Value or AutoCollectYinYangLoopRunning then
+            return
+        end
+
+        AutoCollectYinYangLoopRunning = true
+
+        task.spawn(function()
+            while AutoCollectYinYangEnabled do
+                local Target, Part, Runtime =
+                    FindNearestYinYang()
+
+                if not Target or not Part or not Runtime then
+                    task.wait(0.5)
+                    continue
+                end
+
+                local Character = Player.Character
+                    or Player.CharacterAdded:Wait()
+
+                local Root = Character:WaitForChild(
+                    "HumanoidRootPart"
+                )
+
+                if not AutoCollectYinYangEnabled then
+                    break
+                end
+
+                -- Count this attempt
+                YinYangAttempts[Target] =
+                    (YinYangAttempts[Target] or 0) + 1
+
+                -- Teleport to Yin or Yang
+                Root.CFrame =
+                    Part.CFrame + Vector3.new(0, 2, 0)
+
+                Root.AssemblyLinearVelocity = Vector3.zero
+                Root.AssemblyAngularVelocity = Vector3.zero
+
+                task.wait(0.25)
+
+                if not AutoCollectYinYangEnabled then
+                    break
+                end
+
+                local InteractionSent = false
+
+                -- Method 1: ProximityPrompt
+                local Prompt = FindYinYangPrompt(Target)
+
+                if Prompt
+                    and typeof(fireproximityprompt) == "function"
+                then
+                    InteractionSent = pcall(function()
+                        fireproximityprompt(Prompt)
+                    end)
+                end
+
+                -- Method 2: ClickDetector
+                if not InteractionSent
+                    and Target.Parent
+                then
+                    for _, Object in ipairs(
+                        Target:GetDescendants()
+                    ) do
+                        if Object:IsA("ClickDetector")
+                            and typeof(fireclickdetector) == "function"
+                        then
+                            InteractionSent = pcall(function()
+                                fireclickdetector(Object)
+                            end)
+
+                            break
+                        end
+                    end
+                end
+
+                -- Method 3: Touch interaction
+                if not InteractionSent
+                    and typeof(firetouchinterest) == "function"
+                    and Part.Parent
+                then
+                    InteractionSent = pcall(function()
+                        firetouchinterest(Root, Part, 0)
+                        task.wait(0.1)
+                        firetouchinterest(Root, Part, 1)
+                    end)
+                end
+
+                if not InteractionSent then
+                    warn(
+                        "[Yin & Yang] No supported interaction found:",
+                        Target.Name
+                    )
+                end
+
+                -- Give the game time to register collection
+                local StartTime = os.clock()
+
+                repeat
+                    task.wait(0.1)
+                until not AutoCollectYinYangEnabled
+                    or not Target:IsDescendantOf(Runtime)
+                    or os.clock() - StartTime >= 1.2
+
+                -- Skip objects that disappeared
+                if not Target:IsDescendantOf(Runtime) then
+                    ProcessedYinYang[Target] = true
+                end
+
+                task.wait(0.2)
+            end
+
+            AutoCollectYinYangLoopRunning = false
+        end)
+    end
+})
+
 --==================================================
 -- AUTOMATIC TAB
 --==================================================
