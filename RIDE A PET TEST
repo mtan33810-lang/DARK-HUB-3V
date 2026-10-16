@@ -3045,6 +3045,7 @@ end)
 
 local AutoEggPickupToggle
 local AutoCandyFarmToggle
+local AutoCollectYinYangToggle
 
 --Temporary
 local CandyFarmEnabled = false
@@ -3067,43 +3068,45 @@ TeleportsTab:CreateToggle({
 
         AutoEggPickup = Value
 
-    -- Temporary     
-    if Value and CandyFarmEnabled then
-        ResumeCandyAfterEgg = true
-        CandyFarmEnabled = false
-    end
+            -- Temporary 
+        if Value and CandyFarmEnabled then
 
+            -- Remember that Candy Farm should resume later
+            ResumeCandyAfterEgg = true
 
-        
-if not Value then
-    -- Temporary 
-    if ResumeCandyAfterEgg then
-        task.spawn(function()
-            -- Wait for egg flow to finish
-            while PostPickupRunning do
-                task.wait(0.1)
+            if AutoCandyFarmToggle then
+                AutoCandyFarmToggle:Set(false)
+            else
+                CandyFarmEnabled = false
             end
+        end
 
-            -- Wait for the old candy loop to exit
-            while CandyFarmLoopRunning do
-                task.wait(0.1)
-            end
+        -- WHEN EGG PICKUP TURNS OFF, START YIN & YANG
+        if not Value then
 
-            if ResumeCandyAfterEgg then
-                ProcessedCandy = {}
+            task.spawn(function()
 
-                if AutoCandyFarmToggle then
-                    AutoCandyFarmToggle:Set(true)
-                else
-                    CandyFarmEnabled = true
+                -- Wait for the egg pickup flow to finish
+                while PostPickupRunning do
+                    task.wait(0.1)
                 end
-            end
-        end)
-    end
 
-    return
-end
+                -- Wait for the old Candy Farm loop to stop
+                while CandyFarmLoopRunning do
+                    task.wait(0.1)
+                end
 
+                -- Start Yin & Yang only after Egg Pickup is OFF
+                if not AutoEggPickup
+                    and AutoCollectYinYangToggle then
+
+                    AutoCollectYinYangToggle:Set(true)
+                end
+            end)
+
+            -- Temporary 
+            return
+        end
 
         -- Always scan before checking eggs
         ScanEggs()
@@ -4645,6 +4648,7 @@ end
 -- TOGGLE
 --==================================================
 
+AutoCollectYinYangToggle = 
 EventTab:CreateToggle({
     name = "☯️ Auto Collect Yin & Yang",
     flag = "AutoCollectYinYang",
@@ -4660,11 +4664,13 @@ EventTab:CreateToggle({
         AutoCollectYinYangLoopRunning = true
 
         task.spawn(function()
+    local NoYinYangSince = nil
     while AutoCollectYinYangEnabled do
 
         -- PAUSE WHILE AUTO EGG PICKUP IS ON
         while AutoCollectYinYangEnabled
             and AutoEggPickup do
+            NoYinYangSince = nil
             task.wait(0.1)
         end
 
@@ -4673,12 +4679,33 @@ EventTab:CreateToggle({
         end
 
         local Target, Part, Runtime =
-            FindNearestYinYang()
+    FindNearestYinYang()
 
-                if not Target or not Part or not Runtime then
-                    task.wait(0.5)
-                    continue
-                end
+-- Runtime is not available yet; keep waiting
+if not Runtime then
+    NoYinYangSince = nil
+    task.wait(0.5)
+    continue
+end
+
+-- Check whether all Yin & Yang collectibles are finished
+if not Target or not Part then
+
+    NoYinYangSince =
+        NoYinYangSince or os.clock()
+
+    -- Finish after 5 seconds with no available target
+    if os.clock() - NoYinYangSince >= 5 then
+        AutoCollectYinYangEnabled = false
+        break
+    end
+
+    task.wait(0.5)
+    continue
+end
+
+-- A target was found, so reset the timer
+NoYinYangSince = nil
 
                 local Character = Player.Character
                     or Player.CharacterAdded:Wait()
@@ -4825,6 +4852,39 @@ task.wait(0.3)
             end
 
             AutoCollectYinYangLoopRunning = false
+
+-- Turn off Yin & Yang after the flow finishes
+if AutoCollectYinYangToggle
+    and not AutoCollectYinYangEnabled then
+
+    AutoCollectYinYangToggle:Set(false)
+end
+
+-- RESUME CANDY FARM AFTER YIN & YANG FINISHES
+if ResumeCandyAfterEgg and not AutoEggPickup then
+
+    task.spawn(function()
+
+        -- Make sure other movement flows have stopped
+        while PostPickupRunning
+            or CandyFarmLoopRunning do
+
+            task.wait(0.1)
+        end
+
+        -- Only resume if the egg flow has not restarted
+        if ResumeCandyAfterEgg and not AutoEggPickup then
+
+            ProcessedCandy = {}
+
+            if AutoCandyFarmToggle then
+                AutoCandyFarmToggle:Set(true)
+            else
+                CandyFarmEnabled = true
+            end
+        end
+    end)
+end
         end)
     end
 })
