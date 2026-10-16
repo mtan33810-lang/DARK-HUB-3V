@@ -2831,6 +2831,7 @@ end)
 
 local AutoEggPickupToggle
 local AutoCandyFarmToggle
+local AutoCollectYinYangToggle
 
 --Temporary
 local CandyFarmEnabled = false
@@ -2853,43 +2854,45 @@ TeleportsTab:CreateToggle({
 
         AutoEggPickup = Value
 
-    -- Temporary     
-    if Value and CandyFarmEnabled then
-        ResumeCandyAfterEgg = true
-        CandyFarmEnabled = false
-    end
+        -- Temporary 
+        if Value and CandyFarmEnabled then
 
+            -- Remember that Candy Farm should resume later
+            ResumeCandyAfterEgg = true
 
-        
-if not Value then
-    -- Temporary 
-    if ResumeCandyAfterEgg then
-        task.spawn(function()
-            -- Wait for egg flow to finish
-            while PostPickupRunning do
-                task.wait(0.1)
+            if AutoCandyFarmToggle then
+                AutoCandyFarmToggle:Set(false)
+            else
+                CandyFarmEnabled = false
             end
+        end
 
-            -- Wait for the old candy loop to exit
-            while CandyFarmLoopRunning do
-                task.wait(0.1)
-            end
+        -- WHEN EGG PICKUP TURNS OFF, START YIN & YANG
+        if not Value then
 
-            if ResumeCandyAfterEgg then
-                ProcessedCandy = {}
+            task.spawn(function()
 
-                if AutoCandyFarmToggle then
-                    AutoCandyFarmToggle:Set(true)
-                else
-                    CandyFarmEnabled = true
+                -- Wait for the egg pickup flow to finish
+                while PostPickupRunning do
+                    task.wait(0.1)
                 end
-            end
-        end)
-    end
 
-    return
-end
+                -- Wait for the old Candy Farm loop to stop
+                while CandyFarmLoopRunning do
+                    task.wait(0.1)
+                end
 
+                -- Start Yin & Yang only after Egg Pickup is OFF
+                if not AutoEggPickup
+                    and AutoCollectYinYangToggle then
+
+                    AutoCollectYinYangToggle:Set(true)
+                end
+            end)
+
+            -- Temporary 
+            return
+        end
 
         -- Always scan before checking eggs
         ScanEggs()
