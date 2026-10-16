@@ -4060,7 +4060,7 @@ if Character then
         -- Mark the current candy before scanning for another
         ProcessedCandy[Candy] = true
 
-        task.wait(1.5)
+        task.wait(0.5)
 
         
 -- SECOND DESTINATION
