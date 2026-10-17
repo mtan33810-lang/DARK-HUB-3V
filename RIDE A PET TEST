@@ -4199,7 +4199,9 @@ local function HasSameNameAncestor(Target, Runtime)
     return false
 end
 
--- Find a RANDOM available Yin or Yang
+-- Alternate: Yin first, then Yang
+local NextYinYangName = "Yin"
+
 local function FindRandomYinYang()
     local Ritual =
         workspace:FindFirstChild("HeadlessRitual")
@@ -4218,10 +4220,7 @@ local function FindRandomYinYang()
     local Candidates = {}
 
     for _, Target in ipairs(Runtime:GetDescendants()) do
-        if (
-            Target.Name == "Yin"
-            or Target.Name == "Yang"
-        )
+        if Target.Name == NextYinYangName
             and (
                 Target:IsA("Model")
                 or Target:IsA("BasePart")
@@ -4710,6 +4709,9 @@ if WasCollected then
 
     -- Teleport and place after Auto Egg Pickup finishes
     TeleportAndPlaceYinYang(CollectedName)
+
+NextYinYangName =
+    CollectedName == "Yin" and "Yang" or "Yin"
 
 --==================================================
 -- ☯️ CHECK FOR REMAINING YIN & YANG
