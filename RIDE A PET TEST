@@ -4199,8 +4199,8 @@ local function HasSameNameAncestor(Target, Runtime)
     return false
 end
 
--- Find the nearest available Yin or Yang
-local function FindNearestYinYang()
+-- Find a RANDOM available Yin or Yang
+local function FindRandomYinYang()
     local Ritual =
         workspace:FindFirstChild("HeadlessRitual")
 
@@ -4215,9 +4215,7 @@ local function FindNearestYinYang()
         return nil, nil, Runtime
     end
 
-    local BestTarget = nil
-    local BestPart = nil
-    local BestDistance = math.huge
+    local Candidates = {}
 
     for _, Target in ipairs(Runtime:GetDescendants()) do
         if (
@@ -4235,20 +4233,23 @@ local function FindNearestYinYang()
             local Part = GetYinYangPart(Target)
 
             if Part then
-                local Distance = (
-                    Root.Position - Part.Position
-                ).Magnitude
-
-                if Distance < BestDistance then
-                    BestDistance = Distance
-                    BestTarget = Target
-                    BestPart = Part
-                end
+                table.insert(Candidates, {
+                    Target = Target,
+                    Part = Part
+                })
             end
         end
     end
 
-    return BestTarget, BestPart, Runtime
+    if #Candidates == 0 then
+        return nil, nil, Runtime
+    end
+
+    local Choice = Candidates[
+        math.random(1, #Candidates)
+    ]
+
+    return Choice.Target, Choice.Part, Runtime
 end
 
 -- Find an interaction prompt inside the collectible
