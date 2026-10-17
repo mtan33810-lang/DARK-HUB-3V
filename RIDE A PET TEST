@@ -4633,6 +4633,48 @@ if WasCollected then
     -- Teleport and place after Auto Egg Pickup finishes
     TeleportAndPlaceYinYang(CollectedName)
 
+--==================================================
+-- ☯️ CHECK FOR REMAINING YIN & YANG
+--==================================================
+
+task.wait(0.4)
+
+local Ritual = workspace:FindFirstChild("HeadlessRitual")
+local CurrentRuntime =
+    Ritual and Ritual:FindFirstChild("Runtime")
+
+local FoundRemainingYinYang = false
+
+if CurrentRuntime then
+    for _, RemainingTarget in ipairs(
+        CurrentRuntime:GetDescendants()
+    ) do
+        if (
+            RemainingTarget.Name == "Yin"
+            or RemainingTarget.Name == "Yang"
+        )
+        and (
+            RemainingTarget:IsA("Model")
+            or RemainingTarget:IsA("BasePart")
+        )
+        and not HasSameNameAncestor(
+            RemainingTarget,
+            CurrentRuntime
+        ) then
+
+            FoundRemainingYinYang = true
+
+            -- Allow this remaining item to be retried
+            ProcessedYinYang[RemainingTarget] = nil
+            YinYangAttempts[RemainingTarget] = nil
+        end
+    end
+end
+
+if FoundRemainingYinYang then
+    NoYinYangSince = nil
+end
+
 elseif not SupportedInteraction then
     warn(
         "[Yin & Yang] No supported interaction worked for:",
