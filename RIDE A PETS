@@ -4131,7 +4131,7 @@ local function FindNearestYinYang()
                 or Target:IsA("BasePart")
             )
             and not ProcessedYinYang[Target]
-            and (YinYangAttempts[Target] or 0) < 3
+            and (YinYangAttempts[Target] or 0) < 5
             and not HasSameNameAncestor(Target, Runtime)
         then
             local Part = GetYinYangPart(Target)
@@ -4372,10 +4372,6 @@ NoYinYangSince = nil
                     continue
                 end
 
-                -- Count this attempt
-                YinYangAttempts[Target] =
-                    (YinYangAttempts[Target] or 0) + 1
-
                 -- Teleport to Yin or Yang
                 Root.CFrame =
                     Part.CFrame + Vector3.new(0, 2, 0)
@@ -4399,7 +4395,6 @@ NoYinYangSince = nil
 -- ☯️ RETRY COLLECTION AND CONFIRM SUCCESS
 --==================================================
 
-local CollectionStart = os.clock()
 local SupportedInteraction = false
 local WasCollected = false
 
@@ -4408,13 +4403,17 @@ repeat
         break
     end
 
-    -- Check whether Yin or Yang disappeared
-    if not Target:IsDescendantOf(Runtime) then
-        WasCollected = true
-        break
-    end
+-- Check whether Yin or Yang disappeared
+if not Target:IsDescendantOf(Runtime) then
+    WasCollected = true
+    break
+end
 
-    local InteractionSent = false
+-- Count each actual collection attempt
+YinYangAttempts[Target] =
+    (YinYangAttempts[Target] or 0) + 1
+
+local InteractionSent = false
 
     -- Method 1: ProximityPrompt
     local Prompt = FindYinYangPrompt(Target)
@@ -4467,11 +4466,12 @@ repeat
 
 until not AutoCollectYinYangEnabled
     or not Target:IsDescendantOf(Runtime)
-    or os.clock() - CollectionStart >= 5
+    or (YinYangAttempts[Target] or 0) >= 5
 
--- Confirm collection again
+-- Confirm collection or force-complete after 5 attempts
 WasCollected = WasCollected
     or not Target:IsDescendantOf(Runtime)
+    or (YinYangAttempts[Target] or 0) >= 5
 
 if WasCollected then
     ProcessedYinYang[Target] = true
