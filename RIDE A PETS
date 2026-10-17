@@ -3245,9 +3245,8 @@ local CandyDestination = CFrame.new(
 )
 
 --==================================================
--- 🍬 FIND CANDY
+-- 🍬 FIND CANDY + HEADLESS EGG
 --==================================================
-
 
 local function FindCandy()
     local CandyFolder =
@@ -3260,21 +3259,34 @@ local function FindCandy()
     for _, Candy in ipairs(CandyFolder:GetChildren()) do
         local Name = string.lower(Candy.Name)
 
+        -- Normalize the name to support:
+        -- Headless Egg, HeadlessEgg, Headless_Egg
+        local CompactName = Name
+            :gsub("%s+", "")
+            :gsub("_", "")
+            :gsub("-", "")
+
         local IsNormalCandy =
             Name:match("^candy_%d+$") ~= nil
 
         local IsRitualCandy =
-            Name:find("ritual") ~= nil
+            Name:find("ritual", 1, true) ~= nil
 
-        if (IsNormalCandy or IsRitualCandy)
+        local IsHeadlessEgg =
+            CompactName:find("headless", 1, true) ~= nil
+            and CompactName:find("egg", 1, true) ~= nil
+
+        if (IsNormalCandy or IsRitualCandy or IsHeadlessEgg)
             and not ProcessedCandy[Candy] then
 
             local Part
 
             if Candy:IsA("BasePart") then
                 Part = Candy
-            elseif Candy:IsA("Model") then
-                Part = Candy.PrimaryPart
+
+            elseif Candy:IsA("Model") or Candy:IsA("Folder") then
+                Part = Candy:IsA("Model")
+                    and Candy.PrimaryPart
                     or Candy:FindFirstChildWhichIsA(
                         "BasePart", true
                     )
@@ -3322,7 +3334,8 @@ local function IsPickupPrompt(Prompt)
         "collect",
         "grab",
         "take",
-        "candy"
+        "candy",
+        "claim"
     }
 
     for _, Word in ipairs(Keywords) do
