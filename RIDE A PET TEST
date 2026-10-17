@@ -4535,6 +4535,8 @@ EventTab:CreateToggle({
 
         task.spawn(function()
     local NoYinYangSince = nil
+    local MaxRemainingYinYangChecks = 4
+    local RemainingYinYangChecks = 0
     while AutoCollectYinYangEnabled do
 
         -- PAUSE WHILE AUTO EGG PICKUP IS ON
