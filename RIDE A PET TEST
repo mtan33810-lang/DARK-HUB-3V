@@ -4755,6 +4755,19 @@ end
 
 if FoundRemainingYinYang then
     NoYinYangSince = nil
+
+    -- Count checks that find remaining Yin or Yang
+    RemainingYinYangChecks += 1
+
+    -- Stop after reaching the limit
+    if RemainingYinYangChecks >= MaxRemainingYinYangChecks then
+        warn(
+            "[Yin & Yang] Remaining check limit reached. Stopping Auto Ritual."
+        )
+
+        AutoCollectYinYangEnabled = false
+        break
+    end
 end
 
 elseif not SupportedInteraction then
