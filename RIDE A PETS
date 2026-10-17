@@ -2066,7 +2066,7 @@ TeleportsTab:CreateSlider({
     name = "Fly Speed",
     flag = "PlotFlySpeed",
     description = "Adjust the speed if failing ",
-    range = {25, 1000},
+    range = {25, 1500},
     increment = 25,
     value = 700,
     suffix = "Speed",
