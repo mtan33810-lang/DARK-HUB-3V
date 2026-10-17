@@ -1374,6 +1374,20 @@ local function RunAfterEggPickup(Egg)
 
                 task.wait(VolcanoPostDelay)
 
+                -- Fly to the requested position after Volcano
+                local ReachedVolcanoPosition = FlyToPosition(
+                    CFrame.new(
+                        -5073.91,
+                        41642.64,
+                        -3451.02
+                    )
+                )
+
+                if not ReachedVolcanoPosition then
+                    warn("[EGG FLOW] Fly to Volcano position failed")
+                    return
+                end
+
                 -- Custom drop position
                 local Character =
                     Player.Character
