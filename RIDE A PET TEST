@@ -990,6 +990,7 @@ local function TweenToVolcanoDip()
 
     -- 1. TELEPORT TO VOLCANO
     Root.CFrame = VOLCANO_POSITION
+    task wait(0.3)
 
     -- SAVE HOVER POSITION
     local HoverCFrame = Root.CFrame
