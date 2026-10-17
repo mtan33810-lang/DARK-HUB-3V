@@ -4550,7 +4550,7 @@ EventTab:CreateToggle({
         end
 
         local Target, Part, Runtime =
-    FindNearestYinYang()
+    FindRandomYinYang()
 
 -- Runtime is not available yet; keep waiting
 if not Runtime then
