@@ -2153,7 +2153,7 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 TeleportsTab:CreateSlider({
     name = "Fly to My Plot Speed",
     flag = "PlotFlySpeed",
-    range = {25, 1000},
+    range = {25, 1500},
     increment = 25,
     value = 700,
     suffix = "Speed",
