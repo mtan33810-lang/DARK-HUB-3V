@@ -3261,7 +3261,7 @@ end)
 
 local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 
-EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
+EventTab:CreateSection({ name = "🎃 Farm Candy ", icon = nil })
 
 --==================================================
 -- 🍬 AUTO CANDY FARM SETTINGS
@@ -3853,18 +3853,29 @@ EventTab:CreateSlider({
 })
 
 --==================================================
--- 🍬 AUTO BUY HALLOWEEN EGG
+-- 🎃 AUTO BUY HALLOWEEN ITEM DROPDOWN
 --==================================================
 
-local running = false
+EventTab:CreateSection({ name = "🎃 Auto Buy Halloween Item ", icon = nil })
+
+local AutoBuyHalloweenRunning = false
+local SelectedHalloweenPurchase = "Halloween Egg"
 
 local function runOnce()
+
+    if not AutoBuyHalloweenRunning then
+        return
+    end
+
+    -- Keep the same selected item for this purchase cycle
+    local PurchaseName = SelectedHalloweenPurchase
+
     local Character = Player.Character
         or Player.CharacterAdded:Wait()
 
     local hrp = Character:WaitForChild("HumanoidRootPart")
 
-    -- 1. Teleport
+    -- 1. Teleport to Halloween Shop
     hrp.CFrame = CFrame.new(
         -45758.45,
         40377.75,
@@ -3872,38 +3883,45 @@ local function runOnce()
     )
 
     -- 2. Open Halloween Shop
-    local Event = game:GetService("ReplicatedStorage")
+    local OpenShopEvent = game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
         :WaitForChild("Game")
         :WaitForChild("OpenHalloweenShop")
 
     if firesignal then
-        firesignal(Event.OnClientEvent)
+        firesignal(OpenShopEvent.OnClientEvent)
     else
         warn("firesignal unavailable")
     end
 
-    task.wait(0.5)
+    task.wait(1)
 
-    -- 3. Buy 5 Halloween Eggs
-    local buyEvent = game:GetService("ReplicatedStorage")
+    -- 3. Buy the selected item
+    local BuyEvent = game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
         :WaitForChild("Game")
         :WaitForChild("BuyHalloweenEgg")
 
     for i = 1, 5 do
-        if not running then
+
+        if not AutoBuyHalloweenRunning then
             break
         end
 
-        local success, result = pcall(function()
-            return buyEvent:InvokeServer("Halloween Egg")
+        local Success, Result = pcall(function()
+            return BuyEvent:InvokeServer(PurchaseName)
         end)
 
-        if success then
-            print("Purchase request:", i, "/ 5", result)
+        if Success then
+            print(
+                "Purchase request:",
+                PurchaseName,
+                i,
+                "/ 5",
+                Result
+            )
         else
-            warn("Purchase failed:", result)
+            warn("Purchase failed:", Result)
         end
 
         task.wait(0.5)
@@ -3911,42 +3929,75 @@ local function runOnce()
 end
 
 --==================================================
--- TOGGLE
+-- 🎃 AUTO BUY DROPDOWN
 --==================================================
 
-EventTab:CreateToggle({
-    name = "🥚 Auto Buy Halloween Egg ",
-    value = false,
-    flag = "AutoBuyHalloweenEgg",
+EventTab:CreateDropdown({
+    name = "🎃 Auto Buy Halloween Item",
+    flag = "AutoBuyHalloweenItem",
 
-    callback = function(Value)
-        running = Value
+    description = "Select an item to auto-buy or choose Off",
 
-        if running then
-            task.spawn(function()
-                while running do
-                    local success, err = pcall(runOnce)
+    options = {
+        "Off",
+        "Halloween Egg",
+        "Instant Hatch Key"
+    },
 
-                    if not success then
-                        warn("Loop error:", err)
-                    end
+    value = "Off",
 
-                    for i = 1, 10 do
-                        if not running then
-                            break
-                        end
+    callback = function(Option)
 
-                        task.wait(0.5)
-                    end
-                end
-            end)
+        -- Handle either a string or a table selection
+        if type(Option) == "table" then
+            Option = Option[1]
         end
+
+        -- Stop auto-buying
+        if not Option or Option == "Off" then
+            AutoBuyHalloweenRunning = false
+            return
+        end
+
+        -- Update the selected item
+        SelectedHalloweenPurchase = Option
+
+        -- Avoid starting duplicate loops
+        if AutoBuyHalloweenRunning then
+            return
+        end
+
+        AutoBuyHalloweenRunning = true
+
+        task.spawn(function()
+
+            while AutoBuyHalloweenRunning do
+
+                local Success, Error = pcall(runOnce)
+
+                if not Success then
+                    warn("Loop error:", Error)
+                end
+
+                -- Wait before the next purchase cycle
+                for i = 1, 10 do
+
+                    if not AutoBuyHalloweenRunning then
+                        break
+                    end
+
+                    task.wait(0.5)
+                end
+            end
+        end)
     end
 })
 
 --==================================================
 -- ☯️ YIN & YANG ESP (AUTO REFRESH: 10 SECONDS)
 --==================================================
+
+EventTab:CreateSection({ name = "🎃 Headless Ritual ", icon = nil })
 
 local YinYangESPEnabled = false
 local YinYangESPObjects = {}
