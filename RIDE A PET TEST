@@ -1578,22 +1578,19 @@ end
 
 print("[EGG FLOW] Volcano OFF + Saved OFF")
 
-local Character =
-    Player.Character
-    or Player.CharacterAdded:Wait()
-
-local Root =
-    Character:WaitForChild("HumanoidRootPart")
-
--- STEP 1: Teleport after the initial pickup
-Root.CFrame = CFrame.new(
-    1650.52,
-    40586.08,
-    397.75
+-- STEP 1: Tween Teleport after the initial pickup
+local TweenTeleported = TweenToCustomPosition(
+    CFrame.new(
+        1650.52,
+        40586.08,
+        397.75
+    )
 )
 
-Root.AssemblyLinearVelocity = Vector3.zero
-Root.AssemblyAngularVelocity = Vector3.zero
+if not TweenTeleported then
+    warn("[EGG FLOW] First-position tween failed")
+    return
+end
 
 task.wait(0.3)
 
