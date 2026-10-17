@@ -4423,7 +4423,7 @@ local function PressPlaceYinYang(TargetName)
     end
 
     -- Retry while waiting for the correct interaction
-    for Attempt = 1, 8 do
+    for Attempt = 1, 3 do
 
         -- METHOD 1: ProximityPrompt
         for _, Object in ipairs(workspace:GetDescendants()) do
