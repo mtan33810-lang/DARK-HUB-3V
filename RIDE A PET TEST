@@ -4535,7 +4535,7 @@ EventTab:CreateToggle({
 
         task.spawn(function()
     local NoYinYangSince = nil
-    local MaxRemainingYinYangChecks = 4
+    local MaxRemainingYinYangChecks = 8
     local RemainingYinYangChecks = 0
     while AutoCollectYinYangEnabled do
 
