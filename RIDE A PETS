@@ -4182,9 +4182,9 @@ end
 --==================================================
 
 local YinYangPlacePosition = CFrame.new(
-    -46384.75,
-    40356.26,
-    -19676.62
+    -46380.86, 
+    40371.38, 
+    -19672.54
 )
 
 local function NormalizeYinYangText(Value)
