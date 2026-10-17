@@ -4319,7 +4319,7 @@ local function PressPlaceYinYang(TargetName)
             end
         end
 
-        task.wait(0.25)
+        task.wait(0.5)
     end
 
     return false
@@ -4336,7 +4336,7 @@ local function TeleportAndPlaceYinYang(TargetName)
     Root.AssemblyLinearVelocity = Vector3.zero
     Root.AssemblyAngularVelocity = Vector3.zero
 
-    task.wait(0.75)
+    task.wait(0.5)
 
     local Success = PressPlaceYinYang(TargetName)
 
@@ -4544,6 +4544,48 @@ if WasCollected then
 
     -- Teleport and place after Auto Egg Pickup finishes
     TeleportAndPlaceYinYang(CollectedName)
+
+--==================================================
+-- ☯️ CHECK FOR REMAINING YIN & YANG
+--==================================================
+
+task.wait(0.1)
+
+local Ritual = workspace:FindFirstChild("HeadlessRitual")
+local CurrentRuntime =
+    Ritual and Ritual:FindFirstChild("Runtime")
+
+local FoundRemainingYinYang = false
+
+if CurrentRuntime then
+    for _, RemainingTarget in ipairs(
+        CurrentRuntime:GetDescendants()
+    ) do
+        if (
+            RemainingTarget.Name == "Yin"
+            or RemainingTarget.Name == "Yang"
+        )
+        and (
+            RemainingTarget:IsA("Model")
+            or RemainingTarget:IsA("BasePart")
+        )
+        and not HasSameNameAncestor(
+            RemainingTarget,
+            CurrentRuntime
+        ) then
+
+            FoundRemainingYinYang = true
+
+            -- Allow this remaining item to be retried
+            ProcessedYinYang[RemainingTarget] = nil
+            YinYangAttempts[RemainingTarget] = nil
+        end
+    end
+end
+
+if FoundRemainingYinYang then
+    NoYinYangSince = nil
+end
 
 elseif not SupportedInteraction then
     warn(
