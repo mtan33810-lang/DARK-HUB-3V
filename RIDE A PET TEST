@@ -3350,7 +3350,7 @@ end)
 
 local EventTab = Window:CreateTab({ name = "Event ", icon = 10709783673 })
 
-EventTab:CreateSection({ name = "🎃 Halloween ", icon = nil })
+EventTab:CreateSection({ name = "🎃 Farm Candy ", icon = nil })
 
 --==================================================
 -- 🍬 AUTO CANDY FARM SETTINGS
@@ -3942,6 +3942,8 @@ EventTab:CreateSlider({
 -- 🎃 AUTO BUY HALLOWEEN ITEM DROPDOWN
 --==================================================
 
+EventTab:CreateSection({ name = "🎃 Auto Buy Halloween Item ", icon = nil })
+
 local AutoBuyHalloweenRunning = false
 local SelectedHalloweenPurchase = "Halloween Egg"
 
@@ -4080,6 +4082,8 @@ EventTab:CreateDropdown({
 --==================================================
 -- ☯️ YIN & YANG ESP (AUTO REFRESH: 10 SECONDS)
 --==================================================
+
+EventTab:CreateSection({ name = "🎃 Headless Ritual ", icon = nil })
 
 local YinYangESPEnabled = false
 local YinYangESPObjects = {}
