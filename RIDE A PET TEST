@@ -4275,25 +4275,28 @@ local YinYangPlacePosition = CFrame.new(
 )
 
 local function NormalizeYinYangText(Value)
-    return string.lower(
-        tostring(Value or "")
-    ):gsub("[^%w]", "")
+    local Text = string.lower(tostring(Value or ""))
+    Text = Text:gsub("[^%w]", "")
+    return Text
 end
 
+--==================================================
+-- ☯️ FIXED PLACE YIN / YANG INTERACTION
+--==================================================
 
--- Find and activate the correct Place Yin or Place Yang interaction
 local function PressPlaceYinYang(TargetName)
-
     local TargetKey = NormalizeYinYangText(TargetName)
+
+    if TargetKey ~= "yin" and TargetKey ~= "yang" then
+        warn("[Yin & Yang] Invalid placement target:", TargetName)
+        return false
+    end
+
     local OtherKey = TargetKey == "yin" and "yang" or "yin"
 
-    local Expected = NormalizeYinYangText(
-        "Place " .. TargetName
-    )
-
-    -- Read only the interaction's own text and name
+    -- Get the interaction's own text
     local function GetOwnText(Object)
-        local Parts = {Object.Name}
+        local Parts = { Object.Name }
 
         if Object:IsA("ProximityPrompt") then
             table.insert(Parts, Object.ActionText)
@@ -4301,57 +4304,61 @@ local function PressPlaceYinYang(TargetName)
 
         elseif Object:IsA("TextButton") then
             table.insert(Parts, Object.Text)
-        end
 
-        return NormalizeYinYangText(
-            table.concat(Parts, " ")
-        )
-    end
-
-    local function MatchesPlaceAction(Object)
-
-        local OwnText = GetOwnText(Object)
-
-        -- First: match the exact requested item
-        if OwnText:find(Expected, 1, true) then
-            return true
-        end
-
-        -- Never mistake the opposite item's Place action
-        for _, Word in ipairs({"yin", "yang"}) do
-            if Word ~= TargetKey
-                and OwnText:find(Word, 1, true)
-                and OwnText:find("place", 1, true)
-            then
-                return false
+            -- Some buttons store their text in a child label
+            for _, Child in ipairs(Object:GetDescendants()) do
+                if Child:IsA("TextLabel") then
+                    table.insert(Parts, Child.Text)
+                end
             end
         end
 
-        -- Only use a parent name if it identifies this item
-        -- without also referring to the other item
+        return NormalizeYinYangText(table.concat(Parts, " "))
+    end
+
+    -- Match the requested item without choosing the opposite one
+    local function MatchesPlaceAction(Object)
+        local OwnText = GetOwnText(Object)
+
         if not OwnText:find("place", 1, true) then
             return false
         end
 
+        local HasTarget =
+            OwnText:find(TargetKey, 1, true) ~= nil
+
+        local HasOther =
+            OwnText:find(OtherKey, 1, true) ~= nil
+
+        -- Exact target identified in the interaction itself
+        if HasTarget and not HasOther then
+            return true
+        end
+
+        -- Explicitly named for the opposite item
+        if HasOther and not HasTarget then
+            return false
+        end
+
+        -- Check the FULL parent hierarchy instead of only 4 levels
         local Parent = Object.Parent
 
-        for _ = 1, 4 do
-            if not Parent then
-                break
-            end
+        while Parent and Parent ~= workspace do
+            local ParentText =
+                NormalizeYinYangText(Parent.Name)
 
-            local ParentText = NormalizeYinYangText(
-                Parent.Name
-            )
-
-            local HasTarget =
+            local ParentHasTarget =
                 ParentText:find(TargetKey, 1, true) ~= nil
 
-            local HasOther =
+            local ParentHasOther =
                 ParentText:find(OtherKey, 1, true) ~= nil
 
-            if HasTarget and not HasOther then
+            if ParentHasTarget and not ParentHasOther then
                 return true
+            end
+
+            if ParentHasOther and not ParentHasTarget then
+                return false
             end
 
             Parent = Parent.Parent
@@ -4360,28 +4367,91 @@ local function PressPlaceYinYang(TargetName)
         return false
     end
 
-    -- Retry because the correct interaction may take time to appear
+    -- Find the physical position of the interaction
+    local function GetInteractionPosition(Object)
+        local Parent = Object.Parent
+
+        while Parent and Parent ~= workspace do
+            if Parent:IsA("Attachment") then
+                return Parent.WorldPosition
+            end
+
+            if Parent:IsA("BasePart") then
+                return Parent.Position
+            end
+
+            if Parent:IsA("Model") then
+                local Part = Parent.PrimaryPart
+                    or Parent:FindFirstChildWhichIsA(
+                        "BasePart",
+                        true
+                    )
+
+                if Part then
+                    return Part.Position
+                end
+            end
+
+            Parent = Parent.Parent
+        end
+
+        return nil
+    end
+
+    -- Stand close to the correct placement interaction
+    local function MoveNearInteraction(Object)
+        local Position = GetInteractionPosition(Object)
+
+        if not Position then
+            return
+        end
+
+        local Character = Player.Character
+            or Player.CharacterAdded:Wait()
+
+        local Root =
+            Character:WaitForChild("HumanoidRootPart")
+
+        Root.CFrame = CFrame.new(
+            Position + Vector3.new(0, 2, 0)
+        )
+
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
+
+        task.wait(0.2)
+    end
+
+    -- Retry while waiting for the correct interaction
     for Attempt = 1, 8 do
 
-        -- Search world ProximityPrompts
+        -- METHOD 1: ProximityPrompt
         for _, Object in ipairs(workspace:GetDescendants()) do
 
             if Object:IsA("ProximityPrompt")
                 and Object.Enabled
                 and MatchesPlaceAction(Object)
-                and typeof(fireproximityprompt) == "function"
             then
+                MoveNearInteraction(Object)
+
                 local Success = pcall(function()
-                    fireproximityprompt(Object)
+                    if typeof(fireproximityprompt) == "function" then
+                        fireproximityprompt(Object)
+                    else
+                        Object:InputHoldBegin()
+                        task.wait(math.max(Object.HoldDuration, 0.1))
+                        Object:InputHoldEnd()
+                    end
                 end)
 
                 if Success then
+                    task.wait(0.3)
                     return true
                 end
             end
         end
 
-        -- Search visible UI buttons
+        -- METHOD 2: Visible UI button
         local PlayerGui =
             Player:FindFirstChildOfClass("PlayerGui")
 
@@ -4401,14 +4471,21 @@ local function PressPlaceYinYang(TargetName)
                     end)
 
                     if Success then
+                        task.wait(0.3)
                         return true
                     end
                 end
             end
         end
 
-        task.wait(0.25)
+        task.wait(0.5)
     end
+
+    warn(
+        "[Yin & Yang] Could not activate Place "
+        .. TargetName
+        .. "."
+    )
 
     return false
 end
