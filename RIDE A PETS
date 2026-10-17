@@ -2051,6 +2051,7 @@ EggESPSelectionDropdown = TeleportsTab:CreateDropdown({
 TeleportsTab:CreateSlider({
     name = "Fly Speed",
     flag = "PlotFlySpeed",
+    description = "Adjust the speed if failing ",
     range = {25, 1000},
     increment = 25,
     value = 700,
@@ -2566,7 +2567,7 @@ end
 RarityDropdown =
 TeleportsTab:CreateDropdown({
     name = "💎 Select Egg Rarities",
-    description = "Ride a pet when you're stealing an egg",
+    description = "Ride your best pet before stealing an egg",
     multiSelect = true,
     options = RarityOptions,
     value = {},
@@ -3810,6 +3811,7 @@ task.wait(0.5)
 EventTab:CreateSlider({
     name = "⚡ Candy Tween Speed",
     flag = "CandyTweenSpeed",
+    description = "Adjust the speed if failing ",
     range = {50, 1500},
     increment = 50,
     suffix = " studs/s",
