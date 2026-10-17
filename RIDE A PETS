@@ -1312,42 +1312,58 @@ local function RunAfterEggPickup(Egg)
                 return
             end
 
+--==================================================
+-- 1. VOLCANO ON + SAVED ON
+--
+-- Pick Up
+-- → Volcano
+-- → Fly
+-- → Saved
+-- → Drop
+-- → END
+--==================================================
 
-            --==================================================
-            -- 1. VOLCANO ON + SAVED ON
-            --
-            -- Pick Up
-            -- → Volcano
-            -- → Saved
-            -- → Drop
-            -- → END
-            --==================================================
+if VolcanoDipTween
+    and SavedPositionTween
+then
 
-            if VolcanoDipTween
-                and SavedPositionTween
-            then
+    print(
+        "[EGG FLOW] Volcano ON + Saved ON"
+    )
 
-                print(
-                    "[EGG FLOW] Volcano ON + Saved ON"
-                )
+    -- STEP 1: Volcano
+    TweenToVolcanoDip()
 
-                TweenToVolcanoDip()
+    task.wait(VolcanoPostDelay)
 
-                task.wait(VolcanoPostDelay)
+    -- STEP 2: Fly to coordinates
+    local ReachedVolcanoPosition = FlyToPosition(
+        CFrame.new(
+            -5073.91,
+            41642.64,
+            -3451.02
+        )
+    )
 
-                TweenToSavedPosition()
+    if not ReachedVolcanoPosition then
+        warn("[EGG FLOW] Fly failed")
+        return
+    end
 
-                task.wait(0.5)
+    -- STEP 3: Fly to Saved Position
+    TweenToSavedPosition()
 
-                DropEgg()
+    task.wait(0.5)
 
-                print(
-                    "[EGG FLOW] Finished: Volcano → Saved → Drop"
-                )
+    -- STEP 4: Drop Egg
+    DropEgg()
 
-                return
-            end
+    print(
+        "[EGG FLOW] Finished: Volcano → Fly → Saved → Drop"
+    )
 
+    return
+end
 
             --==================================================
             -- 2. VOLCANO ON + SAVED OFF
