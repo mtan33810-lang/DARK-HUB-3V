@@ -4269,22 +4269,58 @@ local function NormalizeYinYangText(Value)
     ):gsub("[^%w]", "")
 end
 
--- Find and activate the matching Place interaction
+
+-- Find and activate the correct Place Yin or Place Yang interaction
 local function PressPlaceYinYang(TargetName)
+
+    local TargetKey = NormalizeYinYangText(TargetName)
+    local OtherKey = TargetKey == "yin" and "yang" or "yin"
+
     local Expected = NormalizeYinYangText(
         "Place " .. TargetName
     )
 
-    local function MatchesPlaceAction(Object)
-        local Parts = {}
+    -- Read only the interaction's own text and name
+    local function GetOwnText(Object)
+        local Parts = {Object.Name}
 
         if Object:IsA("ProximityPrompt") then
             table.insert(Parts, Object.ActionText)
+            table.insert(Parts, Object.ObjectText)
+
         elseif Object:IsA("TextButton") then
             table.insert(Parts, Object.Text)
         end
 
-        table.insert(Parts, Object.Name)
+        return NormalizeYinYangText(
+            table.concat(Parts, " ")
+        )
+    end
+
+    local function MatchesPlaceAction(Object)
+
+        local OwnText = GetOwnText(Object)
+
+        -- First: match the exact requested item
+        if OwnText:find(Expected, 1, true) then
+            return true
+        end
+
+        -- Never mistake the opposite item's Place action
+        for _, Word in ipairs({"yin", "yang"}) do
+            if Word ~= TargetKey
+                and OwnText:find(Word, 1, true)
+                and OwnText:find("place", 1, true)
+            then
+                return false
+            end
+        end
+
+        -- Only use a parent name if it identifies this item
+        -- without also referring to the other item
+        if not OwnText:find("place", 1, true) then
+            return false
+        end
 
         local Parent = Object.Parent
 
@@ -4293,32 +4329,37 @@ local function PressPlaceYinYang(TargetName)
                 break
             end
 
-            table.insert(Parts, Parent.Name)
+            local ParentText = NormalizeYinYangText(
+                Parent.Name
+            )
+
+            local HasTarget =
+                ParentText:find(TargetKey, 1, true) ~= nil
+
+            local HasOther =
+                ParentText:find(OtherKey, 1, true) ~= nil
+
+            if HasTarget and not HasOther then
+                return true
+            end
+
             Parent = Parent.Parent
         end
 
-        local Combined = NormalizeYinYangText(
-            table.concat(Parts, " ")
-        )
-
-        return Combined:find(Expected, 1, true) ~= nil
-            or (
-                Combined:find("place", 1, true) ~= nil
-                and Combined:find(
-                    NormalizeYinYangText(TargetName),
-                    1,
-                    true
-                ) ~= nil
-            )
+        return false
     end
 
-    -- Look for the matching world interaction
-    for _, Object in ipairs(workspace:GetDescendants()) do
-        if Object:IsA("ProximityPrompt")
-            and Object.Enabled
-            and MatchesPlaceAction(Object)
-        then
-            if typeof(fireproximityprompt) == "function" then
+    -- Retry because the correct interaction may take time to appear
+    for Attempt = 1, 8 do
+
+        -- Search world ProximityPrompts
+        for _, Object in ipairs(workspace:GetDescendants()) do
+
+            if Object:IsA("ProximityPrompt")
+                and Object.Enabled
+                and MatchesPlaceAction(Object)
+                and typeof(fireproximityprompt) == "function"
+            then
                 local Success = pcall(function()
                     fireproximityprompt(Object)
                 end)
@@ -4328,30 +4369,34 @@ local function PressPlaceYinYang(TargetName)
                 end
             end
         end
-    end
 
-    -- Look for the matching on-screen button
-    local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+        -- Search visible UI buttons
+        local PlayerGui =
+            Player:FindFirstChildOfClass("PlayerGui")
 
-    if PlayerGui then
-        for _, Object in ipairs(PlayerGui:GetDescendants()) do
-            if Object:IsA("TextButton")
-                and Object.Visible
-                and MatchesPlaceAction(Object)
-            then
-                local Success = pcall(function()
-                    if typeof(firesignal) == "function" then
-                        firesignal(Object.Activated)
-                    else
-                        Object:Activate()
+        if PlayerGui then
+            for _, Object in ipairs(PlayerGui:GetDescendants()) do
+
+                if Object:IsA("TextButton")
+                    and Object.Visible
+                    and MatchesPlaceAction(Object)
+                then
+                    local Success = pcall(function()
+                        if typeof(firesignal) == "function" then
+                            firesignal(Object.Activated)
+                        else
+                            Object:Activate()
+                        end
+                    end)
+
+                    if Success then
+                        return true
                     end
-                end)
-
-                if Success then
-                    return true
                 end
             end
         end
+
+        task.wait(0.25)
     end
 
     return false
