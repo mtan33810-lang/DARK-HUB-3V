@@ -1472,7 +1472,7 @@ local function FlyToCoin(RootPart, Coin, RunId)
         end
 
         -- Check for a collidable obstacle
-        local Character = LocalPlayer.Character
+        local Character = lp.Character
         local Params = RaycastParams.new()
 
         Params.FilterType = Enum.RaycastFilterType.Exclude
