@@ -3219,7 +3219,7 @@ if AutoEggPickup then
     -- IMPORTANT:
     -- After 3 attempts, continue the existing egg flow
     -- even if pickup was not confirmed.
-</escape>
+end
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
