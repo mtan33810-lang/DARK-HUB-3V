@@ -3060,100 +3060,163 @@ or tostring(Egg.Name) == "Bloom Egg" then
     end
 
 end
+                
+--==================================================
+-- 🥚 TELEPORT TO EGG + PICKUP RETRY
+--==================================================
 
-                --==================================================
-                -- INSTANT TELEPORT TO EGG
-                --==================================================
+local PickupConfirmed = false
+local MaxPickupAttempts = 10
 
-                local EggTargetCFrame =
-                    LiveEggCFrame + Vector3.new(0, 5, 0)
+for Attempt = 1, MaxPickupAttempts do
 
-                HRP.CFrame = EggTargetCFrame
-                HRP.AssemblyLinearVelocity = Vector3.zero
-                HRP.AssemblyAngularVelocity = Vector3.zero
+    if not AutoEggPickup then
+        break
+    end
 
-                task.wait(0.2)
+    -- VERIFY EGG
+    if not Egg
+        or not Egg.Parent
+        or IsIgnoredDroppedEgg(Egg)
+    then
+        break
+    end
 
-                if not AutoEggPickup then
-                    break
-                end
+    if IsEggEquipped(Egg) then
+        PickupConfirmed = true
+        break
+    end
 
-                task.wait(0.4)
+    -- GET LATEST EGG POSITION
+    local LiveEggCFrame = GetObjectCFrame(Egg)
 
-                --==================================================
-                -- VERIFY
-                --==================================================
+    if not LiveEggCFrame then
+        task.wait(0.3)
+        continue
+    end
 
-                if not Egg
-                    or not Egg.Parent
-                    or IsIgnoredDroppedEgg(Egg)
-                    or IsEggEquipped(Egg)
-                then
-                    task.wait(0.2)
-                    continue
-                end
+    -- GET CHARACTER
+    local Character = Player.Character
+    local HRP = Character
+        and Character:FindFirstChild("HumanoidRootPart")
 
+    if not HRP then
+        task.wait(0.3)
+        continue
+    end
 
-                --==================================================
-                -- FIND PICKUP PROMPT
-                --==================================================
+    --==================================================
+    -- INSTANT TELEPORT TO EGG
+    --==================================================
 
-                local FoundPrompt = nil
+    local EggTargetCFrame =
+        LiveEggCFrame + Vector3.new(0, 5, 0)
 
-                for _, Object in ipairs(
-                    Egg:GetDescendants()
-                ) do
+    HRP.CFrame = EggTargetCFrame
+    HRP.AssemblyLinearVelocity = Vector3.zero
+    HRP.AssemblyAngularVelocity = Vector3.zero
 
-                    if Object:IsA(
-                        "ProximityPrompt"
-                    ) then
+    task.wait(0.3)
 
-                        local PromptText =
-                            string.lower(
-                                tostring(
-                                    Object.ActionText
-                                    or ""
-                                )
-                            )
+    if not AutoEggPickup then
+        break
+    end
 
-                        if PromptText == "pick up"
-                            or PromptText:find(
-                                "pick",
-                                1,
-                                true
-                            )
-                        then
+    -- CHECK AGAIN BEFORE PICKUP
+    if not Egg or not Egg.Parent then
+        break
+    end
 
-                            FoundPrompt =
-                                Object
+    if IsEggEquipped(Egg) then
+        PickupConfirmed = true
+        break
+    end
 
-                            break
-                        end
-                    end
-                end
+    --==================================================
+    -- FIND PICKUP PROMPT
+    --==================================================
 
-                --==================================================
-                -- PICK UP
-                --==================================================
+    local FoundPrompt = nil
 
-                if FoundPrompt
-                    and typeof(
-                        fireproximityprompt
-                    ) == "function"
-                then
+    for _, Object in ipairs(Egg:GetDescendants()) do
+        if Object:IsA("ProximityPrompt") then
+            local PromptText = string.lower(
+                tostring(Object.ActionText or "")
+            )
 
-                    if IsEggEquipped(Egg)
-                        or IsIgnoredDroppedEgg(Egg)
-                    then
-                        task.wait(0.2)
-                        continue
-                    end
+            if PromptText == "pick up"
+                or PromptText:find("pick", 1, true)
+            then
+                FoundPrompt = Object
+                break
+            end
+        end
+    end
 
-                    fireproximityprompt(
-                        FoundPrompt
-                    )
+    --==================================================
+    -- PICK UP
+    --==================================================
 
-                    task.wait(0.8)
+    if FoundPrompt
+        and FoundPrompt.Enabled
+        and typeof(fireproximityprompt) == "function"
+    then
+        pcall(function()
+            fireproximityprompt(FoundPrompt)
+        end)
+    end
+
+    -- WAIT FOR GAME TO REGISTER PICKUP
+    task.wait(0.8)
+
+    --==================================================
+    -- VERIFY PICKUP RESULT
+    --==================================================
+
+    if IsEggEquipped(Egg) then
+        PickupConfirmed = true
+        print("[EGG] Pickup successful on attempt " .. Attempt)
+        break
+    end
+
+    if not Egg or not Egg.Parent then
+        -- Confirm only if your existing game logic
+        -- reliably treats removal as a successful pickup.
+        if IsEggEquipped(Egg) then
+            PickupConfirmed = true
+        end
+        break
+    end
+
+    --==================================================
+    -- RETRY: TELEPORT TO THE SAME EGG AGAIN
+    --==================================================
+
+    if Attempt < MaxPickupAttempts then
+        warn(
+            "[EGG] Pickup failed. Retrying: "
+            .. (Attempt + 1)
+            .. "/" .. MaxPickupAttempts
+        )
+
+        task.wait(0.3)
+    end
+end
+
+--==================================================
+-- STOP IF PICKUP WAS NOT CONFIRMED
+--==================================================
+
+if not AutoEggPickup then
+    break
+end
+
+if not PickupConfirmed then
+    warn("[EGG] Pickup failed after all attempts.")
+    continue
+end
+
+-- Continue to your existing post-pickup logic below.
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
