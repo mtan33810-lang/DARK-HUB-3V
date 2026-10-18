@@ -5045,10 +5045,130 @@ end
 
 })
 
+--==================================================
+-- 🌱 REMOVE GRASS | WIDE SCAN
+--==================================================
 
---==================================================
--- 🌱 REMOVE GRASS 
---==================================================
+local RemoveGrassEnabled = false
+local GrassOriginals = {}
+local GrassAddedConnection = nil
+
+-- Check the object and all its ancestors for "grass"
+local function IsGrassRelated(Object)
+    local Current = Object
+
+    while Current and Current ~= workspace do
+        local Name = string.lower(Current.Name)
+
+        if string.find(Name, "grass", 1, true) then
+            return true
+        end
+
+        Current = Current.Parent
+    end
+
+    return false
+end
+
+-- Hide an object while saving its original visibility
+local function SetGrassHidden(Object)
+    if not (
+        Object:IsA("BasePart")
+        or Object:IsA("Decal")
+        or Object:IsA("Texture")
+    ) then
+        return
+    end
+
+    if not GrassOriginals[Object] then
+        GrassOriginals[Object] = {}
+    end
+
+    local Saved = GrassOriginals[Object]
+
+    if Object:IsA("BasePart") then
+        if Saved.LocalTransparencyModifier == nil then
+            Saved.LocalTransparencyModifier =
+                Object.LocalTransparencyModifier
+        end
+
+        Object.LocalTransparencyModifier = 1
+
+    elseif Object:IsA("Decal") or Object:IsA("Texture") then
+        if Saved.Transparency == nil then
+            Saved.Transparency = Object.Transparency
+        end
+
+        Object.Transparency = 1
+    end
+end
+
+local function SetRemoveGrass(Value)
+    RemoveGrassEnabled = Value
+
+    if GrassAddedConnection then
+        GrassAddedConnection:Disconnect()
+        GrassAddedConnection = nil
+    end
+
+    if Value then
+        local HiddenCount = 0
+
+        -- Search the entire Workspace, not just Map/Nature/Grass
+        for _, Object in ipairs(workspace:GetDescendants()) do
+            if IsGrassRelated(Object) then
+                local IsVisual =
+                    Object:IsA("BasePart")
+                    or Object:IsA("Decal")
+                    or Object:IsA("Texture")
+
+                if IsVisual then
+                    SetGrassHidden(Object)
+                    HiddenCount += 1
+                end
+            end
+        end
+
+        -- Hide matching grass added later
+        GrassAddedConnection =
+            workspace.DescendantAdded:Connect(function(Object)
+                task.defer(function()
+                    if RemoveGrassEnabled
+                        and Object.Parent
+                        and IsGrassRelated(Object) then
+
+                        SetGrassHidden(Object)
+                    end
+                end)
+            end)
+
+        print("[REMOVE GRASS] Hidden objects:", HiddenCount)
+
+    else
+        -- Restore original visibility
+        for Object, Saved in pairs(GrassOriginals) do
+            pcall(function()
+                if Object:IsA("BasePart")
+                    and Saved.LocalTransparencyModifier ~= nil then
+
+                    Object.LocalTransparencyModifier =
+                        Saved.LocalTransparencyModifier
+
+                elseif Object:IsA("Decal")
+                    or Object:IsA("Texture") then
+
+                    if Saved.Transparency ~= nil then
+                        Object.Transparency = Saved.Transparency
+                    end
+                end
+            end)
+        end
+
+        table.clear(GrassOriginals)
+
+        print("[REMOVE GRASS] Visibility restored")
+    end
+end
 
 SettingTab:CreateToggle({
     name = "🌱 Remove Grass",
@@ -5056,24 +5176,7 @@ SettingTab:CreateToggle({
     value = false,
 
     callback = function(Value)
-        local Map = workspace:FindFirstChild("Map")
-        local Nature = Map and Map:FindFirstChild("Nature")
-        local GrassFolder = Nature and Nature:FindFirstChild("Grass")
-
-        if not GrassFolder then
-            warn("[Remove Grass] Grass folder not found!")
-            return
-        end
-
-        for _, obj in ipairs(GrassFolder:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                obj.LocalTransparencyModifier = Value and 1 or 0
-            elseif obj:IsA("Decal") or obj:IsA("Texture") then
-                obj.Transparency = Value and 1 or 0
-            end
-        end
-
-        print("[Remove Grass] Enabled:", Value)
+        SetRemoveGrass(Value)
     end
 })
 
