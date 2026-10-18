@@ -3079,18 +3079,19 @@ if not AutoEggPickup then
     break
 end
 
+
 local PickupSucceeded = false
 local PickupAttempts = 0
+local MaxPickupAttempts = 3
 
-while AutoEggPickup and not PickupSucceeded do
+while AutoEggPickup and not PickupSucceeded
+    and PickupAttempts < MaxPickupAttempts do
 
-    -- CHECK: Was the egg picked up?
     if IsEggEquipped(Egg) then
         PickupSucceeded = true
         break
     end
 
-    -- Stop if the target disappears or becomes invalid.
     if not Egg
         or not Egg.Parent
         or not Egg:IsDescendantOf(workspace)
@@ -3099,37 +3100,30 @@ while AutoEggPickup and not PickupSucceeded do
         break
     end
 
-    local CurrentEggCFrame =
-        GetObjectCFrame(Egg)
+    local CurrentEggCFrame = GetObjectCFrame(Egg)
 
     if not CurrentEggCFrame then
         task.wait(0.2)
         continue
     end
 
-    -- FIND THE PICK UP PROMPT AGAIN
     local FoundPrompt = nil
 
     for _, Object in ipairs(Egg:GetDescendants()) do
-
         if Object:IsA("ProximityPrompt") then
-
             local PromptText = string.lower(
                 tostring(Object.ActionText or "")
             )
 
             if PromptText == "pick up"
-                or PromptText:find("pick", 1, true)
-            then
+                or PromptText:find("pick", 1, true) then
                 FoundPrompt = Object
                 break
             end
         end
     end
 
-    -- Refresh the character in case it respawned.
     local Character = Player.Character
-
     local CurrentHRP = Character
         and Character:FindFirstChild("HumanoidRootPart")
 
@@ -3139,31 +3133,25 @@ while AutoEggPickup and not PickupSucceeded do
     end
 
     HRP = CurrentHRP
-    PickupAttempts += 1
-
-    -- MOVE CLOSER after each failed attempt.
-    -- Approach height: 4.5, 4.0, 3.5 ... down to 1.5.
-    local ApproachHeight = math.max(
-        1.5,
-        4.5 - ((PickupAttempts - 1) * 0.5)
-    )
 
     local TargetPosition = CurrentEggCFrame.Position
 
-    -- Use the prompt's actual position when available.
     if FoundPrompt and FoundPrompt.Parent then
-
         local PromptParent = FoundPrompt.Parent
 
         if PromptParent:IsA("Attachment") then
             TargetPosition = PromptParent.WorldPosition
-
         elseif PromptParent:IsA("BasePart") then
             TargetPosition = PromptParent.Position
         end
     end
 
-    -- APPROACH THE EGG
+    -- Move closer before each attempt.
+    local ApproachHeight = math.max(
+        1.5,
+        4.5 - (PickupAttempts * 1.5)
+    )
+
     HRP.CFrame = CFrame.new(
         TargetPosition + Vector3.new(0, ApproachHeight, 0)
     ) * HRP.CFrame.Rotation
@@ -3173,51 +3161,47 @@ while AutoEggPickup and not PickupSucceeded do
 
     task.wait(0.2)
 
-    -- CHECK AGAIN BEFORE TRYING PICK UP.
     if IsEggEquipped(Egg) then
         PickupSucceeded = true
         break
     end
 
-    -- TRY PICK UP.
+    -- Count only actual pickup attempts.
     if FoundPrompt and FoundPrompt.Parent then
+        PickupAttempts += 1
 
         pcall(function()
-
             if typeof(fireproximityprompt) == "function" then
-
                 fireproximityprompt(FoundPrompt)
-
             else
-
                 FoundPrompt:InputHoldBegin()
-
-                task.wait(
-                    math.max(FoundPrompt.HoldDuration, 0.1)
-                )
-
+                task.wait(math.max(FoundPrompt.HoldDuration, 0.1))
                 FoundPrompt:InputHoldEnd()
+            end
+        end)
 
+        -- Wait for the game to register pickup.
+        local VerifyDeadline = os.clock() + 2
+
+        while AutoEggPickup and os.clock() < VerifyDeadline do
+            if IsEggEquipped(Egg) then
+                PickupSucceeded = true
+                break
             end
 
-        end)
-    end
+            task.wait(0.1)
+        end
 
-    -- Give the server time to process the pickup.
-    task.wait(0.5)
-
-    -- VERIFY BEFORE CONTINUING.
-    if IsEggEquipped(Egg) then
-        PickupSucceeded = true
+        if PickupSucceeded then
+            break
+        end
+    else
+        -- No prompt found; avoid an infinite loop.
         break
     end
-
-    -- If unsuccessful, the while loop moves closer
-    -- and attempts Pick Up again automatically.
-
 end
 
-if PickupSucceeded then
+-- Continue to the next flow after success or 3 failed attempts.
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
