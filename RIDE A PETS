@@ -5209,7 +5209,7 @@ SettingTab:CreateDropdown({
         "frost",
         "rose"
     },
-    currentOption = "cobalt",
+    value = "cobalt",
     callback = function(Theme)
         Window:ChangeTheme(Theme)
     end
