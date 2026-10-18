@@ -3203,6 +3203,12 @@ end
 
 -- Continue to the next flow after success or 3 failed attempts.
 
+if PickupSucceeded then
+    print("[EGG PICKUP] Successfully picked up egg.")
+else
+    print("[EGG PICKUP] Finished 3 attempts or pickup unavailable.")
+end
+
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
 -- 4 = TELEPORT | 3 → 2 → 1 = FLY
