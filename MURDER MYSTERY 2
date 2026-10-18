@@ -1336,6 +1336,287 @@ right:CreateDropdown({
 })   
 
 --============================================================
+-- FARM TAB
+--============================================================
+
+local HomeTab = Window:CreateTab({
+    name = "Farm ",
+    icon = nil,
+})
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local CoinFarmEnabled = false
+local CoinFarmRunId = 0
+local FlySpeed = 25
+
+local NoclipEnabled = false
+local NoclipConnection = nil
+local OriginalCollisions = {}
+
+--==================================================
+-- NOCLIP
+--==================================================
+
+local function SetNoclip(Enabled)
+    if NoclipEnabled == Enabled then
+        return
+    end
+
+    NoclipEnabled = Enabled
+
+    if NoclipConnection then
+        NoclipConnection:Disconnect()
+        NoclipConnection = nil
+    end
+
+    if Enabled then
+        local function ApplyNoclip()
+            local Character = lp.Character
+            if not Character then return end
+
+            for _, Part in ipairs(Character:GetDescendants()) do
+                if Part:IsA("BasePart") then
+                    if OriginalCollisions[Part] == nil then
+                        OriginalCollisions[Part] = Part.CanCollide
+                    end
+
+                    Part.CanCollide = false
+                end
+            end
+        end
+
+        ApplyNoclip()
+
+        NoclipConnection = RunService.Stepped:Connect(
+            ApplyNoclip
+        )
+    else
+        for Part, OriginalValue in pairs(OriginalCollisions) do
+            if Part and Part.Parent then
+                Part.CanCollide = OriginalValue
+            end
+        end
+
+        table.clear(OriginalCollisions)
+    end
+end
+
+--==================================================
+-- FIND NEAREST COIN
+--==================================================
+
+local function FindNearestCoin(RootPart, IgnoredCoins)
+    local NearestCoin = nil
+    local NearestDistance = math.huge
+
+    for _, Object in ipairs(workspace:GetDescendants()) do
+        if Object:IsA("BasePart")
+            and not IgnoredCoins[Object] then
+
+            local Name = string.lower(Object.Name)
+
+            local IsCoin =
+                Name == "coin"
+                or Name == "coin_server"
+                or string.find(Name, "coin", 1, true) ~= nil
+
+            if IsCoin
+                and Object.Transparency < 1
+                and Object:IsDescendantOf(workspace) then
+
+                local Distance =
+                    (Object.Position - RootPart.Position).Magnitude
+
+                if Distance < NearestDistance then
+                    NearestDistance = Distance
+                    NearestCoin = Object
+                end
+            end
+        end
+    end
+
+    return NearestCoin
+end
+
+--==================================================
+-- FLY TO COIN WITHOUT TWEEN
+--==================================================
+
+local function FlyToCoin(RootPart, Coin, RunId)
+    while CoinFarmEnabled
+        and RunId == CoinFarmRunId
+        and RootPart.Parent
+        and Coin.Parent do
+
+        local TargetPosition =
+            Coin.Position + Vector3.new(0, 1, 0)
+
+        local Direction = TargetPosition - RootPart.Position
+        local Distance = Direction.Magnitude
+
+        if Distance <= 2 then
+            RootPart.AssemblyLinearVelocity = Vector3.zero
+            return true
+        end
+
+        local DeltaTime = RunService.Heartbeat:Wait()
+
+        if not CoinFarmEnabled
+            or RunId ~= CoinFarmRunId
+            or not RootPart.Parent
+            or not Coin.Parent then
+            return false
+        end
+
+        -- Check for a collidable obstacle
+        local Character = LocalPlayer.Character
+        local Params = RaycastParams.new()
+
+        Params.FilterType = Enum.RaycastFilterType.Exclude
+        Params.FilterDescendantsInstances = {
+            Character,
+            Coin
+        }
+
+        local Obstacle = workspace:Raycast(
+            RootPart.Position,
+            Direction,
+            Params
+        )
+
+        local Blocked =
+            Obstacle ~= nil
+            and Obstacle.Instance:IsA("BasePart")
+            and Obstacle.Instance.CanCollide
+
+        SetNoclip(Blocked)
+
+        -- Continuous frame-by-frame movement
+        -- No TweenService is used
+        local Step = math.min(
+            FlySpeed * DeltaTime,
+            Distance
+        )
+
+        RootPart.CFrame =
+            RootPart.CFrame + Direction.Unit * Step
+
+        -- Corrected typo: Vector3.zero
+        RootPart.AssemblyLinearVelocity = Vector3.zero
+    end
+
+    return false
+end
+
+--==================================================
+-- FLY SPEED SLIDER
+--==================================================
+
+HomeTab:CreateSlider({
+    name = "Fly Speed",
+    range = {10, 40},
+    increment = 5,
+    suffix = " studs/s",
+    currentValue = 25,
+    flag = "CoinFlySpeed",
+
+    callback = function(Value)
+        FlySpeed = Value
+    end
+})
+
+--==================================================
+-- FLY TO THE COIN TOGGLE
+--==================================================
+
+HomeTab:CreateToggle({
+    name = "Fly to the Coin",
+    flag = "AutoFarmCoins",
+    currentValue = false,
+
+    callback = function(Value)
+        CoinFarmEnabled = Value
+        CoinFarmRunId += 1
+
+        local ThisRun = CoinFarmRunId
+
+        if not Value then
+            SetNoclip(false)
+            return
+        end
+
+        task.spawn(function()
+            -- Reset the ignored list when a new run starts
+            local IgnoredCoins = {}
+
+            while CoinFarmEnabled
+                and ThisRun == CoinFarmRunId do
+
+                local Character = lp.Character
+                local RootPart = Character
+                    and Character:FindFirstChild("HumanoidRootPart")
+
+                local Humanoid = Character
+                    and Character:FindFirstChildOfClass("Humanoid")
+
+                if not RootPart
+                    or not Humanoid
+                    or Humanoid.Health <= 0 then
+
+                    SetNoclip(false)
+                    task.wait(0.5)
+                    continue
+                end
+
+                local Coin = FindNearestCoin(
+                    RootPart,
+                    IgnoredCoins
+                )
+
+                if Coin then
+                    local Reached = FlyToCoin(
+                        RootPart,
+                        Coin,
+                        ThisRun
+                    )
+
+                    SetNoclip(false)
+
+                    if Reached then
+                        -- Don't get stuck on this same coin
+                        IgnoredCoins[Coin] = true
+                    end
+
+                    task.wait(0.1)
+                else
+                    SetNoclip(false)
+                    task.wait(0.5)
+                end
+            end
+
+            SetNoclip(false)
+        end)
+    end
+})
+
+--==================================================
+-- STOP BUTTON
+--==================================================
+
+HomeTab:CreateButton({
+    name = "Stop Coin Farm",
+
+    callback = function()
+        CoinFarmEnabled = false
+        CoinFarmRunId += 1
+        SetNoclip(false)
+    end
+})
+
+--============================================================
 -- MAIN TAB
 --============================================================
 
