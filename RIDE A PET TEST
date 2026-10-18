@@ -3061,99 +3061,163 @@ or tostring(Egg.Name) == "Bloom Egg" then
 
 end
 
-                --==================================================
-                -- INSTANT TELEPORT TO EGG
-                --==================================================
+--==================================================
+-- TELEPORT → MOVE CLOSER → PICK UP → VERIFY
+-- Repeat until the egg is actually equipped
+--==================================================
 
-                local EggTargetCFrame =
-                    LiveEggCFrame + Vector3.new(0, 5, 0)
+local EggTargetCFrame =
+    LiveEggCFrame + Vector3.new(0, 5, 0)
 
-                HRP.CFrame = EggTargetCFrame
-                HRP.AssemblyLinearVelocity = Vector3.zero
-                HRP.AssemblyAngularVelocity = Vector3.zero
+HRP.CFrame = EggTargetCFrame
+HRP.AssemblyLinearVelocity = Vector3.zero
+HRP.AssemblyAngularVelocity = Vector3.zero
 
-                task.wait(0.2)
+task.wait(0.25)
 
-                if not AutoEggPickup then
-                    break
-                end
+if not AutoEggPickup then
+    break
+end
 
-                task.wait(0.4)
+local PickupSucceeded = false
+local PickupAttempts = 0
 
-                --==================================================
-                -- VERIFY
-                --==================================================
+while AutoEggPickup and not PickupSucceeded do
 
-                if not Egg
-                    or not Egg.Parent
-                    or IsIgnoredDroppedEgg(Egg)
-                    or IsEggEquipped(Egg)
-                then
-                    task.wait(0.2)
-                    continue
-                end
+    -- CHECK: Was the egg picked up?
+    if IsEggEquipped(Egg) then
+        PickupSucceeded = true
+        break
+    end
 
-                --==================================================
-                -- FIND PICKUP PROMPT
-                --==================================================
+    -- Stop if the target disappears or becomes invalid.
+    if not Egg
+        or not Egg.Parent
+        or not Egg:IsDescendantOf(workspace)
+        or IsIgnoredDroppedEgg(Egg)
+    then
+        break
+    end
 
-                local FoundPrompt = nil
+    local CurrentEggCFrame =
+        GetObjectCFrame(Egg)
 
-                for _, Object in ipairs(
-                    Egg:GetDescendants()
-                ) do
+    if not CurrentEggCFrame then
+        task.wait(0.2)
+        continue
+    end
 
-                    if Object:IsA(
-                        "ProximityPrompt"
-                    ) then
+    -- FIND THE PICK UP PROMPT AGAIN
+    local FoundPrompt = nil
 
-                        local PromptText =
-                            string.lower(
-                                tostring(
-                                    Object.ActionText
-                                    or ""
-                                )
-                            )
+    for _, Object in ipairs(Egg:GetDescendants()) do
 
-                        if PromptText == "pick up"
-                            or PromptText:find(
-                                "pick",
-                                1,
-                                true
-                            )
-                        then
+        if Object:IsA("ProximityPrompt") then
 
-                            FoundPrompt =
-                                Object
+            local PromptText = string.lower(
+                tostring(Object.ActionText or "")
+            )
 
-                            break
-                        end
-                    end
-                end
+            if PromptText == "pick up"
+                or PromptText:find("pick", 1, true)
+            then
+                FoundPrompt = Object
+                break
+            end
+        end
+    end
 
-                --==================================================
-                -- PICK UP
-                --==================================================
+    -- Refresh the character in case it respawned.
+    local Character = Player.Character
 
-                if FoundPrompt
-                    and typeof(
-                        fireproximityprompt
-                    ) == "function"
-                then
+    local CurrentHRP = Character
+        and Character:FindFirstChild("HumanoidRootPart")
 
-                    if IsEggEquipped(Egg)
-                        or IsIgnoredDroppedEgg(Egg)
-                    then
-                        task.wait(0.2)
-                        continue
-                    end
+    if not CurrentHRP then
+        task.wait(0.2)
+        continue
+    end
 
-                    fireproximityprompt(
-                        FoundPrompt
-                    )
+    HRP = CurrentHRP
+    PickupAttempts += 1
 
-                    task.wait(0.8)
+    -- MOVE CLOSER after each failed attempt.
+    -- Approach height: 4.5, 4.0, 3.5 ... down to 1.5.
+    local ApproachHeight = math.max(
+        1.5,
+        4.5 - ((PickupAttempts - 1) * 0.5)
+    )
 
+    local TargetPosition = CurrentEggCFrame.Position
+
+    -- Use the prompt's actual position when available.
+    if FoundPrompt and FoundPrompt.Parent then
+
+        local PromptParent = FoundPrompt.Parent
+
+        if PromptParent:IsA("Attachment") then
+            TargetPosition = PromptParent.WorldPosition
+
+        elseif PromptParent:IsA("BasePart") then
+            TargetPosition = PromptParent.Position
+        end
+    end
+
+    -- APPROACH THE EGG
+    HRP.CFrame = CFrame.new(
+        TargetPosition + Vector3.new(0, ApproachHeight, 0)
+    ) * HRP.CFrame.Rotation
+
+    HRP.AssemblyLinearVelocity = Vector3.zero
+    HRP.AssemblyAngularVelocity = Vector3.zero
+
+    task.wait(0.2)
+
+    -- CHECK AGAIN BEFORE TRYING PICK UP.
+    if IsEggEquipped(Egg) then
+        PickupSucceeded = true
+        break
+    end
+
+    -- TRY PICK UP.
+    if FoundPrompt and FoundPrompt.Parent then
+
+        pcall(function()
+
+            if typeof(fireproximityprompt) == "function" then
+
+                fireproximityprompt(FoundPrompt)
+
+            else
+
+                FoundPrompt:InputHoldBegin()
+
+                task.wait(
+                    math.max(FoundPrompt.HoldDuration, 0.1)
+                )
+
+                FoundPrompt:InputHoldEnd()
+
+            end
+
+        end)
+    end
+
+    -- Give the server time to process the pickup.
+    task.wait(0.5)
+
+    -- VERIFY BEFORE CONTINUING.
+    if IsEggEquipped(Egg) then
+        PickupSucceeded = true
+        break
+    end
+
+    -- If unsuccessful, the while loop moves closer
+    -- and attempts Pick Up again automatically.
+
+end
+
+if PickupSucceeded then
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
