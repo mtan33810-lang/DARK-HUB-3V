@@ -3132,27 +3132,126 @@ end
                 end
 
                 --==================================================
-                -- PICK UP
+                -- 🥚 HOVER AT EGG UNTIL PICKUP IS CONFIRMED
                 --==================================================
 
-                if FoundPrompt
-                    and typeof(
-                        fireproximityprompt
-                    ) == "function"
-                then
+                if typeof(fireproximityprompt) == "function" then
 
-                    if IsEggEquipped(Egg)
-                        or IsIgnoredDroppedEgg(Egg)
-                    then
+                    -- Hold the character at the egg position
+                    local HoverAttachment = Instance.new("Attachment")
+                    HoverAttachment.Name = "EggPickupHoverAttachment"
+                    HoverAttachment.Parent = HRP
+
+                    local HoverAlign = Instance.new("AlignPosition")
+                    HoverAlign.Name = "EggPickupHoverPosition"
+                    HoverAlign.Mode =
+                        Enum.PositionAlignmentMode.OneAttachment
+                    HoverAlign.Attachment0 = HoverAttachment
+                    HoverAlign.Position = EggTargetCFrame.Position
+                    HoverAlign.MaxForce = 1000000
+                    HoverAlign.Responsiveness = 200
+                    HoverAlign.RigidityEnabled = true
+                    HoverAlign.Parent = HRP
+
+                    local PickupConfirmed = false
+                    local LastPromptAttempt = 0
+
+                    -- Stay at the egg until it is collected
+                    while AutoEggPickup do
+
+                        -- Egg disappeared
+                        if not Egg or not Egg.Parent then
+                            PickupConfirmed = true
+                            break
+                        end
+
+                        -- Egg was equipped
+                        if IsEggEquipped(Egg) then
+                            PickupConfirmed = true
+                            break
+                        end
+
+                        -- Egg is no longer in the game world
+                        if not Egg:IsDescendantOf(workspace) then
+                            PickupConfirmed = true
+                            break
+                        end
+
+                        -- Find the pickup prompt again
+                        FoundPrompt = nil
+
+                        for _, Object in ipairs(
+                            Egg:GetDescendants()
+                        ) do
+
+                            if Object:IsA("ProximityPrompt") then
+
+                                local PromptText = string.lower(
+                                    tostring(Object.ActionText or "")
+                                    .. " "
+                                    .. tostring(Object.Name or "")
+                                )
+
+                                if PromptText:find(
+                                    "pick",
+                                    1,
+                                    true
+                                ) then
+                                    FoundPrompt = Object
+                                    break
+                                end
+                            end
+                        end
+
+                        -- Retry pickup without leaving the egg
+                        if FoundPrompt
+                            and FoundPrompt.Parent
+                            and os.clock() - LastPromptAttempt >= 0.75
+                        then
+                            LastPromptAttempt = os.clock()
+
+                            pcall(function()
+                                fireproximityprompt(FoundPrompt)
+                            end)
+                        end
+
+                        task.wait(0.2)
+
+                        -- Confirm that collection succeeded
+                        if not Egg.Parent
+                            or not Egg:IsDescendantOf(workspace)
+                            or IsEggEquipped(Egg)
+                        then
+                            PickupConfirmed = true
+                            break
+                        end
+                    end
+
+                    -- Remove the hover constraint
+                    if HoverAlign.Parent then
+                        HoverAlign:Destroy()
+                    end
+
+                    if HoverAttachment.Parent then
+                        HoverAttachment:Destroy()
+                    end
+
+                    -- Stop movement after hovering
+                    if HRP and HRP.Parent then
+                        HRP.AssemblyLinearVelocity = Vector3.zero
+                        HRP.AssemblyAngularVelocity = Vector3.zero
+                    end
+
+                    -- Stop safely if the toggle was switched off
+                    if not AutoEggPickup then
+                        break
+                    end
+
+                    -- Do not proceed to the next step without confirmation
+                    if not PickupConfirmed then
                         task.wait(0.2)
                         continue
                     end
-
-                    fireproximityprompt(
-                        FoundPrompt
-                    )
-
-                    task.wait(0.8)
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
