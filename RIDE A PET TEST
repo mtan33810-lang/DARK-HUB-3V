@@ -3093,135 +3093,67 @@ end
                     continue
                 end
 
---==================================================
--- PICK UP — MOVE CLOSER UNTIL PICKUP SUCCEEDS
---==================================================
+                --==================================================
+                -- FIND PICKUP PROMPT
+                --==================================================
 
-local PickupConfirmed = false
-local PickupStart = os.clock()
+                local FoundPrompt = nil
 
-while AutoEggPickup
-    and Egg
-    and not PickupConfirmed
-    and os.clock() - PickupStart < 10 do
+                for _, Object in ipairs(
+                    Egg:GetDescendants()
+                ) do
 
-    -- CHECK IF EGG WAS PICKED UP
-    local IsEquipped = false
+                    if Object:IsA(
+                        "ProximityPrompt"
+                    ) then
 
-    pcall(function()
-        IsEquipped = IsEggEquipped(Egg)
-    end)
+                        local PromptText =
+                            string.lower(
+                                tostring(
+                                    Object.ActionText
+                                    or ""
+                                )
+                            )
 
-    if IsEquipped then
-        PickupConfirmed = true
-        break
-    end
+                        if PromptText == "pick up"
+                            or PromptText:find(
+                                "pick",
+                                1,
+                                true
+                            )
+                        then
 
-    -- CHECK IF EGG STILL EXISTS
-    if not Egg.Parent then
-        task.wait(0.1)
+                            FoundPrompt =
+                                Object
 
-        pcall(function()
-            IsEquipped = IsEggEquipped(Egg)
-        end)
+                            break
+                        end
+                    end
+                end
 
-        if IsEquipped then
-            PickupConfirmed = true
-        end
+                --==================================================
+                -- PICK UP
+                --==================================================
 
-        break
-    end
+                if FoundPrompt
+                    and typeof(
+                        fireproximityprompt
+                    ) == "function"
+                then
 
-    -- REFRESH EGG POSITION
-    local CurrentEggCFrame =
-        GetObjectCFrame(Egg)
+                    if IsEggEquipped(Egg)
+                        or IsIgnoredDroppedEgg(Egg)
+                    then
+                        task.wait(0.2)
+                        continue
+                    end
 
-    if CurrentEggCFrame then
-        local TargetPosition =
-            CurrentEggCFrame.Position
-            + Vector3.new(0, 2, 0)
+                    fireproximityprompt(
+                        FoundPrompt
+                    )
 
-        local Direction =
-            TargetPosition - HRP.Position
+                    task.wait(0.8)
 
-        local Distance = Direction.Magnitude
-
-        -- MOVE CLOSER
-        if Distance > 0.5 then
-            local Step =
-                math.min(Distance - 0.5, 3)
-
-            HRP.CFrame = CFrame.new(
-                HRP.Position
-                + Direction.Unit * Step
-            )
-
-            HRP.AssemblyLinearVelocity =
-                Vector3.zero
-
-            HRP.AssemblyAngularVelocity =
-                Vector3.zero
-
-            task.wait(0.1)
-        end
-    end
-
-    -- FIND PICK UP PROMPT AGAIN
-    local PickupPrompt = nil
-
-    for _, Object in ipairs(
-        Egg:GetDescendants()
-    ) do
-        if Object:IsA("ProximityPrompt")
-            and Object.Enabled then
-
-            local PromptText =
-                string.lower(
-                    tostring(Object.ActionText or "")
-                )
-
-            if PromptText == "pick up"
-                or PromptText:find(
-                    "pick",
-                    1,
-                    true
-                ) then
-
-                PickupPrompt = Object
-                break
-            end
-        end
-    end
-
-    -- RETRY PICKUP
-    if PickupPrompt
-        and typeof(fireproximityprompt) == "function" then
-
-        pcall(function()
-            fireproximityprompt(PickupPrompt)
-        end)
-
-        task.wait(0.2)
-    else
-        task.wait(0.1)
-    end
-end
-
--- VERIFY PICKUP BEFORE CONTINUING
-if not PickupConfirmed then
-    warn(
-        "[EGG PICKUP] Failed to pick up egg: "
-        .. tostring(EggName)
-    )
-
-    task.wait(0.2)
-    continue
-end
-
-print(
-    "[EGG PICKUP] Successfully picked up: "
-    .. tostring(EggName)
-)
 
 --==================================================
 -- 🌋 VOLCANIC / BLOOM EGG REVERSE
@@ -3331,6 +3263,8 @@ end
                         break
                     end
 
+
+
                     --==================================================
                     -- RESCAN AFTER DROP
                     --==================================================
@@ -3338,6 +3272,10 @@ end
                     ScanEggs()
 
                     task.wait(0.3)
+
+                else
+
+                    task.wait(0.5)
 
                 end
             end
@@ -5256,7 +5194,7 @@ SettingTab:CreateDropdown({
         "frost",
         "rose"
     },
-    currentOption = "cobalt",
+    value = "cobalt",
     callback = function(Theme)
         Window:ChangeTheme(Theme)
     end
