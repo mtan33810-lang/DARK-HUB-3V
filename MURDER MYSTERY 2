@@ -1174,7 +1174,6 @@ local left = grid:CreateGroup({ direction = "column" })
 
 left:CreateToggle({
     name = "Hitbox ",
-    description = "Sheriff = Murderer only | Murderer = Everyone",
     value = false,
 
     callback = function(value)
