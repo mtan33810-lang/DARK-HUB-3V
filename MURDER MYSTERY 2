@@ -30,6 +30,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local VirtualUser = game:GetService("VirtualUser")
+local HttpService = game:GetService("HttpService")
 
 local lp = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -756,11 +757,69 @@ FireGui.Parent = lp:WaitForChild("PlayerGui")
 
 local FireFrame = Instance.new("Frame")
 FireFrame.Size = UDim2.fromOffset(180, 90)
-FireFrame.Position = UDim2.new(0.5, -90, 0.7, 0)
+
+--==================================================
+-- SHOOT BUTTON POSITION SAVE / LOAD
+--==================================================
+
+local FIRE_POSITION_FILE =
+    "DARK_HUB_MM2_ShootButton_Position.json"
+
+local SavedFirePosition = nil
+
+pcall(function()
+    if type(isfile) == "function"
+        and type(readfile) == "function"
+        and isfile(FIRE_POSITION_FILE) then
+
+        local data = HttpService:JSONDecode(
+            readfile(FIRE_POSITION_FILE)
+        )
+
+        if type(data) == "table"
+            and type(data.XScale) == "number"
+            and type(data.XOffset) == "number"
+            and type(data.YScale) == "number"
+            and type(data.YOffset) == "number" then
+
+            SavedFirePosition = UDim2.new(
+                data.XScale,
+                data.XOffset,
+                data.YScale,
+                data.YOffset
+            )
+        end
+    end
+end)
+
+FireFrame.Position = SavedFirePosition
+    or UDim2.new(0.5, -90, 0.7, 0)
 FireFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 FireFrame.BorderSizePixel = 0
 FireFrame.Active = true
 FireFrame.Parent = FireGui
+
+local function SaveFireFramePosition()
+    if type(writefile) ~= "function" then
+        return
+    end
+
+    local position = FireFrame.Position
+
+    local data = {
+        XScale = position.X.Scale,
+        XOffset = position.X.Offset,
+        YScale = position.Y.Scale,
+        YOffset = position.Y.Offset
+    }
+
+    pcall(function()
+        writefile(
+            FIRE_POSITION_FILE,
+            HttpService:JSONEncode(data)
+        )
+    end)
+end
 
 local FrameCorner = Instance.new("UICorner")
 FrameCorner.CornerRadius = UDim.new(0, 10)
@@ -947,6 +1006,7 @@ FireFrame.InputBegan:Connect(function(input)
 
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
+                SaveFireFramePosition()
             end
 
         end)
