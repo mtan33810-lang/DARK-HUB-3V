@@ -1361,46 +1361,165 @@ local OriginalCollisions = {}
 --==================================================
 
 local function SetNoclip(Enabled)
-    if NoclipEnabled == Enabled then
-        return
-    end
+if NoclipEnabled == Enabled then
+return
+end
 
-    NoclipEnabled = Enabled
+NoclipEnabled = Enabled  
 
-    if NoclipConnection then
-        NoclipConnection:Disconnect()
-        NoclipConnection = nil
+if NoclipConnection then  
+    NoclipConnection:Disconnect()  
+    NoclipConnection = nil  
+end  
+
+if Enabled then  
+    local function ApplyNoclip()  
+        local Character = lp.Character  
+        if not Character then return end  
+
+        for _, Part in ipairs(Character:GetDescendants()) do  
+            if Part:IsA("BasePart") then  
+                if OriginalCollisions[Part] == nil then  
+                    OriginalCollisions[Part] = Part.CanCollide  
+                end  
+
+                Part.CanCollide = false  
+            end  
+        end  
+    end  
+
+    ApplyNoclip()  
+
+    NoclipConnection = RunService.Stepped:Connect(  
+        ApplyNoclip  
+    )  
+else  
+    for Part, OriginalValue in pairs(OriginalCollisions) do  
+        if Part and Part.Parent then  
+            Part.CanCollide = OriginalValue  
+        end  
+    end  
+
+    table.clear(OriginalCollisions)  
+end
+
+end
+
+--==================================================
+-- LIE DOWN WHILE COIN FARM IS ON
+--==================================================
+
+local LieDownConnection = nil
+local LieDownEnabled = false
+
+local OriginalHumanoidSettings = {}
+local OriginalYawByCharacter = {}
+
+local function SetLieDown(Enabled)
+    LieDownEnabled = Enabled
+
+    if LieDownConnection then
+        LieDownConnection:Disconnect()
+        LieDownConnection = nil
     end
 
     if Enabled then
-        local function ApplyNoclip()
+        local function ApplyLieDown()
+            if not LieDownEnabled then
+                return
+            end
+
             local Character = lp.Character
-            if not Character then return end
+            local RootPart = Character
+                and Character:FindFirstChild("HumanoidRootPart")
 
-            for _, Part in ipairs(Character:GetDescendants()) do
-                if Part:IsA("BasePart") then
-                    if OriginalCollisions[Part] == nil then
-                        OriginalCollisions[Part] = Part.CanCollide
-                    end
+            local Humanoid = Character
+                and Character:FindFirstChildOfClass("Humanoid")
 
-                    Part.CanCollide = false
+            if not RootPart or not Humanoid then
+                return
+            end
+
+            if Humanoid.Health <= 0 then
+                return
+            end
+
+            -- Save the original settings once per character
+            if OriginalHumanoidSettings[Humanoid] == nil then
+                OriginalHumanoidSettings[Humanoid] = {
+                    AutoRotate = Humanoid.AutoRotate,
+                    PlatformStand = Humanoid.PlatformStand
+                }
+            end
+
+            -- Save the character's original facing direction
+            if OriginalYawByCharacter[Character] == nil then
+                local _, Yaw, _ =
+                    RootPart.CFrame:ToOrientation()
+
+                OriginalYawByCharacter[Character] = Yaw
+            end
+
+            Humanoid.AutoRotate = false
+            Humanoid.PlatformStand = true
+
+            local OriginalYaw =
+                OriginalYawByCharacter[Character]
+
+            -- Rotate the character into a lying position
+            RootPart.CFrame =
+                CFrame.new(RootPart.Position)
+                * CFrame.Angles(0, OriginalYaw, 0)
+                * CFrame.Angles(math.rad(90), 0, 0)
+        end
+
+        ApplyLieDown()
+
+        -- Keep the lying position while farming
+        LieDownConnection = RunService.Stepped:Connect(
+            ApplyLieDown
+        )
+
+    else
+        -- Stop forcing the lying position
+        LieDownEnabled = false
+
+        local Character = lp.Character
+        local RootPart = Character
+            and Character:FindFirstChild("HumanoidRootPart")
+
+        -- Restore the character's upright orientation
+        if RootPart and Character then
+            local OriginalYaw =
+                OriginalYawByCharacter[Character]
+
+            if OriginalYaw ~= nil then
+                RootPart.CFrame =
+                    CFrame.new(RootPart.Position)
+                    * CFrame.Angles(0, OriginalYaw, 0)
+            end
+        end
+
+        -- Restore original humanoid settings
+        for Humanoid, Settings in pairs(
+            OriginalHumanoidSettings
+        ) do
+            if Humanoid and Humanoid.Parent then
+                Humanoid.AutoRotate = Settings.AutoRotate
+                Humanoid.PlatformStand = Settings.PlatformStand
+
+                if not Settings.PlatformStand
+                    and Humanoid.Health > 0 then
+
+                    Humanoid:ChangeState(
+                        Enum.HumanoidStateType.GettingUp
+                    )
                 end
             end
         end
 
-        ApplyNoclip()
-
-        NoclipConnection = RunService.Stepped:Connect(
-            ApplyNoclip
-        )
-    else
-        for Part, OriginalValue in pairs(OriginalCollisions) do
-            if Part and Part.Parent then
-                Part.CanCollide = OriginalValue
-            end
-        end
-
-        table.clear(OriginalCollisions)
+        table.clear(OriginalHumanoidSettings)
+        table.clear(OriginalYawByCharacter)
     end
 end
 
@@ -1409,40 +1528,41 @@ end
 --==================================================
 
 local function FindNearestCoin(RootPart, IgnoredCoins)
-    local NearestCoin = nil
-    local NearestDistance = math.huge
+local NearestCoin = nil
+local NearestDistance = math.huge
 
-    for _, Object in ipairs(workspace:GetDescendants()) do
-        if Object:IsA("BasePart")
-            and not IgnoredCoins[Object] then
+for _, Object in ipairs(workspace:GetDescendants()) do  
+    if Object:IsA("BasePart")  
+        and not IgnoredCoins[Object] then  
 
-            local Name = string.lower(Object.Name)
+        local Name = string.lower(Object.Name)  
 
-            local IsCoin =
-                Name == "coin"
-                or Name == "coin_server"
-                or string.find(Name, "coin", 1, true) ~= nil
+        local IsCoin =  
+            Name == "coin"  
+            or Name == "coin_server"  
+            or string.find(Name, "coin", 1, true) ~= nil  
 
-            if IsCoin
-                and Object.Transparency < 1
-                and Object:IsDescendantOf(workspace) then
+        if IsCoin  
+            and Object.Transparency < 1  
+            and Object:IsDescendantOf(workspace) then  
 
-                local Distance =
-                    (Object.Position - RootPart.Position).Magnitude
+            local Distance =  
+                (Object.Position - RootPart.Position).Magnitude  
 
-                if Distance < NearestDistance then
-                    NearestDistance = Distance
-                    NearestCoin = Object
-                end
-            end
-        end
-    end
+            if Distance < NearestDistance then  
+                NearestDistance = Distance  
+                NearestCoin = Object  
+            end  
+        end  
+    end  
+end  
 
-    return NearestCoin
+return NearestCoin
+
 end
 
 --==================================================
--- FLY TO COIN WITHOUT TWEEN
+-- FLY TO COIN WITHOUT TWEEN (FLY UNDER)
 --==================================================
 
 local function FlyToCoin(RootPart, Coin, RunId)
@@ -1451,62 +1571,31 @@ local function FlyToCoin(RootPart, Coin, RunId)
         and RootPart.Parent
         and Coin.Parent do
 
-        local TargetPosition =
-            Coin.Position + Vector3.new(0, 1, 0)
+        -- Adjusted Y-offset to fly UNDER the coin (e.g., 3 studs below)
+        local TargetPosition = Coin.Position - Vector3.new(0, 1, 0)  
+        local Direction = TargetPosition - RootPart.Position  
+        local Distance = Direction.Magnitude  
 
-        local Direction = TargetPosition - RootPart.Position
-        local Distance = Direction.Magnitude
+        if Distance <= 2 then  
+            RootPart.AssemblyLinearVelocity = Vector3.zero  
+            return true  
+        end  
 
-        if Distance <= 2 then
-            RootPart.AssemblyLinearVelocity = Vector3.zero
-            return true
-        end
+        local DeltaTime = RunService.Heartbeat:Wait()  
 
-        local DeltaTime = RunService.Heartbeat:Wait()
+        if not CoinFarmEnabled  
+            or RunId ~= CoinFarmRunId  
+            or not RootPart.Parent  
+            or not Coin.Parent then  
+            return false  
+        end  
 
-        if not CoinFarmEnabled
-            or RunId ~= CoinFarmRunId
-            or not RootPart.Parent
-            or not Coin.Parent then
-            return false
-        end
+        -- Continuous movement through all obstacles
+        local Step = math.min(FlySpeed * DeltaTime, Distance)  
 
-        -- Check for a collidable obstacle
-        local Character = lp.Character
-        local Params = RaycastParams.new()
-
-        Params.FilterType = Enum.RaycastFilterType.Exclude
-        Params.FilterDescendantsInstances = {
-            Character,
-            Coin
-        }
-
-        local Obstacle = workspace:Raycast(
-            RootPart.Position,
-            Direction,
-            Params
-        )
-
-        local Blocked =
-            Obstacle ~= nil
-            and Obstacle.Instance:IsA("BasePart")
-            and Obstacle.Instance.CanCollide
-
-        SetNoclip(Blocked)
-
-        -- Continuous frame-by-frame movement
-        -- No TweenService is used
-        local Step = math.min(
-            FlySpeed * DeltaTime,
-            Distance
-        )
-
-        RootPart.CFrame =
-            RootPart.CFrame + Direction.Unit * Step
-
-        -- Corrected typo: Vector3.zero
-        RootPart.AssemblyLinearVelocity = Vector3.zero
-    end
+        RootPart.CFrame = RootPart.CFrame + Direction.Unit * Step  
+        RootPart.AssemblyLinearVelocity = Vector3.zero  
+    end  
 
     return false
 end
@@ -1516,20 +1605,23 @@ end
 --==================================================
 
 HomeTab:CreateSlider({
-    name = "Fly Speed",
-    range = {10, 40},
-    increment = 5,
-    suffix = " studs/s",
-    currentValue = 25,
-    flag = "CoinFlySpeed",
+name = "Fly Speed",
+range = {10, 30},
+increment = 1,
+suffix = " studs/s",
+value = 25,
+flag = "CoinFlySpeed",
 
-    callback = function(Value)
-        FlySpeed = Value
-    end
+callback = function(Value)  
+    FlySpeed = Value  
+end
+
 })
 
 --==================================================
 -- FLY TO THE COIN TOGGLE
+-- NOCLIP ACTIVATES WHEN FLIGHT STARTS
+-- STAYS ON UNTIL FARM IS OFF
 --==================================================
 
 HomeTab:CreateToggle({
@@ -1544,12 +1636,16 @@ HomeTab:CreateToggle({
         local ThisRun = CoinFarmRunId
 
         if not Value then
+            -- Stop farming and restore everything
+            SetLieDown(false)
             SetNoclip(false)
             return
         end
 
+        -- Lie down when farming starts
+        SetLieDown(true)
+
         task.spawn(function()
-            -- Reset the ignored list when a new run starts
             local IgnoredCoins = {}
 
             while CoinFarmEnabled
@@ -1566,7 +1662,6 @@ HomeTab:CreateToggle({
                     or not Humanoid
                     or Humanoid.Health <= 0 then
 
-                    SetNoclip(false)
                     task.wait(0.5)
                     continue
                 end
@@ -1577,30 +1672,32 @@ HomeTab:CreateToggle({
                 )
 
                 if Coin then
+                    -- Activate noclip immediately before flight
+                    SetNoclip(true)
+
+                    -- Fly through obstacles toward the coin
                     local Reached = FlyToCoin(
                         RootPart,
                         Coin,
                         ThisRun
                     )
 
-                    SetNoclip(false)
-
                     if Reached then
-                        -- Don't get stuck on this same coin
                         IgnoredCoins[Coin] = true
                     end
 
+                    -- Keep noclip enabled between coins
                     task.wait(0.1)
                 else
-                    SetNoclip(false)
+                    -- Search for coins; noclip stays in its
+                    -- current state until farming is stopped
                     task.wait(0.5)
                 end
             end
-
-            SetNoclip(false)
         end)
     end
 })
+
 
 --==================================================
 -- STOP BUTTON
@@ -1612,6 +1709,9 @@ HomeTab:CreateButton({
     callback = function()
         CoinFarmEnabled = false
         CoinFarmRunId += 1
+
+        -- Restore original character state
+        SetLieDown(false)
         SetNoclip(false)
     end
 })
