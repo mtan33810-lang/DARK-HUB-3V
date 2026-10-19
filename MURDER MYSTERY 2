@@ -1400,7 +1400,7 @@ right:CreateDropdown({
 --============================================================
 
 local HomeTab = Window:CreateTab({
-    name = "Farm ",
+    name = "🎃 Auto Farm ",
     icon = nil,
 })
 
@@ -1690,7 +1690,7 @@ end
 --==================================================
 
 HomeTab:CreateSlider({
-name = "Fly Speed",
+name = "Speed ",
 range = {10, 30},
 increment = 1,
 suffix = " studs/s",
@@ -1708,7 +1708,7 @@ end
 --==================================================
 
 HomeTab:CreateToggle({
-    name = "Fly to the Coin",
+    name = "🎃 Auto Farm ",
     flag = "AutoFarmCoins",
     currentValue = false,
 
@@ -1782,7 +1782,7 @@ HomeTab:CreateToggle({
 --==================================================
 
 HomeTab:CreateButton({
-    name = "Stop Coin Farm",
+    name = "Stop Auto Farm",
 
     callback = function()
         CoinFarmEnabled = false
