@@ -1562,23 +1562,22 @@ return NearestCoin
 end
 
 --==================================================
--- FLY TO COIN WITHOUT TWEEN (FLY UNDER)
+-- FLY TO COIN AND TOUCH (WITHOUT GOING BACK)
 --==================================================
 
 local function FlyToCoin(RootPart, Coin, RunId)
+    -- 1. Fly to the coin (underneath it)
     while CoinFarmEnabled
         and RunId == CoinFarmRunId
         and RootPart.Parent
         and Coin.Parent do
 
-        -- Adjusted Y-offset to fly UNDER the coin (e.g., 3 studs below)
         local TargetPosition = Coin.Position - Vector3.new(0, 1, 0)  
         local Direction = TargetPosition - RootPart.Position  
         local Distance = Direction.Magnitude  
 
         if Distance <= 2 then  
-            RootPart.AssemblyLinearVelocity = Vector3.zero  
-            return true  
+            break
         end  
 
         local DeltaTime = RunService.Heartbeat:Wait()  
@@ -1590,14 +1589,40 @@ local function FlyToCoin(RootPart, Coin, RunId)
             return false  
         end  
 
-        -- Continuous movement through all obstacles
         local Step = math.min(FlySpeed * DeltaTime, Distance)  
-
         RootPart.CFrame = RootPart.CFrame + Direction.Unit * Step  
         RootPart.AssemblyLinearVelocity = Vector3.zero  
     end  
 
-    return false
+    if not Coin.Parent then return false end
+
+    -- 2. Move closer / directly into the coin to collect it
+    local TouchStartTime = tick()
+    while CoinFarmEnabled 
+        and RunId == CoinFarmRunId 
+        and RootPart.Parent 
+        and Coin.Parent 
+        and (tick() - TouchStartTime) < 0.5 do
+
+        local TouchTarget = Coin.Position
+        local Direction = TouchTarget - RootPart.Position
+        local Distance = Direction.Magnitude
+
+        if Distance <= 0.5 then
+            break
+        end
+
+        local DeltaTime = RunService.Heartbeat:Wait()
+        local Step = math.min(FlySpeed * DeltaTime, Distance)
+        RootPart.CFrame = RootPart.CFrame + Direction.Unit * Step
+        RootPart.AssemblyLinearVelocity = Vector3.zero
+    end
+
+    -- Brief pause to ensure collection registers
+    task.wait(0.15)
+    RootPart.AssemblyLinearVelocity = Vector3.zero
+
+    return true
 end
 
 --==================================================
@@ -1620,8 +1645,6 @@ end
 
 --==================================================
 -- FLY TO THE COIN TOGGLE
--- NOCLIP ACTIVATES WHEN FLIGHT STARTS
--- STAYS ON UNTIL FARM IS OFF
 --==================================================
 
 HomeTab:CreateToggle({
@@ -1636,13 +1659,11 @@ HomeTab:CreateToggle({
         local ThisRun = CoinFarmRunId
 
         if not Value then
-            -- Stop farming and restore everything
             SetLieDown(false)
             SetNoclip(false)
             return
         end
 
-        -- Lie down when farming starts
         SetLieDown(true)
 
         task.spawn(function()
@@ -1672,10 +1693,9 @@ HomeTab:CreateToggle({
                 )
 
                 if Coin then
-                    -- Activate noclip immediately before flight
+                    -- Turn on noclip right when a coin is found & flight begins
                     SetNoclip(true)
 
-                    -- Fly through obstacles toward the coin
                     local Reached = FlyToCoin(
                         RootPart,
                         Coin,
@@ -1686,18 +1706,16 @@ HomeTab:CreateToggle({
                         IgnoredCoins[Coin] = true
                     end
 
-                    -- Keep noclip enabled between coins
                     task.wait(0.1)
                 else
-                    -- Search for coins; noclip stays in its
-                    -- current state until farming is stopped
+                    -- Turn off noclip when no coin is detected
+                    SetNoclip(false)
                     task.wait(0.5)
                 end
             end
         end)
     end
 })
-
 
 --==================================================
 -- STOP BUTTON
@@ -1710,7 +1728,6 @@ HomeTab:CreateButton({
         CoinFarmEnabled = false
         CoinFarmRunId += 1
 
-        -- Restore original character state
         SetLieDown(false)
         SetNoclip(false)
     end
